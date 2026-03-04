@@ -5,45 +5,27 @@ import { Shield } from "lucide-react";
 
 export function LoginForm() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#0A0A0A",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-bg-main relative overflow-hidden">
       {/* Grid background */}
-      <div
-        className="bg-grid"
-        style={{ position: "absolute", inset: 0, opacity: 0.6 }}
-      />
+      <div className="bg-grid absolute inset-0 opacity-60" />
 
       {/* Radial glow */}
       <div
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] pointer-events-none"
         style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
           transform: "translate(-50%, -50%)",
-          width: "600px",
-          height: "600px",
           background: "radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%)",
-          pointerEvents: "none",
         }}
       />
 
       {/* Corner decorations */}
-      <div style={{ position: "absolute", top: "80px", left: "40px", opacity: 0.2 }}>
+      <div className="absolute top-20 left-10 opacity-20">
         <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
           <path d="M0 60 L0 0 L60 0" stroke="#7C3AED" strokeWidth="1" fill="none" />
           <circle cx="0" cy="0" r="3" fill="#7C3AED" />
         </svg>
       </div>
-      <div style={{ position: "absolute", bottom: "80px", right: "40px", opacity: 0.2, transform: "rotate(180deg)" }}>
+      <div className="absolute bottom-20 right-10 opacity-20 rotate-180">
         <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
           <path d="M0 60 L0 0 L60 0" stroke="#7C3AED" strokeWidth="1" fill="none" />
           <circle cx="0" cy="0" r="3" fill="#7C3AED" />
@@ -52,126 +34,50 @@ export function LoginForm() {
 
       {/* Login card */}
       <div
-        className="animate-fade-in-up"
-        style={{
-          position: "relative",
-          width: "360px",
-          padding: "48px 40px",
-          backgroundColor: "#111111",
-          border: "1px solid #1F1F1F",
-          borderRadius: "4px",
-        }}
+        className="animate-fade-in-up relative w-[360px] max-w-[calc(100vw-32px)] px-10 py-12 bg-bg-surface border border-border rounded"
       >
         {/* Top border accent */}
         <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: "20%",
-            right: "20%",
-            height: "1px",
-            background: "linear-gradient(90deg, transparent, #7C3AED, transparent)",
-          }}
+          className="absolute top-0 left-[20%] right-[20%] h-px"
+          style={{ background: "linear-gradient(90deg, transparent, #7C3AED, transparent)" }}
         />
 
-        {/* Icon */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", marginBottom: "36px" }}>
+        {/* Icon + Title */}
+        <div className="flex flex-col items-center gap-5 mb-9">
           <div
-            className="animate-pulse-glow"
-            style={{
-              width: "56px",
-              height: "56px",
-              border: "1px solid #7C3AED",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
+            className="animate-pulse-glow relative w-14 h-14 border border-brand flex items-center justify-center"
           >
-            {/* Corner marks */}
             {[["top", "left"], ["top", "right"], ["bottom", "left"], ["bottom", "right"]].map(([v, h], i) => (
               <div
                 key={i}
-                style={{
-                  position: "absolute",
-                  [v]: "-3px",
-                  [h]: "-3px",
-                  width: "5px",
-                  height: "5px",
-                  backgroundColor: "#7C3AED",
-                }}
+                className="absolute w-[5px] h-[5px] bg-brand"
+                style={{ [v]: "-3px", [h]: "-3px" }}
               />
             ))}
             <Shield size={22} color="#A78BFA" />
           </div>
 
-          <div style={{ textAlign: "center" }}>
-            <h1
-              className="font-cinzel text-glow"
-              style={{
-                fontSize: "22px",
-                fontWeight: 700,
-                letterSpacing: "0.15em",
-                color: "#fff",
-                margin: 0,
-                textTransform: "uppercase",
-              }}
-            >
+          <div className="text-center">
+            <h1 className="font-cinzel text-glow text-[22px] font-bold tracking-[0.15em] text-white m-0 uppercase">
               Assistente Fiel
             </h1>
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#52525B",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                marginTop: "6px",
-              }}
-            >
+            <p className="text-[11px] text-text-faint tracking-[0.12em] uppercase mt-1.5">
               Sistema de RPG
             </p>
           </div>
         </div>
 
         {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "28px" }}>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#1F1F1F" }} />
-          <span style={{ fontSize: "10px", color: "#52525B", letterSpacing: "0.1em" }}>ACESSO</span>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#1F1F1F" }} />
+        <div className="flex items-center gap-3 mb-7">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-[10px] text-text-faint tracking-[0.1em]">ACESSO</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* Google Sign In */}
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-            padding: "12px 20px",
-            backgroundColor: "transparent",
-            border: "1px solid #27272A",
-            borderRadius: "2px",
-            cursor: "pointer",
-            color: "#D4D4D8",
-            fontSize: "13px",
-            fontWeight: 500,
-            letterSpacing: "0.02em",
-            transition: "border-color 0.2s, background-color 0.2s, box-shadow 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.style.borderColor = "#7C3AED";
-            btn.style.backgroundColor = "rgba(124, 58, 237, 0.06)";
-            btn.style.boxShadow = "0 0 20px rgba(124, 58, 237, 0.15)";
-          }}
-          onMouseLeave={(e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.style.borderColor = "#27272A";
-            btn.style.backgroundColor = "transparent";
-            btn.style.boxShadow = "none";
-          }}
+          className="w-full flex items-center justify-center gap-3 px-5 py-3 bg-transparent border border-border-strong rounded-sm cursor-pointer text-[#D4D4D8] text-[13px] font-medium tracking-[0.02em] transition-all hover:border-brand hover:bg-[rgba(124,58,237,0.06)]"
         >
           {/* Google icon */}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -184,28 +90,14 @@ export function LoginForm() {
         </button>
 
         {/* Bottom note */}
-        <p
-          style={{
-            marginTop: "28px",
-            textAlign: "center",
-            fontSize: "10px",
-            color: "#3F3F46",
-            lineHeight: 1.6,
-          }}
-        >
+        <p className="mt-7 text-center text-[10px] text-text-ghost leading-[1.6]">
           Ao entrar, você concorda com os termos<br />de uso do sistema.
         </p>
 
         {/* Bottom border accent */}
         <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: "30%",
-            right: "30%",
-            height: "1px",
-            background: "linear-gradient(90deg, transparent, #4B1E82, transparent)",
-          }}
+          className="absolute bottom-0 left-[30%] right-[30%] h-px"
+          style={{ background: "linear-gradient(90deg, transparent, #4B1E82, transparent)" }}
         />
       </div>
     </div>

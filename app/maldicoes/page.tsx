@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api";
-import { Skull, Users, ChevronRight, Heart, Zap } from "lucide-react";
+import { Skull, ChevronRight, Heart, Zap } from "lucide-react";
 import Link from "next/link";
 
 interface Attrs { FOR: number; AGI: number; VIG: number; INT: number; PRE: number }
@@ -42,128 +42,93 @@ function MobCard({ mob, campaignName }: { mob: MobCharacter; campaignName: strin
   const enPct = mob.energiaMax > 0 ? (mob.energiaAtual / mob.energiaMax) * 100 : 0;
   const attrs = mob.attributes;
 
-  // Deterministic reddish hue from mob id
-  const hue = mob.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 40; // 0-40 range = red-orange
+  const hue = mob.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 40;
 
   return (
-    <div style={{
-      background: "#0F0F0F",
-      border: "1px solid #1F1F1F",
-      borderRadius: 4,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      transition: "border-color 0.2s",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "#EF4444")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
-    >
+    <div className="bg-bg-deep border border-border rounded overflow-hidden flex flex-col transition-colors hover:border-[#EF4444]">
       {/* Banner */}
-      <div style={{
-        width: "100%",
-        aspectRatio: "16/7",
-        background: `radial-gradient(ellipse at 40% 50%, hsl(${hue},55%,14%) 0%, #0A0A0A 70%)`,
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }} />
-        <div style={{
-          width: 52, height: 52,
-          border: `1px solid hsl(${hue},55%,30%)`,
-          borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          opacity: 0.6,
-          boxShadow: `0 0 20px hsl(${hue},55%,20%)`,
-        }}>
+      <div
+        className="w-full relative flex items-center justify-center"
+        style={{
+          aspectRatio: "16/7",
+          background: `radial-gradient(ellipse at 40% 50%, hsl(${hue},55%,14%) 0%, #0A0A0A 70%)`,
+        }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        <div
+          className="w-[52px] h-[52px] rounded-full flex items-center justify-center opacity-60"
+          style={{
+            border: `1px solid hsl(${hue},55%,30%)`,
+            boxShadow: `0 0 20px hsl(${hue},55%,20%)`,
+          }}
+        >
           <Skull size={22} color={`hsl(${hue},65%,55%)`} />
         </div>
         {/* Campaign badge */}
-        <div style={{
-          position: "absolute", top: 8, left: 8,
-          background: "rgba(0,0,0,0.6)", border: "1px solid #27272A",
-          padding: "2px 8px", borderRadius: 2,
-          fontSize: 9, color: "#6B7280", letterSpacing: "0.08em",
-        }}>
+        <div className="absolute top-2 left-2 bg-[rgba(0,0,0,0.6)] border border-border-strong px-2 py-px rounded-sm text-[9px] text-text-muted tracking-[0.08em]">
           {campaignName}
         </div>
         {/* Mob badge */}
-        <div style={{
-          position: "absolute", top: 8, right: 8,
-          background: "rgba(127,29,29,0.5)", border: "1px solid #991B1B",
-          padding: "2px 8px", borderRadius: 2,
-          fontSize: 9, fontWeight: 700, color: "#FCA5A5", letterSpacing: "0.1em",
-        }}>
+        <div className="absolute top-2 right-2 bg-[rgba(127,29,29,0.5)] border border-[#991B1B] px-2 py-px rounded-sm text-[9px] font-bold text-[#FCA5A5] tracking-[0.1em]">
           MOB
         </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="px-4 py-3.5 flex flex-col gap-3">
         {/* Name + class */}
         <div>
-          <h2 className="font-cinzel" style={{ fontSize: 15, fontWeight: 700, color: "#F3F4F6", margin: "0 0 3px", letterSpacing: "0.05em" }}>
+          <h2 className="font-cinzel text-[15px] font-bold text-text-near m-0 mb-0.5 tracking-[0.05em]">
             {mob.nome}
           </h2>
-          <div style={{ fontSize: 11, color: "#52525B" }}>
+          <div className="text-[11px] text-text-faint">
             {mob.specialization?.nome ?? "Sem classe"} · Nív. {mob.nivel}
           </div>
         </div>
 
         {/* Attrs */}
         {attrs && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 4 }}>
+          <div className="grid grid-cols-5 gap-1">
             {(["AGI","FOR","INT","PRE","VIG"] as (keyof Attrs)[]).map(k => (
-              <div key={k} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 8, color: "#52525B", letterSpacing: "0.1em", marginBottom: 2 }}>{k}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#9CA3AF" }}>{attrs[k]}</div>
+              <div key={k} className="text-center">
+                <div className="text-[8px] text-text-faint tracking-[0.1em] mb-0.5">{k}</div>
+                <div className="text-[13px] font-bold text-text-dim">{attrs[k]}</div>
               </div>
             ))}
           </div>
         )}
 
         {/* Bars */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="flex flex-col gap-1.5">
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 9, color: "#52525B", display: "flex", alignItems: "center", gap: 4 }}><Heart size={8} /> VIDA</span>
-              <span style={{ fontSize: 9, color: "#6B7280" }}>{mob.hpAtual}/{mob.hpMax}</span>
+            <div className="flex justify-between mb-0.5">
+              <span className="text-[9px] text-text-faint flex items-center gap-1"><Heart size={8} /> VIDA</span>
+              <span className="text-[9px] text-text-muted">{mob.hpAtual}/{mob.hpMax}</span>
             </div>
-            <div style={{ height: 6, background: "#1A1A1A", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ width: `${hpPct}%`, height: "100%", background: hpColor(mob.hpAtual, mob.hpMax) }} />
+            <div className="h-1.5 bg-[#1A1A1A] rounded-sm overflow-hidden">
+              <div className="h-full" style={{ width: `${hpPct}%`, background: hpColor(mob.hpAtual, mob.hpMax) }} />
             </div>
           </div>
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 9, color: "#52525B", display: "flex", alignItems: "center", gap: 4 }}><Zap size={8} /> ENERGIA</span>
-              <span style={{ fontSize: 9, color: "#6B7280" }}>{mob.energiaAtual}/{mob.energiaMax}</span>
+            <div className="flex justify-between mb-0.5">
+              <span className="text-[9px] text-text-faint flex items-center gap-1"><Zap size={8} /> ENERGIA</span>
+              <span className="text-[9px] text-text-muted">{mob.energiaAtual}/{mob.energiaMax}</span>
             </div>
-            <div style={{ height: 6, background: "#1A1A1A", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ width: `${enPct}%`, height: "100%", background: "#7C3AED" }} />
+            <div className="h-1.5 bg-[#1A1A1A] rounded-sm overflow-hidden">
+              <div className="h-full bg-brand" style={{ width: `${enPct}%` }} />
             </div>
           </div>
         </div>
 
         <Link
           href={`/ficha/${mob.id}`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            padding: "8px 0",
-            background: "transparent",
-            border: "1px solid #27272A",
-            borderRadius: 2,
-            color: "#71717A",
-            fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
-            textDecoration: "none",
-            transition: "border-color 0.15s, color 0.15s",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#EF4444"; (e.currentTarget as HTMLAnchorElement).style.color = "#FCA5A5"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#27272A"; (e.currentTarget as HTMLAnchorElement).style.color = "#71717A"; }}
+          className="flex items-center justify-center gap-1.5 py-2 bg-transparent border border-border-strong rounded-sm text-text-mid text-[11px] font-semibold tracking-[0.08em] uppercase no-underline transition-colors hover:border-[#EF4444] hover:text-[#FCA5A5]"
         >
           Ver Ficha <ChevronRight size={12} />
         </Link>
@@ -200,39 +165,38 @@ export default function MaldicoesPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #EF4444", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando maldições…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-border border-t-[#EF4444] animate-spin-fast" />
+        <span className="text-xs text-text-faint tracking-[0.1em]">Carregando maldições…</span>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", paddingTop: "calc(68px + 32px)", paddingBottom: 60 }}>
-      <div className="bg-grid" style={{ position: "fixed", inset: 0, opacity: 0.3, pointerEvents: "none" }} />
+    <div className="min-h-screen bg-bg-main pt-[calc(68px+32px)] pb-[60px]">
+      <div className="bg-grid fixed inset-0 opacity-30 pointer-events-none" />
 
-      <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div className="relative max-w-[1100px] mx-auto px-6">
         {/* Header */}
-        <div style={{ marginBottom: 36 }}>
-          <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 6px", fontFamily: "Cinzel, serif" }}>
+        <div className="mb-9">
+          <p className="text-[10px] text-text-faint tracking-[0.2em] uppercase m-0 mb-1.5 font-cinzel">
             Entidades & Criaturas
           </p>
-          <h1 className="font-cinzel" style={{ fontSize: 26, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "0.08em" }}>
+          <h1 className="font-cinzel text-[26px] font-bold text-white m-0 tracking-[0.08em]">
             Maldições
           </h1>
         </div>
 
         {mobs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 24px", border: "1px dashed #1F1F1F", borderRadius: 4 }}>
-            <Skull size={36} color="#27272A" style={{ marginBottom: 16 }} />
-            <p style={{ fontSize: 14, color: "#52525B", margin: "0 0 6px" }}>Nenhuma maldição encontrada.</p>
-            <p style={{ fontSize: 12, color: "#3F3F46", margin: 0 }}>
+          <div className="text-center py-20 px-6 border border-dashed border-border rounded">
+            <Skull size={36} color="#27272A" className="mb-4 mx-auto" />
+            <p className="text-[14px] text-text-faint m-0 mb-1.5">Nenhuma maldição encontrada.</p>
+            <p className="text-[12px] text-text-ghost m-0">
               Mobs são criados pelo Mestre dentro de uma campanha.
             </p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+          <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
             {mobs.map(({ mob, campaignName }) => (
               <MobCard key={mob.id} mob={mob} campaignName={campaignName} />
             ))}

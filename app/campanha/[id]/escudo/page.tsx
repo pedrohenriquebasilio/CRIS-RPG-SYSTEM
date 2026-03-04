@@ -170,8 +170,8 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
   }
 
   if (!char) return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "#52525B", fontSize: 12 }}>NPC selecionado</span>
+    <div className="flex-1 flex items-center justify-center">
+      <span className="text-text-faint text-[12px]">NPC selecionado</span>
     </div>
   );
 
@@ -180,66 +180,52 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
   const ATTR_KEYS: (keyof Attrs)[] = ["FOR", "AGI", "VIG", "INT", "PRE"];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderLeft: "1px solid #1A1A1A" }}>
+    <div className="flex-1 flex flex-col overflow-hidden border-l border-border-subtle">
 
       {/* ── Header: name + class ── */}
-      <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 16 }}>
-          <div style={{
-            width: 64, height: 64, flexShrink: 0,
-            background: "#0D0D0D", border: "1px solid #2A2A2A", borderRadius: 3,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: 26, fontWeight: 900, color: "#2A2A2A", fontFamily: "Cinzel, serif" }}>{char.nome[0]?.toUpperCase()}</span>
+      <div className="px-5 pt-4 pb-[14px] border-b border-border-subtle shrink-0">
+        <div className="flex items-start gap-[14px] mb-4">
+          <div className="w-16 h-16 shrink-0 bg-bg-dark border border-border-md rounded-[3px] flex items-center justify-center">
+            <span className="text-[26px] font-black text-border-md font-cinzel">{char.nome[0]?.toUpperCase()}</span>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#F3F4F6", fontFamily: "Cinzel, serif", letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{char.nome}</div>
-            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 3, letterSpacing: "0.04em" }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-[18px] font-bold text-text-near font-cinzel tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis">{char.nome}</div>
+            <div className="text-[11px] text-text-muted mt-[3px] tracking-[0.04em]">
               {char.specialization?.nome ?? "Sem classe"} · NEX: Nv.{char.nivel}
             </div>
             <Link href={`/ficha/${char.id}`} target="_blank"
-              style={{ display: "inline-block", marginTop: 6, fontSize: 9, color: "#52525B", textDecoration: "none", letterSpacing: "0.1em" }}
-              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = "#A78BFA")}
-              onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = "#52525B")}
+              className="inline-block mt-[6px] text-[9px] text-text-faint no-underline tracking-[0.1em] transition-colors hover:text-brand-muted"
             >VER FICHA ↗</Link>
           </div>
         </div>
 
         {/* Stat bars — full width with << < VALUE > >> */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="flex flex-col gap-2">
           {([
             { label: "HP",  cur: hp, max: hpMax, color: "#C62828", field: "hpAtual"      as const },
             { label: "EN",  cur: en, max: enMax, color: "#6A1B9A", field: "energiaAtual" as const },
           ] as const).map(({ label: _label, cur, max, color, field }) => {
             const pct = max > 0 ? Math.min(100, (cur / max) * 100) : 0;
             return (
-              <div key={field} style={{ display: "flex", alignItems: "center", gap: 0 }}>
+              <div key={field} className="flex items-center">
                 {/* Left: big decrease */}
                 {([-5, -1] as const).map(d => (
-                  <button key={d} onClick={() => adjustStat(field, d)} style={{
-                    width: 28, height: 36, background: "#111", border: "1px solid #222",
-                    borderRight: "none", cursor: "pointer",
-                    color: "#EF4444", fontSize: 10, fontWeight: 700,
-                    borderRadius: d === -5 ? "3px 0 0 3px" : 0,
-                    flexShrink: 0,
-                  }}>{d}</button>
+                  <button key={d} onClick={() => adjustStat(field, d)} className="w-[28px] h-[36px] bg-bg-surface border border-[#222] cursor-pointer text-red-500 text-[10px] font-bold shrink-0"
+                    style={{ borderRight: "none", borderRadius: d === -5 ? "3px 0 0 3px" : 0 }}
+                  >{d}</button>
                 ))}
                 {/* Bar */}
-                <div style={{ flex: 1, height: 36, background: "#0D0D0D", border: "1px solid #222", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${pct}%`, background: color, transition: "width 0.3s" }} />
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.9)", fontFamily: "Cinzel, serif" }}>{cur} / {max}</span>
+                <div className="flex-1 h-[36px] bg-bg-dark border border-[#222] relative overflow-hidden">
+                  <div className="absolute left-0 top-0 h-full transition-[width] duration-300" style={{ width: `${pct}%`, background: color }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[14px] font-bold text-white font-cinzel" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{cur} / {max}</span>
                   </div>
                 </div>
                 {/* Right: big increase */}
                 {([1, 5] as const).map(d => (
-                  <button key={d} onClick={() => adjustStat(field, d)} style={{
-                    width: 28, height: 36, background: "#111", border: "1px solid #222",
-                    borderLeft: "none", cursor: "pointer",
-                    color: "#22C55E", fontSize: 10, fontWeight: 700,
-                    borderRadius: d === 5 ? "0 3px 3px 0" : 0,
-                    flexShrink: 0,
-                  }}>+{d}</button>
+                  <button key={d} onClick={() => adjustStat(field, d)} className="w-[28px] h-[36px] bg-bg-surface border border-[#222] cursor-pointer text-green-500 text-[10px] font-bold shrink-0"
+                    style={{ borderLeft: "none", borderRadius: d === 5 ? "0 3px 3px 0" : 0 }}
+                  >+{d}</button>
                 ))}
               </div>
             );
@@ -248,29 +234,28 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
       </div>
 
       {/* ── Tabs ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+      <div className="flex border-b border-border-subtle shrink-0">
         {([
           { id: "atributos",   label: "ATRIBUTOS"  },
           { id: "combate",     label: "COMBATE"    },
           { id: "habilidades", label: "TÉCNICAS"   },
         ] as { id: MiniTab; label: string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, background: "none", border: "none", cursor: "pointer",
-            padding: "11px 0",
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif",
-            color: tab === t.id ? "#E5E7EB" : "#52525B",
-            borderBottom: `2px solid ${tab === t.id ? "#7C3AED" : "transparent"}`,
-            marginBottom: -1, transition: "color 0.15s",
-          }}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="flex-1 bg-transparent border-none cursor-pointer py-[11px] text-[10px] font-bold tracking-[0.1em] font-cinzel transition-colors -mb-px"
+            style={{
+              color: tab === t.id ? "#E5E7EB" : "#52525B",
+              borderBottom: `2px solid ${tab === t.id ? "#7C3AED" : "transparent"}`,
+            }}
+          >{t.label}</button>
         ))}
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 18px" }}>
+      <div className="flex-1 overflow-y-auto px-[18px] py-[14px]">
 
-        {/* ATRIBUTOS — 2×3 grid, somente chaves conhecidas */}
+        {/* ATRIBUTOS — 2×3 grid */}
         {tab === "atributos" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div className="grid grid-cols-2 gap-2">
             {char.attributes && ATTR_KEYS.filter(k => k in char.attributes!).map(k => {
               const v = (char.attributes as unknown as Record<string, number>)[k];
               return (
@@ -278,18 +263,11 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
                   key={k}
                   onClick={() => rollAttr(k)}
                   disabled={rolling}
-                  style={{
-                    background: "#0D0D0D", border: "1px solid #1E1E1E", borderRadius: 3,
-                    padding: "14px 12px", cursor: rolling ? "not-allowed" : "pointer",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                    transition: "border-color 0.15s", outline: "none",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "#1E1E1E")}
+                  className="bg-bg-dark border border-[#1E1E1E] rounded-[3px] px-3 py-[14px] flex flex-col items-center gap-[3px] transition-colors hover:border-brand outline-none disabled:cursor-not-allowed"
                 >
-                  <span style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.18em", fontFamily: "Cinzel, serif" }}>{k}</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#E5E7EB", fontFamily: "Cinzel, serif", lineHeight: 1 }}>{v}</span>
-                  <span style={{ fontSize: 8, color: "#3B1A6B", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 3 }}>
+                  <span className="text-[9px] text-text-faint tracking-[0.18em] font-cinzel">{k}</span>
+                  <span className="text-[32px] font-black text-text-base font-cinzel leading-none">{v}</span>
+                  <span className="text-[8px] text-[#3B1A6B] tracking-[0.1em] flex items-center gap-[3px]">
                     <Dices size={8} /> ROLAR
                   </span>
                 </button>
@@ -300,29 +278,28 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
         {/* COMBATE */}
         {tab === "combate" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="flex flex-col gap-3">
             {/* Weapon filter */}
             <input
               value={weaponFilter}
               onChange={e => setWeaponFilter(e.target.value)}
               placeholder="Filtrar ataques"
-              style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: "1px solid #27272A", padding: "8px 0", color: "#9CA3AF", fontSize: 13, outline: "none" }}
+              className="w-full box-border bg-transparent border-0 border-b border-border-strong px-0 py-2 text-text-dim text-[13px] outline-none focus:border-brand transition-colors"
               onFocus={e => (e.target.style.borderBottomColor = "#7C3AED")}
               onBlur={e => (e.target.style.borderBottomColor = "#27272A")}
             />
 
             {/* Free dice */}
-            <div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid #27272A" }}>
+            <div className="flex items-center border-b border-border-strong">
               <input
                 value={diceInput}
                 onChange={e => setDiceInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && rollFree()}
                 placeholder="Rolar dados"
-                style={{ flex: 1, background: "transparent", border: "none", padding: "8px 0", color: "#9CA3AF", fontSize: 13, outline: "none" }}
+                className="flex-1 bg-transparent border-none py-2 text-text-dim text-[13px] outline-none"
               />
-              <button onClick={rollFree} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", padding: "4px" }}
-                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = "#A78BFA")}
-                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = "#52525B")}
+              <button onClick={rollFree}
+                className="bg-transparent border-none cursor-pointer text-text-faint p-1 transition-colors hover:text-brand-muted"
               >
                 <Dices size={18} />
               </button>
@@ -330,26 +307,25 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
             {/* Weapons — single column rows */}
             {!full ? (
-              <p style={{ fontSize: 11, color: "#52525B", textAlign: "center", padding: "16px 0" }}>Carregando…</p>
+              <p className="text-[11px] text-text-faint text-center py-4">Carregando…</p>
             ) : filteredWeapons.length === 0 ? (
-              <p style={{ fontSize: 11, color: "#3F3F46", textAlign: "center", padding: "16px 0" }}>Nenhuma arma equipada.</p>
+              <p className="text-[11px] text-text-ghost text-center py-4">Nenhuma arma equipada.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className="flex flex-col gap-[6px]">
                 {filteredWeapons.map(w => (
-                  <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#0D0D0D", border: "1px solid #1A1A1A", borderRadius: 3 }}>
-                    <div style={{ width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#7C3AED" }} />
+                  <div key={w.id} className="flex items-center gap-3 px-[14px] py-[10px] bg-bg-dark border border-border-subtle rounded-[3px]">
+                    <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-brand" />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{w.nome}</div>
-                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
-                        Dano: <span style={{ color: "#9CA3AF" }}>{w.damageDice}</span>
-                        {"  "}Crítico: <span style={{ color: "#9CA3AF" }}>{w.threatRange < 20 ? w.threatRange : "20"}/×{w.criticalMultiplier}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-text-base">{w.nome}</div>
+                      <div className="text-[11px] text-text-muted mt-[2px]">
+                        Dano: <span className="text-text-dim">{w.damageDice}</span>
+                        {"  "}Crítico: <span className="text-text-dim">{w.threatRange < 20 ? w.threatRange : "20"}/×{w.criticalMultiplier}</span>
                       </div>
                     </div>
-                    <button onClick={() => rollWeapon(w)} disabled={rolling} style={{ background: "none", border: "none", cursor: rolling ? "not-allowed" : "pointer", color: "#52525B", flexShrink: 0, padding: "4px" }}
-                      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = "#A78BFA")}
-                      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = "#52525B")}
+                    <button onClick={() => rollWeapon(w)} disabled={rolling}
+                      className="bg-transparent border-none shrink-0 p-1 text-text-faint transition-colors hover:text-brand-muted disabled:cursor-not-allowed"
                     ><Dices size={18} /></button>
                   </div>
                 ))}
@@ -360,27 +336,26 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
         {/* HABILIDADES — single column rows */}
         {tab === "habilidades" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="flex flex-col gap-[6px]">
             {!full ? (
-              <p style={{ fontSize: 11, color: "#52525B", textAlign: "center", padding: "16px 0" }}>Carregando…</p>
+              <p className="text-[11px] text-text-faint text-center py-4">Carregando…</p>
             ) : full.techniques.length === 0 ? (
-              <p style={{ fontSize: 11, color: "#3F3F46", textAlign: "center", padding: "16px 0" }}>Nenhuma técnica aprendida.</p>
+              <p className="text-[11px] text-text-ghost text-center py-4">Nenhuma técnica aprendida.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className="flex flex-col gap-[6px]">
                 {full.techniques.map(t => (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#0D0D0D", border: "1px solid #1A1A1A", borderRadius: 3 }}>
-                    <div style={{ width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#6A1B9A" }} />
+                  <div key={t.id} className="flex items-center gap-3 px-[14px] py-[10px] bg-bg-dark border border-border-subtle rounded-[3px]">
+                    <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full" style={{ background: "#6A1B9A" }} />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{t.nome}</div>
-                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-text-base">{t.nome}</div>
+                      <div className="text-[11px] text-text-muted mt-[2px] flex items-center gap-1">
                         <Zap size={10} /> {t.custoEnergia} energia
                       </div>
                     </div>
-                    <button onClick={() => rollTechnique(t)} disabled={rolling} style={{ background: "none", border: "none", cursor: rolling ? "not-allowed" : "pointer", color: "#52525B", flexShrink: 0, padding: "4px" }}
-                      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = "#A78BFA")}
-                      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = "#52525B")}
+                    <button onClick={() => rollTechnique(t)} disabled={rolling}
+                      className="bg-transparent border-none shrink-0 p-1 text-text-faint transition-colors hover:text-brand-muted disabled:cursor-not-allowed"
                     ><Dices size={18} /></button>
                   </div>
                 ))}
@@ -416,34 +391,21 @@ function AgentCard({ char }: { char: Character }) {
   const enPct  = char.energiaMax > 0 ? (char.energiaAtual / char.energiaMax) * 100 : 0;
 
   return (
-    <div style={{
-      background: "#0F0F0F",
-      border: "1px solid #1F1F1F",
-      borderRadius: 4,
-      padding: "18px 20px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 14,
-    }}>
+    <div className="bg-bg-deep border border-border rounded-[4px] p-[18px_20px] flex flex-col gap-[14px]">
       {/* Header */}
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <div style={{
-          width: 52, height: 52, flexShrink: 0,
-          background: "#1A1A1A", border: "1px solid #2A2A2A",
-          borderRadius: 2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+      <div className="flex gap-[14px] items-start">
+        <div className="w-[52px] h-[52px] shrink-0 bg-[#1A1A1A] border border-border-md rounded-[2px] flex items-center justify-center">
           <Users size={20} color="#3A3A3A" />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#F3F4F6", fontFamily: "Cinzel, serif", letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-bold text-text-near font-cinzel tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis">
             {char.nome}
           </div>
-          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
+          <div className="text-[11px] text-text-muted mt-[2px]">
             {char.specialization?.nome ?? "Sem classe"}
             {char.origemRelacao ? ` · ${char.origemRelacao.nome}` : ""}
           </div>
-          <div style={{ fontSize: 10, color: "#7C3AED", letterSpacing: "0.1em", marginTop: 3, fontFamily: "Cinzel, serif" }}>
+          <div className="text-[10px] text-brand tracking-[0.1em] mt-[3px] font-cinzel">
             NÍV. {char.nivel}
           </div>
         </div>
@@ -451,36 +413,36 @@ function AgentCard({ char }: { char: Character }) {
 
       {/* Attributes */}
       {attrs && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 4 }}>
+        <div className="grid grid-cols-5 gap-1">
           {(["AGI","FOR","INT","PRE","VIG"] as (keyof Attrs)[]).map(k => (
-            <div key={k} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.1em", marginBottom: 2 }}>{k}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#D1D5DB" }}>{attrs[k]}</div>
+            <div key={k} className="text-center">
+              <div className="text-[9px] text-text-faint tracking-[0.1em] mb-[2px]">{k}</div>
+              <div className="text-[14px] font-bold text-[#D1D5DB]">{attrs[k]}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* Bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="flex flex-col gap-2">
         {/* HP */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em" }}>VIDA</span>
-            <span style={{ fontSize: 9, color: "#9CA3AF" }}>{char.hpAtual}/{char.hpMax}</span>
+          <div className="flex justify-between mb-1">
+            <span className="text-[9px] text-text-faint tracking-[0.12em]">VIDA</span>
+            <span className="text-[9px] text-text-dim">{char.hpAtual}/{char.hpMax}</span>
           </div>
-          <div style={{ height: 8, background: "#1A1A1A", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ width: `${hpPct}%`, height: "100%", background: hpColor(char.hpAtual, char.hpMax), transition: "width 0.3s" }} />
+          <div className="h-2 bg-[#1A1A1A] rounded-[2px] overflow-hidden">
+            <div className="h-full transition-[width] duration-300" style={{ width: `${hpPct}%`, background: hpColor(char.hpAtual, char.hpMax) }} />
           </div>
         </div>
         {/* Energia */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em" }}>ENERGIA</span>
-            <span style={{ fontSize: 9, color: "#9CA3AF" }}>{char.energiaAtual}/{char.energiaMax}</span>
+          <div className="flex justify-between mb-1">
+            <span className="text-[9px] text-text-faint tracking-[0.12em]">ENERGIA</span>
+            <span className="text-[9px] text-text-dim">{char.energiaAtual}/{char.energiaMax}</span>
           </div>
-          <div style={{ height: 8, background: "#1A1A1A", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ width: `${enPct}%`, height: "100%", background: "#7C3AED", transition: "width 0.3s" }} />
+          <div className="h-2 bg-[#1A1A1A] rounded-[2px] overflow-hidden">
+            <div className="h-full bg-brand transition-[width] duration-300" style={{ width: `${enPct}%` }} />
           </div>
         </div>
       </div>
@@ -488,20 +450,7 @@ function AgentCard({ char }: { char: Character }) {
       {/* Ficha link */}
       <Link
         href={`/ficha/${char.id}`}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          padding: "7px 0",
-          background: "transparent",
-          border: "1px solid #27272A",
-          borderRadius: 2,
-          color: "#71717A",
-          fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
-          textDecoration: "none",
-          textTransform: "uppercase",
-          transition: "border-color 0.15s, color 0.15s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#7C3AED"; (e.currentTarget as HTMLAnchorElement).style.color = "#A78BFA"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#27272A"; (e.currentTarget as HTMLAnchorElement).style.color = "#71717A"; }}
+        className="flex items-center justify-center gap-[6px] py-[7px] bg-transparent border border-border-strong rounded-[2px] text-text-mid text-[11px] font-semibold tracking-[0.08em] no-underline uppercase transition-colors hover:border-brand hover:text-brand-muted"
       >
         Ficha <ChevronRight size={12} />
       </Link>
@@ -565,21 +514,24 @@ function CombatPanel({
   // No active combat
   if (!combat || combat.state === "COMBAT_FINISHED" || combat.state === "IDLE") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 20 }}>
-        <div style={{ width: 72, height: 72, border: "1px solid #27272A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="flex flex-col items-center justify-center py-20 px-6 gap-5">
+        <div className="w-[72px] h-[72px] border border-border-strong rounded-full flex items-center justify-center">
           <Swords size={28} color="#3F3F46" />
         </div>
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "#71717A", margin: "0 0 6px" }}>Nenhum combate ativo</p>
-          <p style={{ fontSize: 12, color: "#3F3F46", margin: 0 }}>Ao iniciar, a iniciativa será rolada automaticamente para todos os agentes aprovados.</p>
+        <div className="text-center">
+          <p className="text-[14px] text-text-mid m-0 mb-[6px]">Nenhum combate ativo</p>
+          <p className="text-[12px] text-text-ghost m-0">Ao iniciar, a iniciativa será rolada automaticamente para todos os agentes aprovados.</p>
         </div>
         {agents.length === 0
-          ? <p style={{ fontSize: 12, color: "#EF4444" }}>Nenhum agente aprovado na campanha.</p>
-          : <button onClick={handleStartCombat} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", background: loading ? "#3B0764" : "#7C3AED", border: "none", borderRadius: 3, color: "#fff", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif", cursor: loading ? "not-allowed" : "pointer" }}>
+          ? <p className="text-[12px] text-red-500">Nenhum agente aprovado na campanha.</p>
+          : <button onClick={handleStartCombat} disabled={loading}
+              className="flex items-center gap-2 px-6 py-[10px] border-none rounded-[3px] text-white text-[13px] font-bold tracking-[0.1em] uppercase font-cinzel disabled:cursor-not-allowed transition-colors"
+              style={{ background: loading ? "#3B0764" : "#7C3AED", cursor: loading ? "not-allowed" : "pointer" }}
+            >
               <Play size={14} /> {loading ? "Iniciando…" : "Iniciar Combate"}
             </button>
         }
-        {error && <p style={{ fontSize: 12, color: "#F87171" }}>{error}</p>}
+        {error && <p className="text-[12px] text-red-400">{error}</p>}
       </div>
     );
   }
@@ -588,28 +540,30 @@ function CombatPanel({
   const currentPart = sorted[combat.currentTurn % Math.max(sorted.length, 1)];
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: 0, gap: 0 }}>
+    <div className="flex h-full min-h-0 gap-0">
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
-      {/* Left: turn order */}
-      <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid #1A1A1A", overflow: "hidden" }}>
+      {/* Left: turn order — responsive */}
+      <div className="w-full lg:w-[280px] shrink-0 flex flex-col border-r border-border-subtle overflow-hidden">
         {/* Combat header */}
-        <div style={{ padding: "12px 14px", borderBottom: "1px solid #1A1A1A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#EF4444", boxShadow: "0 0 6px #EF4444", animation: "pulse 1.5s ease-in-out infinite" }} />
-            <span style={{ fontSize: 11, color: "#EF4444", fontWeight: 700, letterSpacing: "0.08em" }}>RODADA {combat.round}</span>
+        <div className="px-[14px] py-3 border-b border-border-subtle flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-[7px] h-[7px] rounded-full bg-red-500" style={{ boxShadow: "0 0 6px #EF4444", animation: "pulse 1.5s ease-in-out infinite" }} />
+            <span className="text-[11px] text-red-500 font-bold tracking-[0.08em]">RODADA {combat.round}</span>
           </div>
-          <button onClick={handleFinishCombat} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", background: "transparent", border: "1px solid #3F1515", borderRadius: 2, color: "#EF4444", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+          <button onClick={handleFinishCombat} disabled={loading}
+            className="flex items-center gap-[5px] px-[10px] py-1 bg-transparent border border-[#3F1515] rounded-[2px] text-red-500 text-[10px] font-bold cursor-pointer"
+          >
             <StopCircle size={11} /> Encerrar
           </button>
         </div>
 
-        {error && <p style={{ fontSize: 11, color: "#F87171", padding: "6px 14px", margin: 0 }}>{error}</p>}
+        {error && <p className="text-[11px] text-red-400 px-[14px] py-[6px] m-0">{error}</p>}
 
         {/* Turn list */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <div style={{ padding: "8px 14px 4px", fontSize: 9, color: "#3F3F46", letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>Iniciativa</div>
-          <div style={{ fontSize: 10, color: "#52525B", padding: "0 14px 10px" }}>Rodada Atual: {combat.round}</div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-[14px] pt-2 pb-1 text-[9px] text-text-ghost tracking-[0.15em] uppercase font-cinzel">Iniciativa</div>
+          <div className="text-[10px] text-text-faint px-[14px] pb-[10px]">Rodada Atual: {combat.round}</div>
           {sorted.map(p => {
             const name    = p.character?.nome ?? p.npc?.nome ?? "?";
             const hp      = p.hpAtual;
@@ -623,28 +577,26 @@ function CombatPanel({
               <div
                 key={p.id}
                 onClick={() => setSelected(isSel ? null : p)}
+                className="flex items-center gap-[10px] px-[14px] py-[10px] cursor-pointer border-b border-[#111] transition-colors"
                 style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px",
-                  cursor: "pointer",
                   background: isSel ? "rgba(124,58,237,0.1)" : isCur ? "rgba(124,58,237,0.06)" : "transparent",
                   borderLeft: `3px solid ${isSel ? "#7C3AED" : isCur ? "#4C1D95" : "transparent"}`,
-                  borderBottom: "1px solid #111",
-                  transition: "background 0.15s",
                 }}
               >
                 {/* Avatar */}
-                <div style={{ width: 42, height: 42, background: "#0D0D0D", border: `1px solid ${isCur ? "#7C3AED" : "#1E1E1E"}`, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: isCur ? "#A78BFA" : "#2A2A2A", fontFamily: "Cinzel, serif" }}>{name[0]?.toUpperCase()}</span>
+                <div className="w-[42px] h-[42px] bg-bg-dark rounded-[3px] flex items-center justify-center shrink-0"
+                  style={{ border: `1px solid ${isCur ? "#7C3AED" : "#1E1E1E"}` }}
+                >
+                  <span className="text-[16px] font-black font-cinzel" style={{ color: isCur ? "#A78BFA" : "#2A2A2A" }}>{name[0]?.toUpperCase()}</span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: isCur ? "#F3F4F6" : "#9CA3AF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>{name}</div>
-                  <div style={{ fontSize: 11, color: "#52525B", display: "flex", gap: 10 }}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis mb-1" style={{ color: isCur ? "#F3F4F6" : "#9CA3AF" }}>{name}</div>
+                  <div className="text-[11px] text-text-faint flex gap-[10px]">
                     <span style={{ color: "#C62828" }}>{hp}/{hpMax}</span>
                     <span style={{ color: "#6A1B9A" }}>{en}/{enMax}</span>
                   </div>
                 </div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: isCur ? "#A78BFA" : "#3F3F46", fontFamily: "Cinzel, serif", flexShrink: 0, minWidth: 32, textAlign: "right" }}>
+                <div className="text-[26px] font-black font-cinzel shrink-0 min-w-[32px] text-right" style={{ color: isCur ? "#A78BFA" : "#3F3F46" }}>
                   {p.iniciativa ?? 0}
                 </div>
               </div>
@@ -664,9 +616,9 @@ function CombatPanel({
           onStatsChange={handleStatsChange}
         />
       ) : (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+        <div className="flex-1 flex items-center justify-center flex-col gap-3">
           <Users size={28} color="#27272A" />
-          <p style={{ fontSize: 12, color: "#3F3F46", margin: 0 }}>Clique em um participante para ver a mini ficha</p>
+          <p className="text-[12px] text-text-ghost m-0">Clique em um participante para ver a mini ficha</p>
         </div>
       )}
     </div>
@@ -692,22 +644,15 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
   }
 
   return (
-    <div style={{
-      width: 260, flexShrink: 0,
-      background: "#0A0A0A",
-      borderRight: "1px solid #1A1A1A",
-      display: "flex", flexDirection: "column",
-      height: "100%",
-      overflow: "hidden",
-    }}>
-      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #1A1A1A" }}>
-        <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.18em", textTransform: "uppercase", margin: 0, fontFamily: "Cinzel, serif" }}>
+    <div className="w-[260px] shrink-0 bg-bg-input border-r border-border-subtle flex flex-col h-full overflow-hidden">
+      <div className="px-4 pt-4 pb-3 border-b border-border-subtle">
+        <p className="text-[10px] text-text-faint tracking-[0.18em] uppercase m-0 font-cinzel">
           Resultados
         </p>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+      <div className="flex-1 overflow-y-auto py-2">
         {logs.length === 0 && (
-          <p style={{ fontSize: 11, color: "#3F3F46", textAlign: "center", padding: "32px 16px" }}>
+          <p className="text-[11px] text-text-ghost text-center px-4 py-8">
             Nenhum registro ainda.
           </p>
         )}
@@ -716,34 +661,31 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
           const hasNumbers = ataque !== undefined || dano !== undefined;
 
           return (
-            <div key={log.id} style={{
-              padding: "10px 14px",
-              borderBottom: "1px solid #111",
-            }}>
-              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>
+            <div key={log.id} className="px-[14px] py-[10px] border-b border-[#111]">
+              <div className="text-[11px] text-text-muted mb-1">
                 {log.actorName ?? "Sistema"}
               </div>
-              <div style={{ fontSize: 12, color: "#D1D5DB", marginBottom: hasNumbers ? 6 : 0 }}>
+              <div className="text-[12px] text-[#D1D5DB]" style={{ marginBottom: hasNumbers ? 6 : 0 }}>
                 {log.action}
                 {log.result ? ` · ${log.result}` : ""}
               </div>
               {hasNumbers && (
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="flex gap-2">
                   {ataque !== undefined && (
-                    <div style={{ flex: 1, background: "#111", border: "1px solid #1F1F1F", borderRadius: 2, padding: "4px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#A78BFA", fontFamily: "Cinzel, serif" }}>{ataque}</div>
-                      <div style={{ fontSize: 8, color: "#52525B", letterSpacing: "0.1em" }}>ROLAGEM</div>
+                    <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
+                      <div className="text-[18px] font-bold text-brand-muted font-cinzel">{ataque}</div>
+                      <div className="text-[8px] text-text-faint tracking-[0.1em]">ROLAGEM</div>
                     </div>
                   )}
                   {dano !== undefined && (
-                    <div style={{ flex: 1, background: "#111", border: "1px solid #1F1F1F", borderRadius: 2, padding: "4px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#EF4444", fontFamily: "Cinzel, serif" }}>{dano}</div>
-                      <div style={{ fontSize: 8, color: "#52525B", letterSpacing: "0.1em" }}>DANO</div>
+                    <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
+                      <div className="text-[18px] font-bold text-red-500 font-cinzel">{dano}</div>
+                      <div className="text-[8px] text-text-faint tracking-[0.1em]">DANO</div>
                     </div>
                   )}
                 </div>
               )}
-              <div style={{ fontSize: 9, color: "#3F3F46", marginTop: 4 }}>
+              <div className="text-[9px] text-text-ghost mt-1">
                 {new Date(log.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
               </div>
             </div>
@@ -818,54 +760,55 @@ function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; toke
   }
 
   if (agents.length === 0) return (
-    <div style={{ textAlign: "center", padding: "60px 24px" }}>
-      <Users size={28} color="#27272A" style={{ marginBottom: 10 }} />
-      <p style={{ fontSize: 13, color: "#52525B" }}>Nenhum agente aprovado na campanha.</p>
+    <div className="text-center py-[60px] px-6">
+      <Users size={28} color="#27272A" className="mb-[10px]" />
+      <p className="text-[13px] text-text-faint">Nenhum agente aprovado na campanha.</p>
     </div>
   );
 
   return (
-    <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="max-w-[560px] flex flex-col gap-5">
 
       {/* Direction toggle */}
-      <div style={{ display: "flex", gap: 0, border: "1px solid #1F1F1F", borderRadius: 3, overflow: "hidden" }}>
+      <div className="flex border border-border rounded-[3px] overflow-hidden">
         {([
           { id: "add", label: "CONCEDER", color: "#22C55E" },
           { id: "sub", label: "REDUZIR",  color: "#EF4444" },
         ] as const).map(d => (
-          <button key={d.id} onClick={() => { setDirection(d.id); setResult(null); setAmount(""); }} style={{
-            flex: 1, padding: "12px 0", border: "none", cursor: "pointer",
-            background: direction === d.id
-              ? d.id === "add" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"
-              : "#0D0D0D",
-            color: direction === d.id ? d.color : "#3F3F46",
-            fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", fontFamily: "Cinzel, serif",
-            borderRight: d.id === "add" ? "1px solid #1F1F1F" : "none",
-            transition: "all 0.15s",
-          }}>{d.id === "add" ? "+ " : "− "}{d.label}</button>
+          <button key={d.id} onClick={() => { setDirection(d.id); setResult(null); setAmount(""); }}
+            className="flex-1 py-3 border-none cursor-pointer text-[12px] font-bold tracking-[0.14em] font-cinzel transition-all"
+            style={{
+              background: direction === d.id
+                ? d.id === "add" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"
+                : "#0D0D0D",
+              color: direction === d.id ? d.color : "#3F3F46",
+              borderRight: d.id === "add" ? "1px solid #1F1F1F" : "none",
+            }}
+          >{d.id === "add" ? "+ " : "− "}{d.label}</button>
         ))}
       </div>
 
       {/* Stat type selector */}
       <div>
-        <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.18em", margin: "0 0 12px", fontFamily: "Cinzel, serif" }}>TIPO DE STAT</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <p className="text-[10px] text-text-faint tracking-[0.18em] m-0 mb-3 font-cinzel">TIPO DE STAT</p>
+        <div className="grid grid-cols-2 gap-2">
           {AJUSTE_DEFS.filter(d => !(direction === "sub" && d.type === "XP")).map(d => {
             const active = selectedType === d.type;
             return (
-              <button key={d.type} onClick={() => { setSelectedType(active ? null : d.type); setResult(null); setAmount(""); }} style={{
-                background: active ? `rgba(${
-                  d.color === "#A855F7" ? "168,85,247" :
-                  d.color === "#EF4444" ? "239,68,68"  :
-                  d.color === "#7C3AED" ? "124,58,237" : "245,158,11"
-                },0.12)` : "#0F0F0F",
-                border: `1px solid ${active ? d.color : "#1F1F1F"}`,
-                borderRadius: 3, padding: "12px 14px", cursor: "pointer", textAlign: "left",
-                transition: "all 0.15s",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 20, color: active ? d.color : "#3F3F46", lineHeight: 1 }}>{d.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: active ? d.color : "#9CA3AF" }}>{d.label}</span>
+              <button key={d.type} onClick={() => { setSelectedType(active ? null : d.type); setResult(null); setAmount(""); }}
+                className="rounded-[3px] px-[14px] py-3 cursor-pointer text-left transition-all"
+                style={{
+                  background: active ? `rgba(${
+                    d.color === "#A855F7" ? "168,85,247" :
+                    d.color === "#EF4444" ? "239,68,68"  :
+                    d.color === "#7C3AED" ? "124,58,237" : "245,158,11"
+                  },0.12)` : "#0F0F0F",
+                  border: `1px solid ${active ? d.color : "#1F1F1F"}`,
+                }}
+              >
+                <div className="flex items-center gap-[10px]">
+                  <span className="text-[20px] leading-none" style={{ color: active ? d.color : "#3F3F46" }}>{d.icon}</span>
+                  <span className="text-[12px] font-bold" style={{ color: active ? d.color : "#9CA3AF" }}>{d.label}</span>
                 </div>
               </button>
             );
@@ -877,52 +820,52 @@ function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; toke
         <>
           {/* Target */}
           <div>
-            <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.18em", margin: "0 0 12px", fontFamily: "Cinzel, serif" }}>DESTINO</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <button onClick={() => setTarget("all")} style={{
-                display: "flex", alignItems: "center", gap: 12,
-                background: target === "all" ? "rgba(124,58,237,0.1)" : "#0F0F0F",
-                border: `1px solid ${target === "all" ? "#7C3AED" : "#1F1F1F"}`,
-                borderRadius: 3, padding: "10px 14px", cursor: "pointer", textAlign: "left",
-                transition: "all 0.15s",
-              }}>
+            <p className="text-[10px] text-text-faint tracking-[0.18em] m-0 mb-3 font-cinzel">DESTINO</p>
+            <div className="flex flex-col gap-[6px]">
+              <button onClick={() => setTarget("all")}
+                className="flex items-center gap-3 rounded-[3px] px-[14px] py-[10px] cursor-pointer text-left transition-all"
+                style={{
+                  background: target === "all" ? "rgba(124,58,237,0.1)" : "#0F0F0F",
+                  border: `1px solid ${target === "all" ? "#7C3AED" : "#1F1F1F"}`,
+                }}
+              >
                 <Users size={16} color={target === "all" ? "#A78BFA" : "#52525B"} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: target === "all" ? "#A78BFA" : "#9CA3AF" }}>Todos os Agentes</div>
-                  <div style={{ fontSize: 10, color: "#52525B" }}>{agents.length} personagem{agents.length !== 1 ? "s" : ""}</div>
+                <div className="flex-1">
+                  <div className="text-[12px] font-bold" style={{ color: target === "all" ? "#A78BFA" : "#9CA3AF" }}>Todos os Agentes</div>
+                  <div className="text-[10px] text-text-faint">{agents.length} personagem{agents.length !== 1 ? "s" : ""}</div>
                 </div>
-                {target === "all" && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#7C3AED" }} />}
+                {target === "all" && <div className="w-2 h-2 rounded-full bg-brand" />}
               </button>
 
               {agents.map(char => {
                 const active = target === char.id;
                 const base   = currentBase(char);
                 return (
-                  <button key={char.id} onClick={() => setTarget(active ? "all" : char.id)} style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    background: active ? `rgba(${
-                      def!.color === "#A855F7" ? "168,85,247" :
-                      def!.color === "#EF4444" ? "239,68,68"  :
-                      def!.color === "#7C3AED" ? "124,58,237" : "245,158,11"
-                    },0.08)` : "#0F0F0F",
-                    border: `1px solid ${active ? def!.color : "#1F1F1F"}`,
-                    borderRadius: 3, padding: "10px 14px", cursor: "pointer", textAlign: "left",
-                    transition: "all 0.15s",
-                  }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 2, background: "#1A1A1A", border: "1px solid #2A2A2A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: active ? def!.color : "#3F3F46" }}>{char.nome[0].toUpperCase()}</span>
+                  <button key={char.id} onClick={() => setTarget(active ? "all" : char.id)}
+                    className="flex items-center gap-3 rounded-[3px] px-[14px] py-[10px] cursor-pointer text-left transition-all"
+                    style={{
+                      background: active ? `rgba(${
+                        def!.color === "#A855F7" ? "168,85,247" :
+                        def!.color === "#EF4444" ? "239,68,68"  :
+                        def!.color === "#7C3AED" ? "124,58,237" : "245,158,11"
+                      },0.08)` : "#0F0F0F",
+                      border: `1px solid ${active ? def!.color : "#1F1F1F"}`,
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-[2px] bg-[#1A1A1A] border border-border-md flex items-center justify-center shrink-0">
+                      <span className="text-[13px] font-extrabold" style={{ color: active ? def!.color : "#3F3F46" }}>{char.nome[0].toUpperCase()}</span>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: active ? "#F3F4F6" : "#9CA3AF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{char.nome}</div>
-                      <div style={{ fontSize: 10, color: "#52525B" }}>{char.specialization?.nome ?? "Sem classe"} · Nv.{char.nivel}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-bold overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: active ? "#F3F4F6" : "#9CA3AF" }}>{char.nome}</div>
+                      <div className="text-[10px] text-text-faint">{char.specialization?.nome ?? "Sem classe"} · Nv.{char.nivel}</div>
                     </div>
                     {selectedType !== "XP" && (
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 9, color: "#3F3F46", letterSpacing: "0.1em" }}>ATUAL</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: active ? def!.color : "#52525B", fontFamily: "Cinzel, serif" }}>{base}</div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[9px] text-text-ghost tracking-[0.1em]">ATUAL</div>
+                        <div className="text-[16px] font-bold font-cinzel" style={{ color: active ? def!.color : "#52525B" }}>{base}</div>
                       </div>
                     )}
-                    {active && <div style={{ width: 8, height: 8, borderRadius: "50%", background: def!.color, flexShrink: 0 }} />}
+                    {active && <div className="w-2 h-2 rounded-full shrink-0" style={{ background: def!.color }} />}
                   </button>
                 );
               })}
@@ -931,7 +874,7 @@ function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; toke
 
           {/* Amount + preview + apply */}
           <div>
-            <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.18em", margin: "0 0 12px", fontFamily: "Cinzel, serif" }}>VALOR</p>
+            <p className="text-[10px] text-text-faint tracking-[0.18em] m-0 mb-3 font-cinzel">VALOR</p>
 
             {/* Preview */}
             {selectedType !== "XP" && target !== "all" && (() => {
@@ -943,58 +886,52 @@ function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; toke
               const sign   = direction === "add" ? "+" : "−";
               const resColor = direction === "add" ? "#22C55E" : "#EF4444";
               return (
-                <div style={{ background: "#0A0A0A", border: `1px solid ${def!.color}33`, borderRadius: 3, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 13, color: "#52525B" }}>{base}</span>
-                  <span style={{ fontSize: 11, color: resColor }}>{sign}{n}</span>
-                  <span style={{ fontSize: 11, color: "#3F3F46" }}>=</span>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: "#F3F4F6", fontFamily: "Cinzel, serif" }}>{result}</span>
-                  <span style={{ fontSize: 10, color: "#52525B", marginLeft: 4 }}>{def!.label}</span>
+                <div className="bg-bg-input rounded-[3px] px-[14px] py-[10px] mb-3 flex items-center gap-3"
+                  style={{ border: `1px solid ${def!.color}33` }}
+                >
+                  <span className="text-[13px] text-text-faint">{base}</span>
+                  <span className="text-[11px]" style={{ color: resColor }}>{sign}{n}</span>
+                  <span className="text-[11px] text-text-ghost">=</span>
+                  <span className="text-[22px] font-black text-text-near font-cinzel">{result}</span>
+                  <span className="text-[10px] text-text-faint ml-1">{def!.label}</span>
                 </div>
               );
             })()}
 
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="flex gap-[10px]">
               <input
                 type="number" min={1}
                 value={amount}
                 onChange={e => { setAmount(e.target.value); setResult(null); }}
                 onKeyDown={e => e.key === "Enter" && applyAjuste()}
                 placeholder="Ex.: 5"
-                style={{
-                  flex: 1, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 3,
-                  color: "#E5E7EB", fontSize: 18, fontWeight: 700, fontFamily: "Cinzel, serif",
-                  padding: "10px 14px", outline: "none", textAlign: "center",
-                  transition: "border-color 0.15s",
-                }}
+                className="flex-1 bg-bg-input border border-border-md rounded-[3px] text-text-base text-[18px] font-bold font-cinzel px-[14px] py-[10px] outline-none text-center transition-colors"
                 onFocus={e => (e.currentTarget.style.borderColor = direction === "add" ? "#22C55E" : "#EF4444")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
               />
               <button
                 onClick={applyAjuste}
                 disabled={applying || !amount.trim()}
+                className="px-6 rounded-[3px] text-[12px] font-bold tracking-[0.1em] font-cinzel whitespace-nowrap shrink-0 transition-all"
                 style={{
-                  padding: "0 24px",
                   background: applying || !amount.trim() ? "#1A1A1A" : direction === "add" ? "#166534" : "#7F1D1D",
                   border: `1px solid ${applying || !amount.trim() ? "#2A2A2A" : direction === "add" ? "#22C55E" : "#EF4444"}`,
-                  borderRadius: 3, cursor: applying || !amount.trim() ? "not-allowed" : "pointer",
+                  cursor: applying || !amount.trim() ? "not-allowed" : "pointer",
                   color: applying || !amount.trim() ? "#52525B" : direction === "add" ? "#22C55E" : "#EF4444",
-                  fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
-                  fontFamily: "Cinzel, serif", whiteSpace: "nowrap", flexShrink: 0,
-                  transition: "all 0.15s",
                 }}
               >{applying ? "Aplicando…" : direction === "add" ? "+ Conceder" : "− Reduzir"}</button>
             </div>
           </div>
 
           {result && (
-            <div style={{
-              background: result.ok ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
-              border: `1px solid ${result.ok ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
-              borderRadius: 3, padding: "12px 16px",
-              fontSize: 13, fontWeight: 600,
-              color: result.ok ? "#22C55E" : "#EF4444",
-              display: "flex", alignItems: "center", gap: 8,
-            }}>
+            <div
+              className="rounded-[3px] px-4 py-3 text-[13px] font-semibold flex items-center gap-2"
+              style={{
+                background: result.ok ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                border: `1px solid ${result.ok ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
+                color: result.ok ? "#22C55E" : "#EF4444",
+              }}
+            >
               <span>{result.ok ? "✓" : "✗"}</span> {result.msg}
             </div>
           )}
@@ -1066,18 +1003,17 @@ export default function EscudoPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #7C3AED", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando Escudo…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex items-center justify-center flex-col gap-[14px]">
+        <div className="w-9 h-9 border-2 border-border border-t-brand rounded-full animate-spin" />
+        <span className="text-[12px] text-text-faint tracking-[0.1em]">Carregando Escudo…</span>
       </div>
     );
   }
 
   if (!campaign) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "#EF4444" }}>Campanha não encontrada.</span>
+      <div className="h-screen bg-bg-dark flex items-center justify-center">
+        <span className="text-red-500">Campanha não encontrada.</span>
       </div>
     );
   }
@@ -1085,10 +1021,10 @@ export default function EscudoPage() {
   const isMaster = campaign.master.id === userId;
   if (!isMaster) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+      <div className="h-screen bg-bg-dark flex items-center justify-center flex-col gap-3">
         <Shield size={32} color="#3F3F46" />
-        <span style={{ fontSize: 13, color: "#71717A" }}>Apenas o Mestre pode acessar o Escudo.</span>
-        <Link href={`/campanha/${id}`} style={{ fontSize: 12, color: "#7C3AED", textDecoration: "none" }}>← Voltar</Link>
+        <span className="text-[13px] text-text-mid">Apenas o Mestre pode acessar o Escudo.</span>
+        <Link href={`/campanha/${id}`} className="text-[12px] text-brand no-underline">← Voltar</Link>
       </div>
     );
   }
@@ -1096,43 +1032,31 @@ export default function EscudoPage() {
   const agents = campaign.characters.filter(c => !c.isMob && c.isApproved);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", paddingTop: 68, display: "flex", flexDirection: "column" }}>
+    <div className="min-h-screen bg-bg-main pt-[68px] flex flex-col">
 
       {/* Top bar */}
-      <div style={{
-        height: 52,
-        background: "rgba(10,10,10,0.98)",
-        borderBottom: "1px solid #1A1A1A",
-        display: "flex", alignItems: "center",
-        padding: "0 24px",
-        gap: 16,
-        flexShrink: 0,
-      }}>
+      <div className="h-[52px] bg-[rgba(10,10,10,0.98)] border-b border-border-subtle flex items-center px-6 gap-4 shrink-0">
         <Link
           href={`/campanha/${id}`}
-          style={{ display: "flex", alignItems: "center", gap: 6, color: "#52525B", textDecoration: "none", fontSize: 12, transition: "color 0.15s" }}
-          onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = "#A78BFA"}
-          onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = "#52525B"}
+          className="flex items-center gap-[6px] text-text-faint no-underline text-[12px] transition-colors hover:text-brand-muted"
         >
           <ChevronLeft size={14} /> Campanha
         </Link>
 
-        <div style={{ width: 1, height: 16, background: "#1F1F1F" }} />
+        <div className="w-px h-4 bg-border" />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="flex items-center gap-2">
           <Shield size={14} color="#7C3AED" />
-          <span className="font-cinzel" style={{ fontSize: 13, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.1em" }}>
+          <span className="font-cinzel text-[13px] font-bold text-text-near tracking-[0.1em]">
             Escudo do Mestre
           </span>
-          <span style={{ fontSize: 12, color: "#52525B" }}>— {campaign.name}</span>
+          <span className="text-[12px] text-text-faint">— {campaign.name}</span>
         </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        <div className="ml-auto flex gap-[6px]">
           <button
             onClick={fetchAll}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", padding: 4, display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = "#A78BFA"}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = "#52525B"}
+            className="bg-transparent border-none cursor-pointer text-text-faint p-1 flex items-center gap-1 text-[11px] transition-colors hover:text-brand-muted"
           >
             <RefreshCw size={13} /> Atualizar
           </button>
@@ -1140,34 +1064,24 @@ export default function EscudoPage() {
       </div>
 
       {/* Body: sidebar + main */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", height: "calc(100vh - 68px - 52px)" }}>
+      <div className="flex-1 flex overflow-hidden" style={{ height: "calc(100vh - 68px - 52px)" }}>
 
         {/* Left: log feed */}
         <LogFeed logs={logs} />
 
         {/* Right: tabs */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Tab bar */}
-          <div style={{
-            display: "flex", gap: 0,
-            borderBottom: "1px solid #1A1A1A",
-            padding: "0 24px",
-            flexShrink: 0,
-          }}>
+          <div className="flex gap-0 border-b border-border-subtle px-6 shrink-0">
             {TABS.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
+                className="bg-transparent border-none cursor-pointer px-[18px] py-[14px] text-[11px] font-bold tracking-[0.12em] font-cinzel transition-colors -mb-px"
                 style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  padding: "14px 18px",
-                  fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
-                  fontFamily: "Cinzel, serif",
                   color: tab === t.id ? "#F3F4F6" : "#52525B",
                   borderBottom: `2px solid ${tab === t.id ? "#7C3AED" : "transparent"}`,
-                  transition: "color 0.15s, border-color 0.15s",
-                  marginBottom: -1,
                 }}
               >
                 {t.label}
@@ -1176,21 +1090,17 @@ export default function EscudoPage() {
           </div>
 
           {/* Tab content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+          <div className="flex-1 overflow-y-auto p-6">
 
             {/* AGENTES */}
             {tab === "agentes" && (
               agents.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "60px 24px" }}>
-                  <Users size={32} color="#27272A" style={{ marginBottom: 12 }} />
-                  <p style={{ fontSize: 13, color: "#52525B" }}>Nenhum agente aprovado.</p>
+                <div className="text-center py-[60px] px-6">
+                  <Users size={32} color="#27272A" className="mb-3" />
+                  <p className="text-[13px] text-text-faint">Nenhum agente aprovado.</p>
                 </div>
               ) : (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                  gap: 16,
-                }}>
+                <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
                   {agents.map(c => <AgentCard key={c.id} char={c} />)}
                 </div>
               )

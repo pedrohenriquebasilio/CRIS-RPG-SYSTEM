@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
 interface Character {
   id: string;
   nome: string;
@@ -32,7 +31,6 @@ interface Campaign {
   characters: Character[];
 }
 
-// ─── Sub-navbar ────────────────────────────────────────────────────────────────
 function CampaignNavbar({
   campaign,
   isMaster,
@@ -45,73 +43,34 @@ function CampaignNavbar({
   onInvite: () => void;
 }) {
   return (
-    <div style={{
-      position: "fixed",
-      top: 68,
-      left: 0,
-      right: 0,
-      zIndex: 40,
-      background: "rgba(10,10,10,0.95)",
-      backdropFilter: "blur(10px)",
-      borderBottom: "1px solid #1A1A1A",
-      height: 44,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      padding: "0 24px",
-      gap: 8,
-    }}>
-      {/* Active combat indicator */}
+    <div className="fixed top-[68px] left-0 right-0 z-40 bg-[rgba(10,10,10,0.95)] backdrop-blur-[10px] border-b border-border-subtle h-11 flex items-center justify-end px-6 gap-2">
       {campaign.isActiveCombat && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          marginRight: "auto",
-        }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444", boxShadow: "0 0 6px #EF4444", animation: "pulse 1.5s ease-in-out infinite" }} />
-          <span style={{ fontSize: 11, color: "#EF4444", fontWeight: 600, letterSpacing: "0.08em" }}>COMBATE ATIVO</span>
-          <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+        <div className="flex items-center gap-1.5 mr-auto">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse-dot" style={{ boxShadow: "0 0 6px #EF4444" }} />
+          <span className="text-[11px] text-[#EF4444] font-semibold tracking-[0.08em]">COMBATE ATIVO</span>
         </div>
       )}
 
-      {/* Convidar Jogadores */}
       <button
         onClick={onInvite}
-        style={navBtnStyle}
-        onMouseEnter={e => Object.assign((e.currentTarget as HTMLButtonElement).style, navBtnHover)}
-        onMouseLeave={e => Object.assign((e.currentTarget as HTMLButtonElement).style, navBtnStyle)}
+        className="flex items-center gap-1.5 px-3.5 py-[5px] bg-transparent border border-border-strong rounded-sm cursor-pointer text-text-secondary text-[11px] font-semibold tracking-[0.07em] whitespace-nowrap transition-colors hover:border-brand hover:text-brand-muted hover:bg-[rgba(124,58,237,0.08)]"
       >
         <UserPlus size={13} /> Convidar Jogadores
       </button>
 
-      {/* Escudo do Mestre */}
       {isMaster && (
         <Link
           href={`/campanha/${campaign.id}/escudo`}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "5px 12px",
-            background: "rgba(124,58,237,0.15)",
-            border: "1px solid #7C3AED",
-            borderRadius: 2,
-            color: "#A78BFA",
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
-            textDecoration: "none",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = "rgba(124,58,237,0.28)"}
-          onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = "rgba(124,58,237,0.15)"}
+          className="flex items-center gap-1.5 px-3 py-[5px] bg-[rgba(124,58,237,0.15)] border border-brand rounded-sm text-brand-muted text-[11px] font-bold tracking-[0.08em] no-underline transition-colors hover:bg-[rgba(124,58,237,0.28)]"
         >
           <Shield size={13} /> Escudo do Mestre
         </Link>
       )}
 
-      {/* Sair da Campanha */}
       {!isMaster && (
         <button
           onClick={onLeave}
-          style={{ ...navBtnStyle, borderColor: "#3F1515", color: "#EF4444" }}
-          onMouseEnter={e => Object.assign((e.currentTarget as HTMLButtonElement).style, { ...navBtnStyle, borderColor: "#EF4444", color: "#FCA5A5", background: "rgba(239,68,68,0.08)" })}
-          onMouseLeave={e => Object.assign((e.currentTarget as HTMLButtonElement).style, { ...navBtnStyle, borderColor: "#3F1515", color: "#EF4444" })}
+          className="flex items-center gap-1.5 px-3.5 py-[5px] bg-transparent border border-[#3F1515] rounded-sm cursor-pointer text-[#EF4444] text-[11px] font-semibold tracking-[0.07em] whitespace-nowrap transition-colors hover:border-[#EF4444] hover:text-[#FCA5A5] hover:bg-[rgba(239,68,68,0.08)]"
         >
           <LogOut size={13} /> Sair da Campanha
         </button>
@@ -120,26 +79,6 @@ function CampaignNavbar({
   );
 }
 
-const navBtnStyle: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 6,
-  padding: "5px 14px",
-  background: "transparent",
-  border: "1px solid #27272A",
-  borderRadius: 2,
-  cursor: "pointer",
-  color: "#A1A1AA",
-  fontSize: 11, fontWeight: 600, letterSpacing: "0.07em",
-  transition: "border-color 0.15s, color 0.15s, background 0.15s",
-  whiteSpace: "nowrap",
-};
-
-const navBtnHover: React.CSSProperties = {
-  borderColor: "#7C3AED",
-  color: "#A78BFA",
-  background: "rgba(124,58,237,0.08)",
-};
-
-// ─── Invite Modal ──────────────────────────────────────────────────────────────
 function InviteModal({ code, onClose }: { code: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
 
@@ -153,89 +92,53 @@ function InviteModal({ code, onClose }: { code: string; onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
+      className="fixed inset-0 z-[200] bg-[rgba(0,0,0,0.7)] backdrop-blur-sm flex items-center justify-center"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{
-          background: "#111111",
-          border: "1px solid #27272A",
-          borderRadius: 4,
-          padding: "36px 40px",
-          width: 380,
-          position: "relative",
-        }}
+        className="bg-bg-surface border border-border-strong rounded px-10 py-9 w-[380px] max-w-[calc(100vw-32px)] relative"
       >
-        <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 1, background: "linear-gradient(90deg,transparent,#7C3AED,transparent)" }} />
+        <div className="absolute top-0 left-[20%] right-[20%] h-px" style={{ background: "linear-gradient(90deg,transparent,#7C3AED,transparent)" }} />
 
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{
-            width: 48, height: 48, border: "1px solid #7C3AED",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 16px", boxShadow: "0 0 16px rgba(124,58,237,0.3)",
-          }}>
+        <div className="text-center mb-7">
+          <div
+            className="w-12 h-12 border border-brand flex items-center justify-center mx-auto mb-4"
+            style={{ boxShadow: "0 0 16px rgba(124,58,237,0.3)" }}
+          >
             <UserPlus size={20} color="#A78BFA" />
           </div>
-          <h2 className="font-cinzel" style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: "0 0 6px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          <h2 className="font-cinzel text-base font-bold text-white m-0 mb-1.5 tracking-[0.12em] uppercase">
             Convidar Jogadores
           </h2>
-          <p style={{ fontSize: 12, color: "#52525B", margin: 0 }}>
+          <p className="text-xs text-text-faint m-0">
             Compartilhe o código abaixo com seus jogadores
           </p>
         </div>
 
-        {/* Code display */}
-        <div style={{
-          background: "#0A0A0A",
-          border: "1px solid #27272A",
-          borderRadius: 2,
-          padding: "14px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 12,
-        }}>
-          <span className="font-cinzel" style={{
-            fontSize: 20, fontWeight: 700, letterSpacing: "0.2em",
-            color: "#A78BFA", textShadow: "0 0 20px rgba(167,139,250,0.4)",
-          }}>
+        <div className="bg-bg-input border border-border-strong rounded-sm px-4 py-[14px] flex items-center justify-between gap-3 mb-3">
+          <span className="font-cinzel text-xl font-bold tracking-[0.2em] text-brand-muted" style={{ textShadow: "0 0 20px rgba(167,139,250,0.4)" }}>
             {code}
           </span>
           <button
             onClick={copy}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm cursor-pointer text-[11px] font-bold transition-all"
             style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 12px",
               background: copied ? "rgba(34,197,94,0.1)" : "rgba(124,58,237,0.1)",
               border: `1px solid ${copied ? "#22C55E" : "#7C3AED"}`,
-              borderRadius: 2,
-              cursor: "pointer",
               color: copied ? "#22C55E" : "#A78BFA",
-              fontSize: 11, fontWeight: 700,
-              transition: "all 0.2s",
             }}
           >
             {copied ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
           </button>
         </div>
 
-        <p style={{ fontSize: 10, color: "#3F3F46", textAlign: "center", margin: "0 0 20px" }}>
-          O jogador acessa pelo menu <strong style={{ color: "#52525B" }}>Ficha → Entrar em Campanha</strong>
+        <p className="text-[10px] text-text-ghost text-center m-0 mb-5">
+          O jogador acessa pelo menu <strong className="text-text-faint">Ficha → Entrar em Campanha</strong>
         </p>
 
         <button
           onClick={onClose}
-          style={{
-            width: "100%", padding: "9px",
-            background: "transparent", border: "1px solid #27272A",
-            borderRadius: 2, cursor: "pointer",
-            color: "#71717A", fontSize: 12,
-          }}
+          className="w-full py-[9px] bg-transparent border border-border-strong rounded-sm cursor-pointer text-text-mid text-xs"
         >
           Fechar
         </button>
@@ -244,7 +147,6 @@ function InviteModal({ code, onClose }: { code: string; onClose: () => void }) {
   );
 }
 
-// ─── Leave Confirm Modal ────────────────────────────────────────────────────────
 function LeaveModal({ characterId, token, onClose, onDone }: { characterId: string; token: string; onClose: () => void; onDone: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -263,35 +165,30 @@ function LeaveModal({ characterId, token, onClose, onDone }: { characterId: stri
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      className="fixed inset-0 z-[200] bg-[rgba(0,0,0,0.7)] backdrop-blur-sm flex items-center justify-center"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: "#111111", border: "1px solid #27272A", borderRadius: 4, padding: "32px 36px", width: 360 }}
+        className="bg-bg-surface border border-border-strong rounded px-9 py-8 w-[360px] max-w-[calc(100vw-32px)]"
       >
-        <h2 className="font-cinzel" style={{ fontSize: 15, fontWeight: 700, color: "#fff", margin: "0 0 10px", letterSpacing: "0.1em" }}>
+        <h2 className="font-cinzel text-[15px] font-bold text-white m-0 mb-2.5 tracking-[0.1em]">
           Sair da Campanha
         </h2>
-        <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 24px", lineHeight: 1.6 }}>
+        <p className="text-[13px] text-text-mid m-0 mb-6 leading-[1.6]">
           Isso irá desativar seu personagem nesta campanha. Esta ação pode ser desfeita pelo Mestre.
         </p>
-        {error && <p style={{ fontSize: 12, color: "#EF4444", margin: "0 0 12px" }}>{error}</p>}
-        <div style={{ display: "flex", gap: 10 }}>
+        {error && <p className="text-xs text-[#EF4444] m-0 mb-3">{error}</p>}
+        <div className="flex gap-2.5">
           <button
             onClick={handleLeave}
             disabled={loading}
-            style={{
-              flex: 1, padding: "9px", background: "#991B1B",
-              border: "1px solid #EF4444", borderRadius: 2,
-              cursor: loading ? "not-allowed" : "pointer",
-              color: "#FFF", fontSize: 12, fontWeight: 700,
-            }}
+            className="flex-1 py-[9px] bg-[#991B1B] border border-[#EF4444] rounded-sm cursor-pointer disabled:cursor-not-allowed text-white text-xs font-bold"
           >
             {loading ? "Saindo…" : "Confirmar Saída"}
           </button>
           <button
             onClick={onClose}
-            style={{ flex: 1, padding: "9px", background: "transparent", border: "1px solid #27272A", borderRadius: 2, cursor: "pointer", color: "#71717A", fontSize: 12 }}
+            className="flex-1 py-[9px] bg-transparent border border-border-strong rounded-sm cursor-pointer text-text-mid text-xs"
           >
             Cancelar
           </button>
@@ -301,7 +198,6 @@ function LeaveModal({ characterId, token, onClose, onDone }: { characterId: stri
   );
 }
 
-// ─── Character Card ─────────────────────────────────────────────────────────────
 function CharacterCard({ char, isMaster, currentUserId, token, onApprove }: {
   char: Character;
   isMaster: boolean;
@@ -312,89 +208,64 @@ function CharacterCard({ char, isMaster, currentUserId, token, onApprove }: {
   const isOwn = char.userId === currentUserId;
   const date = new Date(char.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 
-  // Avatar placeholder colors
   const hue = char.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
   return (
-    <div style={{
-      background: "#0F0F0F",
-      border: "1px solid #1F1F1F",
-      borderRadius: 4,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      transition: "border-color 0.15s",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
-    >
-      {/* Card top: avatar + info */}
-      <div style={{ display: "flex", gap: 0, flex: 1 }}>
+    <div className="bg-[#0F0F0F] border border-border rounded overflow-hidden flex flex-col transition-colors hover:border-border-md">
+
+      <div className="flex flex-1">
         {/* Avatar */}
-        <div style={{
-          width: 90, flexShrink: 0,
-          background: `linear-gradient(160deg, hsl(${hue},25%,12%) 0%, #0A0A0A 100%)`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          position: "relative",
-          minHeight: 110,
-        }}>
-          <div style={{
-            width: 44, height: 44,
-            border: `1px solid hsl(${hue},40%,28%)`,
-            borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            opacity: 0.8,
-          }}>
+        <div
+          className="w-[90px] shrink-0 flex items-center justify-center relative min-h-[110px]"
+          style={{ background: `linear-gradient(160deg, hsl(${hue},25%,12%) 0%, #0A0A0A 100%)` }}
+        >
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center opacity-80"
+            style={{ border: `1px solid hsl(${hue},40%,28%)` }}
+          >
             <Shield size={18} color={`hsl(${hue},55%,55%)`} />
           </div>
-          {/* Mob badge */}
           {char.isMob && (
-            <div style={{ position: "absolute", bottom: 6, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "#6B7280", letterSpacing: "0.1em" }}>
+            <div className="absolute bottom-1.5 left-0 right-0 text-center text-[8px] text-text-muted tracking-[0.1em]">
               MOB
             </div>
           )}
         </div>
 
         {/* Info */}
-        <div style={{ flex: 1, padding: "14px 14px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div className="flex-1 px-3.5 pt-3.5 pb-2.5 flex flex-col gap-0.5 min-w-0">
+          <div className="flex items-start justify-between">
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.01em" }}>
+              <div className="text-base font-bold text-[#F3F4F6] tracking-[0.01em]">
                 {char.nome}
               </div>
-              <div style={{ fontSize: 12, color: "#8B5CF6", fontWeight: 500, marginTop: 1 }}>
-                {char.specialization?.nome ?? <span style={{ color: "#52525B" }}>Sem classe</span>}
+              <div className="text-xs text-[#8B5CF6] font-medium mt-0.5">
+                {char.specialization?.nome ?? <span className="text-text-faint">Sem classe</span>}
               </div>
             </div>
             {(isMaster || isOwn) && (
               <button
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#3F3F46", padding: 2, borderRadius: 2 }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#71717A")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#3F3F46")}
+                className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 rounded-sm transition-colors hover:text-text-mid"
               >
                 <Settings size={14} />
               </button>
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+          <div className="flex items-center gap-1.5 mt-1">
             <Calendar size={10} color="#3F3F46" />
-            <span style={{ fontSize: 10, color: "#52525B" }}>Registrado em {date}</span>
+            <span className="text-[10px] text-text-faint">Registrado em {date}</span>
           </div>
 
-          {/* Approval badge */}
           {!char.isApproved && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-              <span style={{ fontSize: 10, color: "#F59E0B", border: "1px solid #78350F", padding: "1px 6px", borderRadius: 2 }}>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-[#F59E0B] border border-[#78350F] px-1.5 py-0.5 rounded-sm">
                 Aguardando aprovação
               </span>
               {isMaster && (
                 <button
                   onClick={() => onApprove(char.id)}
-                  style={{
-                    fontSize: 10, color: "#22C55E", border: "1px solid #14532D",
-                    padding: "1px 6px", borderRadius: 2, background: "none", cursor: "pointer",
-                  }}
+                  className="text-[10px] text-[#22C55E] border border-[#14532D] px-1.5 py-0.5 rounded-sm bg-transparent cursor-pointer"
                 >
                   Aprovar
                 </button>
@@ -404,24 +275,12 @@ function CharacterCard({ char, isMaster, currentUserId, token, onApprove }: {
         </div>
       </div>
 
-      {/* Footer: Acessar Ficha */}
+      {/* Footer */}
       {(isOwn || isMaster) && (
-        <div style={{ borderTop: "1px solid #1A1A1A", padding: "8px 12px", display: "flex", justifyContent: "flex-end" }}>
+        <div className="border-t border-border-subtle px-3 py-2 flex justify-end">
           <Link
             href={`/ficha/${char.id}`}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "5px 14px",
-              background: "#7C3AED",
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-              borderRadius: 2,
-              fontFamily: "Cinzel, serif",
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = "#6D28D9"}
-            onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = "#7C3AED"}
+            className="flex items-center gap-1.5 px-3.5 py-[5px] bg-brand text-white no-underline text-[11px] font-bold tracking-[0.06em] uppercase rounded-sm font-cinzel transition-colors hover:bg-brand-dark"
           >
             Acessar Ficha <ChevronRight size={12} />
           </Link>
@@ -431,7 +290,6 @@ function CharacterCard({ char, isMaster, currentUserId, token, onApprove }: {
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
 type Tab = "agentes" | "jogadores";
 
 export default function CampaignDetailPage() {
@@ -471,19 +329,18 @@ export default function CampaignDetailPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #7C3AED", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando campanha…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-border border-t-brand animate-spin-fast" />
+        <span className="text-xs text-text-faint tracking-[0.1em]">Carregando campanha…</span>
       </div>
     );
   }
 
   if (!campaign) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-        <span style={{ fontSize: 13, color: "#EF4444" }}>Campanha não encontrada.</span>
-        <Link href="/campanha" style={{ fontSize: 12, color: "#7C3AED", textDecoration: "underline" }}>Voltar</Link>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3">
+        <span className="text-[13px] text-[#EF4444]">Campanha não encontrada.</span>
+        <Link href="/campanha" className="text-xs text-brand underline">Voltar</Link>
       </div>
     );
   }
@@ -491,17 +348,14 @@ export default function CampaignDetailPage() {
   const isMaster = campaign.master.id === userId;
   const myChar = campaign.characters.find(c => c.userId === userId && !c.isMob);
 
-  // Gradient hue for header
   const hue = campaign.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
-  // Tabs
   const agents = campaign.characters.filter(c => !c.isMob);
   const mobs   = campaign.characters.filter(c => c.isMob);
   const shownChars = tab === "agentes" ? agents : mobs;
 
   return (
     <>
-      {/* Sub-navbar */}
       <CampaignNavbar
         campaign={campaign}
         isMaster={isMaster}
@@ -509,7 +363,6 @@ export default function CampaignDetailPage() {
         onLeave={() => setShowLeave(true)}
       />
 
-      {/* Modals */}
       {showInvite && <InviteModal code={campaign.inviteCode} onClose={() => setShowInvite(false)} />}
       {showLeave && myChar && (
         <LeaveModal
@@ -517,79 +370,56 @@ export default function CampaignDetailPage() {
           token={token!}
           onClose={() => setShowLeave(false)}
           onDone={() => {
-            // Clear user-scoped localStorage entry
             if (userId) localStorage.removeItem(`assistente-fiel-character-${userId}`);
             router.push("/campanha");
           }}
         />
       )}
 
-      <div style={{ minHeight: "100vh", background: "#0A0A0A", paddingTop: "calc(68px + 44px + 32px)", paddingBottom: 60 }}>
-        <div className="bg-grid" style={{ position: "fixed", inset: 0, opacity: 0.35, pointerEvents: "none" }} />
+      <div className="min-h-screen bg-bg-main pt-[calc(68px+44px+32px)] pb-16">
+        <div className="bg-grid fixed inset-0 opacity-[0.35] pointer-events-none" />
 
-        <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+        <div className="relative max-w-[1100px] mx-auto px-6">
 
           {/* Campaign header */}
-          <div style={{ display: "flex", gap: 24, alignItems: "flex-end", marginBottom: 40 }}>
-
-            {/* Image box */}
-            <div style={{
-              width: 200, height: 200, flexShrink: 0,
-              background: `radial-gradient(ellipse at 40% 35%, hsl(${hue},35%,15%) 0%, #0A0A0A 75%)`,
-              border: "1px solid #1F1F1F",
-              borderRadius: 4,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              <div style={{
-                position: "absolute", inset: 0,
+          <div className="flex gap-6 items-end mb-10 flex-wrap">
+            <div
+              className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] shrink-0 border border-border rounded flex items-center justify-center relative overflow-hidden"
+              style={{ background: `radial-gradient(ellipse at 40% 35%, hsl(${hue},35%,15%) 0%, #0A0A0A 75%)` }}
+            >
+              <div className="absolute inset-0" style={{
                 backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)",
                 backgroundSize: "20px 20px",
               }} />
-              <div style={{
-                width: 72, height: 72,
-                border: `1px solid hsl(${hue},40%,30%)`,
-                borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 28px hsl(${hue},40%,18%)`,
-              }}>
+              <div
+                className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
+                style={{ border: `1px solid hsl(${hue},40%,30%)`, boxShadow: `0 0 28px hsl(${hue},40%,18%)` }}
+              >
                 <Shield size={30} color={`hsl(${hue},55%,55%)`} />
               </div>
             </div>
 
-            {/* Title + info */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <div className="flex items-center gap-2.5 mb-2">
                 {campaign.isActiveCombat && (
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, color: "#FCA5A5", letterSpacing: "0.1em",
-                    background: "#991B1B", border: "1px solid #EF4444",
-                    padding: "2px 7px", borderRadius: 2,
-                  }}>EM COMBATE</span>
+                  <span className="text-[9px] font-bold text-[#FCA5A5] tracking-[0.1em] bg-[#991B1B] border border-[#EF4444] px-[7px] py-0.5 rounded-sm">EM COMBATE</span>
                 )}
                 {isMaster && (
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, color: "#A78BFA", letterSpacing: "0.1em",
-                    background: "rgba(124,58,237,0.15)", border: "1px solid #7C3AED",
-                    padding: "2px 7px", borderRadius: 2,
-                  }}>MESTRE</span>
+                  <span className="text-[9px] font-bold text-brand-muted tracking-[0.1em] bg-[rgba(124,58,237,0.15)] border border-brand px-[7px] py-0.5 rounded-sm">MESTRE</span>
                 )}
               </div>
-              <h1 className="font-cinzel" style={{ fontSize: 32, fontWeight: 700, color: "#F3F4F6", margin: "0 0 8px", letterSpacing: "0.06em" }}>
+              <h1 className="font-cinzel text-2xl sm:text-[32px] font-bold text-[#F3F4F6] m-0 mb-2 tracking-[0.06em]">
                 {campaign.name}
               </h1>
-              <div style={{ display: "flex", gap: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div className="flex gap-5">
+                <div className="flex items-center gap-1.5">
                   <Users size={12} color="#52525B" />
-                  <span style={{ fontSize: 12, color: "#52525B" }}>
-                    {agents.length} agente(s)
-                  </span>
+                  <span className="text-xs text-text-faint">{agents.length} agente(s)</span>
                 </div>
                 {isMaster && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className="flex items-center gap-1.5">
                     <Swords size={12} color="#52525B" />
-                    <span style={{ fontSize: 12, color: "#52525B" }}>{mobs.length} mob(s)</span>
+                    <span className="text-xs text-text-faint">{mobs.length} mob(s)</span>
                   </div>
                 )}
               </div>
@@ -597,12 +427,7 @@ export default function CampaignDetailPage() {
           </div>
 
           {/* Tabs */}
-          <div style={{
-            display: "flex",
-            borderBottom: "1px solid #1A1A1A",
-            marginBottom: 28,
-            gap: 0,
-          }}>
+          <div className="flex border-b border-border-subtle mb-7">
             {([
               { id: "agentes", label: `Agentes (${agents.length})` },
               ...(isMaster ? [{ id: "jogadores", label: `Mobs (${mobs.length})` }] : []),
@@ -610,16 +435,10 @@ export default function CampaignDetailPage() {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
+                className="px-5 py-2.5 bg-transparent border-none -mb-px cursor-pointer text-[13px] font-semibold tracking-[0.06em] transition-colors"
                 style={{
-                  padding: "10px 20px",
-                  background: "none",
-                  border: "none",
                   borderBottom: tab === t.id ? "2px solid #8B5CF6" : "2px solid transparent",
-                  cursor: "pointer",
                   color: tab === t.id ? "#A78BFA" : "#52525B",
-                  fontSize: 13, fontWeight: 600, letterSpacing: "0.06em",
-                  transition: "color 0.15s",
-                  marginBottom: -1,
                 }}
               >
                 {t.label}
@@ -629,21 +448,14 @@ export default function CampaignDetailPage() {
 
           {/* Characters grid */}
           {shownChars.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "60px 24px",
-              border: "1px dashed #1A1A1A", borderRadius: 4,
-            }}>
-              <Users size={32} color="#1F1F1F" style={{ marginBottom: 14 }} />
-              <p style={{ fontSize: 13, color: "#52525B", margin: 0 }}>
+            <div className="text-center py-16 px-6 border border-dashed border-border-subtle rounded">
+              <Users size={32} color="#1F1F1F" className="mb-3.5 mx-auto" />
+              <p className="text-[13px] text-text-faint m-0">
                 {tab === "agentes" ? "Nenhum agente na campanha." : "Nenhum mob criado."}
               </p>
             </div>
           ) : (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: 16,
-            }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {shownChars.map(char => (
                 <CharacterCard
                   key={char.id}

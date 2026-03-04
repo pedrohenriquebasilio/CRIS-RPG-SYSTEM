@@ -59,7 +59,6 @@ function CreateModal({ token, onCreated, onClose }: {
 
   useEffect(() => { firstRef.current?.focus(); }, []);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -89,93 +88,73 @@ function CreateModal({ token, onCreated, onClose }: {
     }
   }
 
-  const input: React.CSSProperties = {
-    background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 3,
-    color: "#E5E7EB", fontSize: 13, padding: "9px 12px", outline: "none",
-    width: "100%", boxSizing: "border-box", transition: "border-color 0.15s",
-    fontFamily: "inherit",
-  };
-
   return (
     <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 16,
-      }}
+      className="fixed inset-0 z-[200] bg-[rgba(0,0,0,0.75)] backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: "#111", border: "1px solid #1F1F1F", borderRadius: 6,
-        width: "100%", maxWidth: 540,
-        boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15)",
-        overflow: "hidden",
-      }}>
+      <div
+        className="bg-bg-surface border border-border rounded-md w-full max-w-[540px] overflow-hidden"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15)" }}
+      >
         {/* Header */}
-        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #1A1A1A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="px-6 py-5 pb-4 border-b border-[#1A1A1A] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <Zap size={16} color="#A855F7" />
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.06em", fontFamily: "Cinzel, serif" }}>
-              Nova Técnica
-            </span>
+            <span className="text-[14px] font-bold text-text-near tracking-[0.06em] font-cinzel">Nova Técnica</span>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", padding: 4, display: "flex" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
-          ><X size={16} /></button>
+          <button
+            onClick={onClose}
+            className="bg-transparent border-none cursor-pointer text-text-faint p-1 flex hover:text-[#EF4444] transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleSubmit} className="px-6 py-5 pb-6 flex flex-col gap-4">
           {/* Nome */}
           <div>
-            <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Nome *</label>
+            <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Nome *</label>
             <input
               ref={firstRef}
               value={nome}
               onChange={e => setNome(e.target.value)}
               placeholder="Ex.: Onda de Choque Etérea"
-              style={input}
-              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              className="ficha-input"
             />
           </div>
 
           {/* Nivel + Atributo */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Nível</label>
-              <div style={{ display: "flex", gap: 4 }}>
+              <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Nível</label>
+              <div className="flex gap-1">
                 {[1,2,3,4,5].map(n => (
                   <button
                     key={n} type="button"
                     onClick={() => setNivel(n)}
+                    className="flex-1 py-2 rounded-sm cursor-pointer text-[13px] font-bold transition-all border"
                     style={{
-                      flex: 1, padding: "8px 0", background: nivel === n ? NIVEL_COLORS[n] : "#0A0A0A",
-                      border: `1px solid ${nivel === n ? NIVEL_COLORS[n] : "#2A2A2A"}`,
-                      borderRadius: 3, cursor: "pointer",
+                      background: nivel === n ? NIVEL_COLORS[n] : "#0A0A0A",
+                      borderColor: nivel === n ? NIVEL_COLORS[n] : "#2A2A2A",
                       color: nivel === n ? "#FFF" : "#6B7280",
-                      fontSize: 13, fontWeight: 700,
-                      transition: "all 0.15s",
                     }}
                   >{n}</button>
                 ))}
               </div>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Atributo Base</label>
-              <div style={{ display: "flex", gap: 4 }}>
+              <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Atributo Base</label>
+              <div className="flex gap-1">
                 {ATRIBUTOS.map(a => (
                   <button
                     key={a} type="button"
                     onClick={() => setAtributo(a)}
+                    className="flex-1 py-2 rounded-sm cursor-pointer text-[10px] font-bold tracking-[0.05em] transition-all border"
                     style={{
-                      flex: 1, padding: "8px 0", background: atributo === a ? "rgba(124,58,237,0.2)" : "#0A0A0A",
-                      border: `1px solid ${atributo === a ? "#7C3AED" : "#2A2A2A"}`,
-                      borderRadius: 3, cursor: "pointer",
+                      background: atributo === a ? "rgba(124,58,237,0.2)" : "#0A0A0A",
+                      borderColor: atributo === a ? "#7C3AED" : "#2A2A2A",
                       color: atributo === a ? "#A855F7" : "#6B7280",
-                      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-                      transition: "all 0.15s",
                     }}
                   >{a}</button>
                 ))}
@@ -184,10 +163,10 @@ function CreateModal({ token, onCreated, onClose }: {
           </div>
 
           {/* Tipo Dano + CD + Custo */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
+          <div className="grid gap-3" style={{ gridTemplateColumns: "2fr 1fr 1fr" }}>
             <div>
-              <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Tipo de Dano</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+              <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Tipo de Dano</label>
+              <div className="grid grid-cols-2 gap-1">
                 {DANO_TYPES.map(d => {
                   const c = DANO_COLORS[d];
                   const active = tipoDano === d;
@@ -195,13 +174,11 @@ function CreateModal({ token, onCreated, onClose }: {
                     <button
                       key={d} type="button"
                       onClick={() => setTipoDano(active ? "" : d)}
+                      className="py-1.5 rounded-sm cursor-pointer text-[9px] font-bold tracking-[0.06em] transition-all border"
                       style={{
-                        padding: "6px 0", background: active ? c.bg : "#0A0A0A",
-                        border: `1px solid ${active ? c.border : "#2A2A2A"}`,
-                        borderRadius: 3, cursor: "pointer",
+                        background: active ? c.bg : "#0A0A0A",
+                        borderColor: active ? c.border : "#2A2A2A",
                         color: active ? c.text : "#6B7280",
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
-                        transition: "all 0.15s",
                       }}
                     >{d.charAt(0) + d.slice(1).toLowerCase()}</button>
                   );
@@ -209,62 +186,57 @@ function CreateModal({ token, onCreated, onClose }: {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>CD</label>
+              <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">CD</label>
               <input
                 type="number" min={1} value={cd}
                 onChange={e => setCd(e.target.value)}
                 placeholder="—"
-                style={{ ...input, textAlign: "center" }}
-                onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                className="ficha-input text-center"
               />
             </div>
             <div>
-              <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Custo ⚡</label>
+              <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Custo ⚡</label>
               <input
                 type="number" min={0} value={custo}
                 onChange={e => setCusto(e.target.value)}
                 placeholder="0"
-                style={{ ...input, textAlign: "center" }}
-                onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                className="ficha-input text-center"
               />
             </div>
           </div>
 
           {/* Descrição */}
           <div>
-            <label style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 6, fontFamily: "Cinzel, serif" }}>Descrição</label>
+            <label className="block text-[10px] text-text-faint tracking-[0.14em] uppercase mb-1.5 font-cinzel">Descrição</label>
             <textarea
               value={descricao}
               onChange={e => setDescricao(e.target.value)}
               placeholder="Descreva o efeito da técnica..."
               rows={3}
-              style={{ ...input, resize: "none", lineHeight: 1.6 }}
-              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              className="ficha-input resize-none leading-relaxed"
             />
           </div>
 
           {error && (
-            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 3, padding: "10px 14px", fontSize: 12, color: "#EF4444" }}>
+            <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-sm px-3.5 py-2.5 text-[12px] text-[#EF4444]">
               {error}
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
-            <button type="button" onClick={onClose} style={{ padding: "9px 20px", background: "transparent", border: "1px solid #2A2A2A", borderRadius: 3, cursor: "pointer", color: "#6B7280", fontSize: 12, fontWeight: 600 }}>
+          <div className="flex gap-2.5 justify-end pt-1">
+            <button
+              type="button" onClick={onClose}
+              className="px-5 py-2 bg-transparent border border-border-md rounded-sm cursor-pointer text-text-muted text-[12px] font-semibold hover:border-border-strong hover:text-text-dim transition-colors"
+            >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving || !nome.trim()}
+              className="px-6 py-2 border-none rounded-sm cursor-pointer text-[12px] font-bold tracking-[0.1em] uppercase font-cinzel transition-all disabled:cursor-not-allowed"
               style={{
-                padding: "9px 24px", background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED",
-                border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
+                background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED",
                 color: saving || !nome.trim() ? "#52525B" : "#FFF",
-                fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                fontFamily: "Cinzel, serif", transition: "background 0.15s",
                 boxShadow: !saving && nome.trim() ? "0 0 16px rgba(124,58,237,0.3)" : "none",
               }}
             >
@@ -287,6 +259,7 @@ function TechCard({ t, currentUserId, token, onDelete }: {
   const [deleting, setDeleting] = useState(false);
   const danoStyle = t.tipoDano ? DANO_COLORS[t.tipoDano] : null;
   const canDelete = !t.isSystem && t.createdBy?.id === currentUserId && token;
+  const leftBorderColor = danoStyle ? danoStyle.text : "#7C3AED";
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
@@ -299,84 +272,79 @@ function TechCard({ t, currentUserId, token, onDelete }: {
   }
 
   return (
-    <div style={{
-      background: "#0F0F0F",
-      border: "1px solid #1A1A1A",
-      borderLeft: `3px solid ${danoStyle ? danoStyle.text : "#7C3AED"}`,
-      borderRadius: "0 4px 4px 0",
-      padding: "14px 16px",
-      display: "flex", flexDirection: "column", gap: 10,
-      position: "relative",
-      transition: "border-color 0.15s",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = danoStyle ? danoStyle.text : "#A855F7")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "#1A1A1A")}
+    <div
+      className="bg-bg-deep border border-[#1A1A1A] rounded-r flex flex-col gap-2.5 px-4 py-3.5 relative transition-colors"
+      style={{ borderLeft: `3px solid ${leftBorderColor}` }}
     >
       {/* Top row */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#F3F4F6" }}>{t.nome}</span>
+      <div className="flex items-start gap-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[14px] font-bold text-text-near">{t.nome}</span>
             {t.isSystem && (
-              <span style={{ fontSize: 8, color: "#F59E0B", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", padding: "1px 6px", borderRadius: 2, letterSpacing: "0.1em", fontWeight: 700 }}>SISTEMA</span>
+              <span className="text-[8px] text-[#F59E0B] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] px-1.5 py-px rounded-sm tracking-[0.1em] font-bold">SISTEMA</span>
             )}
           </div>
-          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 3 }}>
+          <div className="text-[11px] text-text-muted mt-0.5">
             {ATTR_LABELS[t.atributoBase]} · {t.createdBy ? t.createdBy.email.split("@")[0] : "Sistema"}
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div className="flex items-center gap-2 shrink-0">
           {/* Nivel badge */}
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: `${NIVEL_COLORS[t.nivel]}22`,
-            border: `1px solid ${NIVEL_COLORS[t.nivel]}55`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 900, color: NIVEL_COLORS[t.nivel], fontFamily: "Cinzel, serif" }}>{t.nivel}</span>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{
+              background: `${NIVEL_COLORS[t.nivel]}22`,
+              border: `1px solid ${NIVEL_COLORS[t.nivel]}55`,
+            }}
+          >
+            <span className="text-[13px] font-black font-cinzel" style={{ color: NIVEL_COLORS[t.nivel] }}>{t.nivel}</span>
           </div>
 
           {canDelete && (
             <button
               onClick={handleDelete}
               disabled={deleting}
-              style={{ background: "none", border: "none", cursor: deleting ? "not-allowed" : "pointer", color: "#3F3F46", padding: 2, display: "flex", transition: "color 0.15s" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#3F3F46")}
-            ><Trash2 size={13} /></button>
+              className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex transition-colors hover:text-[#EF4444] disabled:cursor-not-allowed"
+            >
+              <Trash2 size={13} />
+            </button>
           )}
         </div>
       </div>
 
       {/* Tags row */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: "#7C3AED", background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)", padding: "2px 8px", borderRadius: 2, fontWeight: 600 }}>
+      <div className="flex gap-1.5 flex-wrap items-center">
+        <span className="text-[10px] text-brand bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.2)] px-2 py-px rounded-sm font-semibold">
           {t.atributoBase}
         </span>
         {t.custoEnergia > 0 && (
-          <span style={{ fontSize: 10, color: "#A855F7", display: "flex", alignItems: "center", gap: 3 }}>
+          <span className="text-[10px] text-brand-light flex items-center gap-1">
             <Zap size={9} /> {t.custoEnergia}
           </span>
         )}
         {t.tipoDano && danoStyle && (
-          <span style={{ fontSize: 10, fontWeight: 600, color: danoStyle.text, background: danoStyle.bg, border: `1px solid ${danoStyle.border}`, padding: "2px 8px", borderRadius: 2 }}>
+          <span
+            className="text-[10px] font-semibold px-2 py-px rounded-sm"
+            style={{ color: danoStyle.text, background: danoStyle.bg, border: `1px solid ${danoStyle.border}` }}
+          >
             {t.tipoDano.charAt(0) + t.tipoDano.slice(1).toLowerCase()}
           </span>
         )}
         {t.cd != null && (
-          <span style={{ fontSize: 10, color: "#9CA3AF", background: "rgba(255,255,255,0.04)", border: "1px solid #2A2A2A", padding: "2px 8px", borderRadius: 2 }}>
+          <span className="text-[10px] text-text-dim bg-[rgba(255,255,255,0.04)] border border-border-md px-2 py-px rounded-sm">
             CD {t.cd}
           </span>
         )}
-        <span style={{ marginLeft: "auto", fontSize: 9, color: "#3F3F46", display: "flex", alignItems: "center", gap: 3 }}>
+        <span className="ml-auto text-[9px] text-text-ghost flex items-center gap-1">
           <Dices size={9} /> d20 + {t.atributoBase}
         </span>
       </div>
 
       {/* Description */}
       {t.descricaoLivre && (
-        <p style={{ fontSize: 12, color: "#6B7280", margin: 0, lineHeight: 1.65, borderTop: "1px solid #1A1A1A", paddingTop: 10 }}>
+        <p className="text-[12px] text-text-muted m-0 leading-[1.65] border-t border-[#1A1A1A] pt-2.5">
           {t.descricaoLivre}
         </p>
       )}
@@ -418,43 +386,34 @@ export default function TecnicasPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #7C3AED", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando técnicas…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-border border-t-brand animate-spin-fast" />
+        <span className="text-xs text-text-faint tracking-[0.1em]">Carregando técnicas…</span>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0D0D0D", paddingTop: 68, fontFamily: "Inter, sans-serif" }}>
+    <div className="min-h-screen bg-bg-dark pt-[68px] font-sans">
 
       {/* Header band */}
-      <div style={{ borderBottom: "1px solid #1A1A1A", padding: "28px 32px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+      <div className="border-b border-[#1A1A1A] px-8 pt-7 pb-6">
+        <div className="max-w-[1100px] mx-auto flex items-end justify-between gap-4">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <div className="flex items-center gap-2.5 mb-1.5">
               <Zap size={18} color="#A855F7" />
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
+              <h1 className="m-0 text-[22px] font-bold text-text-near tracking-[0.1em] uppercase font-cinzel">
                 Técnicas
               </h1>
             </div>
-            <p style={{ margin: 0, fontSize: 12, color: "#52525B" }}>
+            <p className="m-0 text-[12px] text-text-faint">
               {techniques.length} técnica{techniques.length !== 1 ? "s" : ""} no catálogo · {system.length} do sistema · {custom.length} dos jogadores
             </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "10px 20px", background: "#7C3AED", border: "none", borderRadius: 3,
-              cursor: "pointer", color: "#FFF", fontSize: 12, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
-              boxShadow: "0 0 20px rgba(124,58,237,0.35)", transition: "background 0.15s, box-shadow 0.15s",
-              flexShrink: 0,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#6D28D9"; e.currentTarget.style.boxShadow = "0 0 32px rgba(124,58,237,0.5)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#7C3AED"; e.currentTarget.style.boxShadow = "0 0 20px rgba(124,58,237,0.35)"; }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand border-none rounded-sm cursor-pointer text-white text-[12px] font-bold tracking-[0.1em] uppercase font-cinzel transition-all hover:bg-brand-dark shrink-0"
+            style={{ boxShadow: "0 0 20px rgba(124,58,237,0.35)" }}
           >
             <Plus size={14} /> Criar Técnica
           </button>
@@ -462,67 +421,67 @@ export default function TecnicasPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ padding: "16px 32px", borderBottom: "1px solid #111", background: "#0A0A0A" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <div className="px-8 py-4 border-b border-[#111] bg-bg-input">
+        <div className="max-w-[1100px] mx-auto flex gap-2.5 items-center flex-wrap">
           {/* Search */}
-          <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 320 }}>
-            <Search size={13} color="#3F3F46" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <div className="relative flex-1 min-w-[240px] max-w-[320px]">
+            <Search size={13} color="#3F3F46" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar técnicas…"
-              style={{
-                width: "100%", boxSizing: "border-box",
-                background: "#111", border: "1px solid #1F1F1F", borderRadius: 3,
-                color: "#E5E7EB", fontSize: 12, padding: "8px 12px 8px 34px", outline: "none",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-              onBlur={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
+              className="w-full ficha-input pl-8"
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#52525B", padding: 0 }}>
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-text-faint p-0"
+              >
                 <X size={12} />
               </button>
             )}
           </div>
 
           {/* Attr filter */}
-          <div style={{ display: "flex", gap: 4 }}>
+          <div className="flex gap-1">
             {ATRIBUTOS.map(a => (
-              <button key={a} onClick={() => setFilterAttr(filterAttr === a ? "" : a)} style={{
-                padding: "6px 12px", background: filterAttr === a ? "rgba(124,58,237,0.2)" : "#111",
-                border: `1px solid ${filterAttr === a ? "#7C3AED" : "#1F1F1F"}`,
-                borderRadius: 3, cursor: "pointer",
-                color: filterAttr === a ? "#A855F7" : "#52525B",
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-                transition: "all 0.15s",
-              }}>{a}</button>
+              <button
+                key={a}
+                onClick={() => setFilterAttr(filterAttr === a ? "" : a)}
+                className="px-3 py-1.5 rounded-sm cursor-pointer text-[10px] font-bold tracking-[0.08em] transition-all border"
+                style={{
+                  background: filterAttr === a ? "rgba(124,58,237,0.2)" : "#111",
+                  borderColor: filterAttr === a ? "#7C3AED" : "#1F1F1F",
+                  color: filterAttr === a ? "#A855F7" : "#52525B",
+                }}
+              >{a}</button>
             ))}
           </div>
 
           {/* Dano filter */}
-          <div style={{ display: "flex", gap: 4 }}>
+          <div className="flex gap-1">
             {DANO_TYPES.map(d => {
               const c = DANO_COLORS[d];
               const active = filterDano === d;
               return (
-                <button key={d} onClick={() => setFilterDano(filterDano === d ? "" : d)} style={{
-                  padding: "6px 12px", background: active ? c.bg : "#111",
-                  border: `1px solid ${active ? c.border : "#1F1F1F"}`,
-                  borderRadius: 3, cursor: "pointer",
-                  color: active ? c.text : "#52525B",
-                  fontSize: 9, fontWeight: 700, letterSpacing: "0.07em",
-                  transition: "all 0.15s",
-                }}>{d.charAt(0) + d.slice(1).toLowerCase()}</button>
+                <button
+                  key={d}
+                  onClick={() => setFilterDano(filterDano === d ? "" : d)}
+                  className="px-3 py-1.5 rounded-sm cursor-pointer text-[9px] font-bold tracking-[0.07em] transition-all border"
+                  style={{
+                    background: active ? c.bg : "#111",
+                    borderColor: active ? c.border : "#1F1F1F",
+                    color: active ? c.text : "#52525B",
+                  }}
+                >{d.charAt(0) + d.slice(1).toLowerCase()}</button>
               );
             })}
           </div>
 
           {(search || filterAttr || filterDano) && (
-            <button onClick={() => { setSearch(""); setFilterAttr(""); setFilterDano(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+            <button
+              onClick={() => { setSearch(""); setFilterAttr(""); setFilterDano(""); }}
+              className="bg-transparent border-none cursor-pointer text-text-faint text-[11px] flex items-center gap-1 hover:text-[#EF4444] transition-colors"
             >
               <X size={11} /> Limpar
             </button>
@@ -531,27 +490,27 @@ export default function TecnicasPage() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 32px 60px" }}>
+      <div className="max-w-[1100px] mx-auto px-8 pt-7 pb-[60px]">
 
         {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "80px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+          <div className="text-center py-20 flex flex-col items-center gap-3.5">
             <Zap size={32} color="#27272A" />
-            <p style={{ fontSize: 14, color: "#52525B", margin: 0 }}>Nenhuma técnica encontrada.</p>
+            <p className="text-[14px] text-text-faint m-0">Nenhuma técnica encontrada.</p>
             {techniques.length === 0 && (
-              <p style={{ fontSize: 12, color: "#3F3F46", margin: 0 }}>Crie a primeira técnica usando o botão acima.</p>
+              <p className="text-[12px] text-text-ghost m-0">Crie a primeira técnica usando o botão acima.</p>
             )}
           </div>
         )}
 
         {/* System techniques */}
         {system.length > 0 && (
-          <section style={{ marginBottom: 36 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: "#F59E0B", textTransform: "uppercase", letterSpacing: "0.16em", fontFamily: "Cinzel, serif" }}>Do Sistema</span>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, rgba(245,158,11,0.25), transparent)" }} />
-              <span style={{ fontSize: 10, color: "#52525B" }}>{system.length}</span>
+          <section className="mb-9">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="text-[9px] font-bold text-[#F59E0B] uppercase tracking-[0.16em] font-cinzel">Do Sistema</span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(245,158,11,0.25), transparent)" }} />
+              <span className="text-[10px] text-text-faint">{system.length}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 10 }}>
+            <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
               {system.map(t => (
                 <TechCard key={t.id} t={t} currentUserId={userId} token={token} onDelete={id => setTechniques(prev => prev.filter(x => x.id !== id))} />
               ))}
@@ -562,12 +521,12 @@ export default function TecnicasPage() {
         {/* Player techniques */}
         {custom.length > 0 && (
           <section>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: "#A855F7", textTransform: "uppercase", letterSpacing: "0.16em", fontFamily: "Cinzel, serif" }}>Dos Jogadores</span>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, rgba(168,85,247,0.25), transparent)" }} />
-              <span style={{ fontSize: 10, color: "#52525B" }}>{custom.length}</span>
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="text-[9px] font-bold text-brand-light uppercase tracking-[0.16em] font-cinzel">Dos Jogadores</span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(168,85,247,0.25), transparent)" }} />
+              <span className="text-[10px] text-text-faint">{custom.length}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 10 }}>
+            <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
               {custom.map(t => (
                 <TechCard key={t.id} t={t} currentUserId={userId} token={token} onDelete={id => setTechniques(prev => prev.filter(x => x.id !== id))} />
               ))}

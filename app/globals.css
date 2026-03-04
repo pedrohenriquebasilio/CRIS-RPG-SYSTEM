@@ -23,6 +23,39 @@
   --color-background: var(--bg-main);
   --color-foreground: var(--text-primary);
   --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Backgrounds */
+  --color-bg-main: #0A0A0A;
+  --color-bg-surface: #111111;
+  --color-bg-card: #18181B;
+  --color-bg-deep: #0F0F0F;
+  --color-bg-dark: #0D0D0D;
+  --color-bg-input: #0A0A0A;
+
+  /* Borders */
+  --color-border: #1F1F1F;
+  --color-border-md: #2A2A2A;
+  --color-border-strong: #27272A;
+  --color-border-subtle: #1A1A1A;
+
+  /* Brand */
+  --color-brand: #7C3AED;
+  --color-brand-dark: #6D28D9;
+  --color-brand-light: #A855F7;
+  --color-brand-muted: #A78BFA;
+
+  /* Text */
+  --color-text-base: #E5E7EB;
+  --color-text-dim: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-text-faint: #52525B;
+  --color-text-ghost: #3F3F46;
+  --color-text-near: #F3F4F6;
+  --color-text-mid: #71717A;
+  --color-text-light: #D4D4D8;
+
+  /* Font families */
+  --font-cinzel: 'Cinzel', serif;
 }
 
 * {
@@ -109,6 +142,20 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes diceTimerDrain {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -127,6 +174,18 @@ body {
 
 .animate-rune {
   animation: runeRotate 20s linear infinite;
+}
+
+.animate-spin-fast {
+  animation: spin 0.8s linear infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.animate-dice-drain {
+  animation: diceTimerDrain 120s linear forwards;
 }
 
 /* ─── Ficha layout ─────────────────────────────── */

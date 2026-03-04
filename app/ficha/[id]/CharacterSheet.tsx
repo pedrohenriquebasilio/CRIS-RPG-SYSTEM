@@ -235,13 +235,13 @@ function StatusBar({ label, current, max, color, dimColor, onChange, onChangeMax
 
   return (
     <div>
-      <div style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 6, fontFamily: "Cinzel, serif" }}>
+      <div className="text-center text-[10px] font-bold text-text-muted tracking-[0.18em] uppercase mb-1.5 font-cinzel">
         {label}
       </div>
-      <div style={{ position: "relative", height: 38, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, overflow: "hidden" }}>
+      <div className="relative h-[38px] bg-bg-input border border-border-md rounded-sm overflow-hidden">
         <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${dimColor}, ${color})`, opacity: 0.35, transition: "width 0.35s ease" }} />
-        <div style={{ position: "absolute", left: 0, top: 0, right: 0, height: "40%", background: "linear-gradient(180deg, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
-        <div style={{ position: "relative", display: "flex", alignItems: "center", height: "100%", zIndex: 1 }}>
+        <div className="absolute left-0 top-0 right-0 h-[40%] bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+        <div className="relative flex items-center h-full z-[1]">
           <button style={btn} onClick={() => dec(5)} onMouseEnter={e => (e.currentTarget.style.color = color)} onMouseLeave={e => (e.currentTarget.style.color = "#3F3F46")}>«</button>
           <button style={btn} onClick={() => dec(1)} onMouseEnter={e => (e.currentTarget.style.color = color)} onMouseLeave={e => (e.currentTarget.style.color = "#3F3F46")}>‹</button>
           <span style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 700, color, letterSpacing: "0.04em", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
@@ -268,20 +268,20 @@ function StatusBar({ label, current, max, color, dimColor, onChange, onChangeMax
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 function SectionDivider({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, transparent, #2A2A2A)" }} />
-      <span style={{ fontSize: 9, fontWeight: 700, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.16em", fontFamily: "Cinzel, serif" }}>{children}</span>
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(to left, transparent, #2A2A2A)" }} />
+    <div className="flex items-center gap-2 mb-3">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border-md" />
+      <span className="text-[9px] font-bold text-text-faint uppercase tracking-[0.16em] font-cinzel">{children}</span>
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent to-border-md" />
     </div>
   );
 }
 
 function EmptyState({ icon, message, sub }: { icon: React.ReactNode; message: string; sub?: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 16px", gap: 12 }}>
-      <div style={{ color: "#27272A" }}>{icon}</div>
-      <span style={{ fontSize: 13, color: "#52525B", fontWeight: 500 }}>{message}</span>
-      {sub && <span style={{ fontSize: 12, color: "#3F3F46", textAlign: "center", lineHeight: 1.6, maxWidth: 220 }}>{sub}</span>}
+    <div className="flex flex-col items-center justify-center py-12 px-4 gap-3">
+      <div className="text-border-strong">{icon}</div>
+      <span className="text-[13px] text-text-faint font-medium">{message}</span>
+      {sub && <span className="text-[12px] text-text-ghost text-center leading-relaxed max-w-[220px]">{sub}</span>}
     </div>
   );
 }
@@ -294,29 +294,29 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
   const attrVal = attrs[t.atributoBase as keyof Attrs] ?? 0;
   const [expanded, setExpanded] = useState(false);
   return (
-    <div style={{ background: "#0A0A0A", borderRadius: "0 2px 2px 0", border: "1px solid #1F1F1F", borderLeft: "3px solid #7C3AED" }}>
-      <div style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setExpanded(x => !x)}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="bg-bg-input border border-border border-l-[3px] border-l-brand rounded-[0_2px_2px_0]">
+      <div className="px-3.5 py-2.5 flex justify-between items-center cursor-pointer" onClick={() => setExpanded(x => !x)}>
+        <div className="flex items-center gap-2">
           <button
             onClick={e => { e.stopPropagation(); onRoll(); }}
             title="Rolar técnica"
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#52525B", padding: "2px 3px", display: "flex", alignItems: "center", borderRadius: 2, transition: "color 0.15s" }}
+            className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
             onMouseEnter={e => (e.currentTarget.style.color = "#A855F7")}
             onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
           ><Dices size={14} /></button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{t.nome}</span>
-          <span style={{ fontSize: 9, background: "rgba(124,58,237,0.12)", color: "#9B75F0", padding: "2px 7px", borderRadius: 2, border: "1px solid rgba(124,58,237,0.25)", fontWeight: 600 }}>NV.{t.nivel}</span>
+          <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
+          <span className="text-[9px] bg-brand/[0.12] text-[#9B75F0] px-1.5 py-0.5 rounded-sm border border-brand/25 font-semibold">NV.{t.nivel}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: "#7C3AED" }}>{t.custoEnergia}⚡</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#A855F7" }}>+{attrVal + maestriaBonus}</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[11px] text-brand">{t.custoEnergia}⚡</span>
+          <span className="text-sm font-extrabold text-brand-light">+{attrVal + maestriaBonus}</span>
         </div>
       </div>
       {expanded && (
-        <div style={{ padding: "0 14px 12px" }}>
-          {t.descricaoLivre && <p style={{ fontSize: 12, color: "#9CA3AF", margin: "0 0 8px", lineHeight: 1.6 }}>{t.descricaoLivre}</p>}
-          <div style={{ display: "flex", gap: 14 }}>
-            <span style={{ fontSize: 10, color: "#52525B" }}>Base: {t.atributoBase} ({attrVal})</span>
+        <div className="px-3.5 pb-3">
+          {t.descricaoLivre && <p className="text-xs text-text-dim m-0 mb-2 leading-relaxed">{t.descricaoLivre}</p>}
+          <div className="flex gap-3.5">
+            <span className="text-[10px] text-text-faint">Base: {t.atributoBase} ({attrVal})</span>
             {t.tipoDano && <span style={{ fontSize: 10, color: DANO_COLORS[t.tipoDano] ?? "#6B7280" }}>● {t.tipoDano.toLowerCase()}</span>}
           </div>
         </div>
@@ -327,23 +327,23 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
 
 function WeaponCard({ w, onRoll }: { w: Weapon; onRoll: () => void }) {
   return (
-    <div style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: "3px solid #991B1B", borderRadius: "0 2px 2px 0", padding: "12px 14px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="bg-bg-input border border-border border-l-[3px] border-l-[#991B1B] rounded-[0_2px_2px_0] px-3.5 py-3">
+      <div className="flex justify-between items-center mb-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={onRoll}
             title="Rolar ataque"
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#52525B", padding: "2px 3px", display: "flex", alignItems: "center", borderRadius: 2, transition: "color 0.15s" }}
+            className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
             onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
             onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
           ><Dices size={14} /></button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{w.nome}</span>
+          <span className="text-[13px] font-semibold text-text-base">{w.nome}</span>
         </div>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#EF4444" }}>{w.damageDice}</span>
+        <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
       </div>
-      <div style={{ display: "flex", gap: 16 }}>
-        <div><span style={{ fontSize: 10, color: "#52525B", marginRight: 5 }}>TIPO</span><span style={{ fontSize: 11, color: "#9CA3AF" }}>{w.damageType.toLowerCase()}</span></div>
-        <div><span style={{ fontSize: 10, color: "#52525B", marginRight: 5 }}>CRÍTICO</span><span style={{ fontSize: 11, color: w.threatRange < 20 ? "#F59E0B" : "#6B7280" }}>≥{w.threatRange} (×{w.criticalMultiplier})</span></div>
+      <div className="flex gap-4">
+        <div><span className="text-[10px] text-text-faint mr-1">TIPO</span><span className="text-[11px] text-text-dim">{w.damageType.toLowerCase()}</span></div>
+        <div><span className="text-[10px] text-text-faint mr-1">CRÍTICO</span><span style={{ fontSize: 11, color: w.threatRange < 20 ? "#F59E0B" : "#6B7280" }}>≥{w.threatRange} (×{w.criticalMultiplier})</span></div>
       </div>
     </div>
   );
@@ -366,30 +366,30 @@ function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
   const glow = isCrit ? "rgba(245,158,11,0.35)" : isFumble ? "rgba(239,68,68,0.25)" : "rgba(124,58,237,0.2)";
 
   return (
-    <div style={{
-      position: "fixed", bottom: 24, right: 24, zIndex: 1000,
-      background: "#111111", border: "1px solid #2A2A2A", borderRadius: 4,
-      padding: "16px 20px", minWidth: 200, maxWidth: 240,
-      boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04), 0 0 28px ${glow}`,
-      transition: "opacity 0.35s ease, transform 0.35s ease",
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0) scale(1)" : "translateY(10px) scale(0.96)",
-      pointerEvents: visible ? "auto" : "none",
-    }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: accentColor, borderRadius: "4px 4px 0 0" }} />
+    <div
+      className="fixed bottom-6 right-6 z-[1000] bg-bg-surface border border-border-md rounded p-4 min-w-[200px] max-w-[240px]"
+      style={{
+        boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04), 0 0 28px ${glow}`,
+        transition: "opacity 0.35s ease, transform 0.35s ease",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0) scale(1)" : "translateY(10px) scale(0.96)",
+        pointerEvents: visible ? "auto" : "none",
+      }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t" style={{ background: accentColor }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+      <div className="flex items-center gap-1.5 mb-2.5">
         <Dices size={11} color="#52525B" />
-        <span style={{ fontSize: 10, color: "#6B7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "Cinzel, serif" }}>
+        <span className="text-[10px] text-text-muted font-bold uppercase tracking-[0.1em] font-cinzel">
           {roll.label}
         </span>
-        {isCrit   && <span style={{ fontSize: 9, color: "#F59E0B", fontWeight: 800, marginLeft: "auto", letterSpacing: "0.08em" }}>CRÍTICO!</span>}
-        {isFumble && <span style={{ fontSize: 9, color: "#EF4444", fontWeight: 800, marginLeft: "auto", letterSpacing: "0.08em" }}>FALHA!</span>}
+        {isCrit   && <span className="text-[9px] text-amber-400 font-extrabold ml-auto tracking-[0.08em]">CRÍTICO!</span>}
+        {isFumble && <span className="text-[9px] text-red-500 font-extrabold ml-auto tracking-[0.08em]">FALHA!</span>}
       </div>
 
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+      <div className="flex items-end gap-2">
         <div>
-          <div style={{ fontSize: 8, color: "#3F3F46", marginBottom: 1, textAlign: "center" }}>d20</div>
+          <div className="text-[8px] text-text-ghost mb-px text-center">d20</div>
           <div style={{
             fontSize: 46, fontWeight: 900, lineHeight: 1, color: diceColor,
             fontFamily: "Cinzel, serif",
@@ -398,22 +398,22 @@ function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
         </div>
         {roll.modifier !== 0 && (
           <>
-            <div style={{ paddingBottom: 6, color: "#3F3F46", fontSize: 16, fontWeight: 300 }}>+</div>
+            <div className="pb-1.5 text-text-ghost text-base font-light">+</div>
             <div>
-              <div style={{ fontSize: 8, color: "#3F3F46", marginBottom: 1, textAlign: "center" }}>bônus</div>
-              <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1, color: "#7C3AED", paddingBottom: 4 }}>{roll.modifier}</div>
+              <div className="text-[8px] text-text-ghost mb-px text-center">bônus</div>
+              <div className="text-[22px] font-bold leading-none text-brand pb-1">{roll.modifier}</div>
             </div>
-            <div style={{ paddingBottom: 6, color: "#3F3F46", fontSize: 16, fontWeight: 300 }}>=</div>
+            <div className="pb-1.5 text-text-ghost text-base font-light">=</div>
             <div>
-              <div style={{ fontSize: 8, color: "#3F3F46", marginBottom: 1, textAlign: "center" }}>total</div>
-              <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: "#E5E7EB", paddingBottom: 1 }}>{roll.total}</div>
+              <div className="text-[8px] text-text-ghost mb-px text-center">total</div>
+              <div className="text-[28px] font-black leading-none text-text-base pb-px">{roll.total}</div>
             </div>
           </>
         )}
       </div>
 
-      <div key={roll.rollId} style={{ marginTop: 12, height: 2, background: "#1A1A1A", borderRadius: 1, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: "100%", background: accentColor, opacity: 0.5, animation: "diceTimerDrain 120s linear forwards" }} />
+      <div key={roll.rollId} className="mt-3 h-0.5 bg-border-subtle rounded-sm overflow-hidden">
+        <div className="h-full w-full animate-dice-drain opacity-50" style={{ background: accentColor }} />
       </div>
     </div>
   );
@@ -483,24 +483,19 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
     !tSearch || t.nome.toLowerCase().includes(tSearch.toLowerCase())
   );
 
-  const inp: React.CSSProperties = {
-    background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 3,
-    color: "#E5E7EB", fontSize: 13, padding: "8px 12px", outline: "none",
-    width: "100%", boxSizing: "border-box", fontFamily: "inherit", transition: "border-color 0.15s",
-  };
-
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.78)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    <div
+      className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#111", border: "1px solid #1F1F1F", borderRadius: 6, width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.12)" }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.12)" }}>
         {/* Header */}
-        <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #1A1A1A", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.06em", fontFamily: "Cinzel, serif" }}>Adicionar Técnica</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", fontSize: 18, lineHeight: 1 }}>×</button>
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Técnica</span>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
         </div>
         {/* Mode tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+        <div className="flex border-b border-border-subtle shrink-0">
           {(["biblioteca", "custom"] as Mode[]).map(m => (
             <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
               flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
@@ -513,32 +508,32 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
           ))}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+        <div className="flex-1 overflow-y-auto px-[22px] py-4">
           {mode === "biblioteca" && (
             <>
               <input value={tSearch} onChange={e => setTSearch(e.target.value)} placeholder="Buscar…"
-                style={{ ...inp, marginBottom: 12 }}
+                className="ficha-input mb-3"
                 onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
               />
-              {templates === null && <p style={{ color: "#52525B", fontSize: 12, textAlign: "center" }}>Carregando…</p>}
-              {visibleTemplates.length === 0 && templates !== null && <p style={{ color: "#3F3F46", fontSize: 12, textAlign: "center" }}>Nenhuma técnica encontrada.</p>}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {templates === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
+              {visibleTemplates.length === 0 && templates !== null && <p className="text-text-ghost text-xs text-center">Nenhuma técnica encontrada.</p>}
+              <div className="flex flex-col gap-1.5">
                 {visibleTemplates.map(t => (
                   <button key={t.id} onClick={() => addFromTemplate(t)} disabled={saving}
                     style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: `3px solid ${DANO_COLORS_T[t.tipoDano ?? ""] ?? "#7C3AED"}`, borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left", transition: "border-color 0.15s" }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{t.nome}</span>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span style={{ fontSize: 10, color: "#7C3AED" }}>Nv.{t.nivel}</span>
-                        <span style={{ fontSize: 10, color: "#A855F7" }}>{t.custoEnergia}⚡</span>
-                        <span style={{ fontSize: 10, color: "#52525B" }}>{t.atributoBase}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-[10px] text-brand">Nv.{t.nivel}</span>
+                        <span className="text-[10px] text-brand-light">{t.custoEnergia}⚡</span>
+                        <span className="text-[10px] text-text-faint">{t.atributoBase}</span>
                       </div>
                     </div>
-                    {t.descricaoLivre && <p style={{ fontSize: 11, color: "#6B7280", margin: "4px 0 0", lineHeight: 1.5 }}>{t.descricaoLivre}</p>}
+                    {t.descricaoLivre && <p className="text-[11px] text-text-muted mt-1 mb-0 leading-relaxed">{t.descricaoLivre}</p>}
                   </button>
                 ))}
               </div>
@@ -546,55 +541,55 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
           )}
 
           {mode === "custom" && (
-            <form onSubmit={addCustom} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <form onSubmit={addCustom} className="flex flex-col gap-3.5">
               <div>
-                <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Nome *</label>
-                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da técnica" style={inp}
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da técnica" className="ficha-input"
                   onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Nível</label>
-                  <div style={{ display: "flex", gap: 3 }}>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível</label>
+                  <div className="flex gap-0.5">
                     {[1,2,3,4,5].map(n => (
                       <button key={n} type="button" onClick={() => setNivel(n)} style={{ flex: 1, padding: "7px 0", background: nivel === n ? "#7C3AED" : "#0A0A0A", border: `1px solid ${nivel === n ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: nivel === n ? "#FFF" : "#6B7280", fontSize: 12, fontWeight: 700 }}>{n}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Atributo</label>
-                  <div style={{ display: "flex", gap: 3 }}>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo</label>
+                  <div className="flex gap-0.5">
                     {["FOR","AGI","VIG","INT","PRE"].map(a => (
                       <button key={a} type="button" onClick={() => setAtrib(a)} style={{ flex: 1, padding: "7px 0", background: atrib === a ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${atrib === a ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: atrib === a ? "#A855F7" : "#6B7280", fontSize: 9, fontWeight: 700 }}>{a}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Custo ⚡</label>
-                  <input type="number" min={0} value={custo} onChange={e => setCusto(e.target.value)} style={{ ...inp, textAlign: "center" }}
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo ⚡</label>
+                  <input type="number" min={0} value={custo} onChange={e => setCusto(e.target.value)} className="ficha-input text-center"
                     onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Tipo de Dano</label>
-                <div style={{ display: "flex", gap: 4 }}>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
+                <div className="flex gap-1">
                   {["FISICO","ENERGETICO","MENTAL","ESPIRITUAL"].map(d => (
                     <button key={d} type="button" onClick={() => setTipoDano(tipoDano === d ? "" : d)} style={{ flex: 1, padding: "6px 0", background: tipoDano === d ? `${DANO_COLORS_T[d]}22` : "#0A0A0A", border: `1px solid ${tipoDano === d ? DANO_COLORS_T[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: tipoDano === d ? DANO_COLORS_T[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>{d.charAt(0)+d.slice(1).toLowerCase()}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Descrição</label>
-                <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} style={{ ...inp, resize: "none" }}
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+                <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="ficha-input resize-none"
                   onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-              {error && <p style={{ fontSize: 12, color: "#EF4444", margin: 0 }}>{error}</p>}
+              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
               <button type="submit" disabled={saving || !nome.trim()} style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
                 {saving ? "Adicionando…" : "✦ Adicionar Técnica"}
               </button>
@@ -603,8 +598,8 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
         </div>
 
         {mode === "biblioteca" && error && (
-          <div style={{ padding: "8px 22px", borderTop: "1px solid #1A1A1A", flexShrink: 0 }}>
-            <p style={{ fontSize: 12, color: "#EF4444", margin: 0 }}>{error}</p>
+          <div className="px-[22px] py-2 border-t border-border-subtle shrink-0">
+            <p className="text-xs text-red-500 m-0">{error}</p>
           </div>
         )}
       </div>
@@ -670,22 +665,17 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
   const TIPO_COLORS: Record<string, string> = { FISICO: "#EF4444", ENERGETICO: "#8B5CF6", MENTAL: "#3B82F6", ESPIRITUAL: "#10B981" };
   const visibleTemplates = (templates ?? []).filter(t => !wSearch || t.nome.toLowerCase().includes(wSearch.toLowerCase()));
 
-  const inp: React.CSSProperties = {
-    background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 3,
-    color: "#E5E7EB", fontSize: 13, padding: "8px 12px", outline: "none",
-    width: "100%", boxSizing: "border-box", fontFamily: "inherit", transition: "border-color 0.15s",
-  };
-
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.78)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    <div
+      className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#111", border: "1px solid #1F1F1F", borderRadius: 6, width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(153,27,27,0.15)" }}>
-        <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #1A1A1A", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#F3F4F6", letterSpacing: "0.06em", fontFamily: "Cinzel, serif" }}>Adicionar Arma</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", fontSize: 18, lineHeight: 1 }}>×</button>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(153,27,27,0.15)" }}>
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Arma</span>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
         </div>
-        <div style={{ display: "flex", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+        <div className="flex border-b border-border-subtle shrink-0">
           {(["catalogo", "custom"] as Mode[]).map(m => (
             <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
               flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
@@ -698,36 +688,36 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
           ))}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+        <div className="flex-1 overflow-y-auto px-[22px] py-4">
           {mode === "catalogo" && (
             <>
               <input value={wSearch} onChange={e => setWSearch(e.target.value)} placeholder="Buscar…"
-                style={{ ...inp, marginBottom: 12 }}
+                className="ficha-input mb-3"
                 onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
               />
-              {templates === null && <p style={{ color: "#52525B", fontSize: 12, textAlign: "center" }}>Carregando…</p>}
-              {visibleTemplates.length === 0 && templates !== null && <p style={{ color: "#3F3F46", fontSize: 12, textAlign: "center" }}>Nenhuma arma encontrada.</p>}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {templates === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
+              {visibleTemplates.length === 0 && templates !== null && <p className="text-text-ghost text-xs text-center">Nenhuma arma encontrada.</p>}
+              <div className="flex flex-col gap-1.5">
                 {visibleTemplates.map(t => (
                   <button key={t.id} onClick={() => addFromTemplate(t)} disabled={saving}
                     style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: `3px solid ${TIPO_COLORS[t.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left", transition: "border-color 0.15s" }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{t.nome}</span>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#EF4444" }}>{t.damageDice}</span>
-                        <span style={{ fontSize: 9, color: "#52525B" }}>{t.categoria}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-sm font-extrabold text-red-500">{t.damageDice}</span>
+                        <span className="text-[9px] text-text-faint">{t.categoria}</span>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                      <span style={{ fontSize: 10, color: "#6B7280" }}>{t.distancia}</span>
-                      {t.duasMaos && <span style={{ fontSize: 10, color: "#F59E0B" }}>2 mãos</span>}
-                      {t.requiresMarcial && <span style={{ fontSize: 10, color: "#EF4444" }}>Marcial</span>}
-                      {t.threatRange < 20 && <span style={{ fontSize: 10, color: "#F59E0B" }}>Crit ≥{t.threatRange}</span>}
-                      {t.regraEspecial && <span style={{ fontSize: 10, color: "#8B5CF6" }}>{t.regraEspecial}</span>}
+                    <div className="flex gap-2.5 mt-1">
+                      <span className="text-[10px] text-text-muted">{t.distancia}</span>
+                      {t.duasMaos && <span className="text-[10px] text-amber-400">2 mãos</span>}
+                      {t.requiresMarcial && <span className="text-[10px] text-red-500">Marcial</span>}
+                      {t.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{t.threatRange}</span>}
+                      {t.regraEspecial && <span className="text-[10px] text-violet-400">{t.regraEspecial}</span>}
                     </div>
                   </button>
                 ))}
@@ -736,48 +726,48 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
           )}
 
           {mode === "custom" && (
-            <form onSubmit={addCustom} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <form onSubmit={addCustom} className="flex flex-col gap-3.5">
               <div>
-                <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Nome *</label>
-                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex.: Espada Longa" style={inp}
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex.: Espada Longa" className="ficha-input"
                   onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Dado de Dano *</label>
-                  <input value={dice} onChange={e => setDice(e.target.value)} placeholder="Ex.: 1d8" style={inp}
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano *</label>
+                  <input value={dice} onChange={e => setDice(e.target.value)} placeholder="Ex.: 1d8" className="ficha-input"
                     onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Tipo de Dano</label>
-                  <div style={{ display: "flex", gap: 3 }}>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
+                  <div className="flex gap-0.5">
                     {["FISICO","ENERGETICO","MENTAL","ESPIRITUAL"].map(d => (
                       <button key={d} type="button" onClick={() => setDamType(d)} style={{ flex: 1, padding: "7px 0", background: damType === d ? `${TIPO_COLORS[d]}22` : "#0A0A0A", border: `1px solid ${damType === d ? TIPO_COLORS[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: damType === d ? TIPO_COLORS[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>{d.charAt(0)+d.slice(1).toLowerCase()}</button>
                     ))}
                   </div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Ameaça (crítico ≥)</label>
-                  <input type="number" min={1} max={20} value={threat} onChange={e => setThreat(e.target.value)} style={{ ...inp, textAlign: "center" }}
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Ameaça (crítico ≥)</label>
+                  <input type="number" min={1} max={20} value={threat} onChange={e => setThreat(e.target.value)} className="ficha-input text-center"
                     onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 9, color: "#52525B", letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Multiplicador Crítico</label>
-                  <input type="number" min={1} value={crit} onChange={e => setCrit(e.target.value)} style={{ ...inp, textAlign: "center" }}
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Multiplicador Crítico</label>
+                  <input type="number" min={1} value={crit} onChange={e => setCrit(e.target.value)} className="ficha-input text-center"
                     onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
                 </div>
               </div>
-              {error && <p style={{ fontSize: 12, color: "#EF4444", margin: 0 }}>{error}</p>}
+              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
               <button type="submit" disabled={saving || !nome.trim()} style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
                 {saving ? "Adicionando…" : "✦ Adicionar Arma"}
               </button>
@@ -786,18 +776,14 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
         </div>
 
         {mode === "catalogo" && error && (
-          <div style={{ padding: "8px 22px", borderTop: "1px solid #1A1A1A", flexShrink: 0 }}>
-            <p style={{ fontSize: 12, color: "#EF4444", margin: 0 }}>{error}</p>
+          <div className="px-[22px] py-2 border-t border-border-subtle shrink-0">
+            <p className="text-xs text-red-500 m-0">{error}</p>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-const SURFACE: React.CSSProperties = {
-  background: "#111111", border: "1px solid #1F1F1F", borderRadius: 4, overflow: "hidden",
-};
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "classe";
@@ -1087,44 +1073,29 @@ export function CharacterSheet({ character }: { character: Character }) {
   const xpPct  = Math.min(100, (character.xpAtual / xpNext) * 100);
 
   return (
-    <div style={{
-      height: "100vh",
-      paddingTop: 68,
-      paddingLeft: 16,
-      paddingRight: 16,
-      paddingBottom: 16,
-      backgroundColor: "#0D0D0D",
-      boxSizing: "border-box",
-      overflow: "hidden",
-      fontFamily: "Inter, sans-serif",
-    }}>
-      <style>{`@keyframes diceTimerDrain { from { width: 100%; } to { width: 0%; } }`}</style>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "320px 1fr 1fr",
-        gap: 12,
-        height: "100%",
-        maxWidth: 1600,
-        margin: "0 auto",
-      }}>
+    <div className="h-screen pt-[68px] px-4 pb-4 bg-bg-dark overflow-hidden font-sans">
+      <div
+        className="grid gap-3 h-full max-w-[1600px] mx-auto"
+        style={{ gridTemplateColumns: "320px 1fr 1fr" }}
+      >
 
         {/* ══════════════ LEFT ══════════════ */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", paddingRight: 2 }}>
+        <div className="flex flex-col gap-2.5 overflow-y-auto pr-0.5">
 
           {/* Header */}
-          <div style={{ ...SURFACE, padding: 16, flexShrink: 0 }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-              <div style={{ width: 56, height: 56, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <div className="bg-bg-surface border border-border rounded overflow-hidden p-4 shrink-0">
+            <div className="flex gap-3.5 items-start">
+              <div className="w-14 h-14 bg-bg-input border border-border-md rounded-sm shrink-0 flex items-center justify-center relative">
                 <User size={22} color="#2A2A2A" />
                 {(["tl","tr","bl","br"] as const).map(p => (
                   <div key={p} style={{ position: "absolute", top: p.startsWith("t") ? -3 : undefined, bottom: p.startsWith("b") ? -3 : undefined, left: p.endsWith("l") ? -3 : undefined, right: p.endsWith("r") ? -3 : undefined, width: 5, height: 5, background: "#2A2A2A" }} />
                 ))}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 14px" }}>
+              <div className="flex-1 min-w-0">
+                <div className="grid gap-x-3.5 gap-y-2.5" style={{ gridTemplateColumns: "1fr 1fr" }}>
                   {/* Nome — editável */}
                   <div>
-                    <div style={{ fontSize: 9, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Personagem</div>
+                    <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Personagem</div>
                     {editingNome ? (
                       <input
                         autoFocus
@@ -1163,7 +1134,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                       <div
                         onClick={() => setEditingNome(true)}
                         title="Clique para editar"
-                        style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "text" }}
+                        className="text-[13px] font-semibold text-text-base overflow-hidden text-ellipsis whitespace-nowrap cursor-text"
                       >
                         {nome}
                       </div>
@@ -1176,37 +1147,37 @@ export function CharacterSheet({ character }: { character: Character }) {
                     { label: "Nível",  value: String(character.nivel) },
                   ] as { label: string; value: string; accent?: boolean }[]).map(f => (
                     <div key={f.label}>
-                      <div style={{ fontSize: 9, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>{f.label}</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: f.accent ? "#A855F7" : "#E5E7EB", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.value}</div>
+                      <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">{f.label}</div>
+                      <div className={`text-[13px] font-semibold overflow-hidden text-ellipsis whitespace-nowrap ${f.accent ? "text-brand-light" : "text-text-base"}`}>{f.value}</div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #1A1A1A", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", boxShadow: "0 0 6px #22C55E88", flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "#52525B" }}>Campanha: <span style={{ color: "#9CA3AF" }}>{character.campaign.name}</span></span>
-              {character.isApproved && <span style={{ marginLeft: "auto", fontSize: 9, color: "#22C55E", border: "1px solid #14532D", padding: "1px 6px", borderRadius: 2 }}>Aprovado</span>}
+            <div className="mt-3 pt-2.5 border-t border-border-subtle flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" style={{ boxShadow: "0 0 6px #22C55E88" }} />
+              <span className="text-[11px] text-text-faint">Campanha: <span className="text-text-dim">{character.campaign.name}</span></span>
+              {character.isApproved && <span className="ml-auto text-[9px] text-green-500 border border-green-900 px-1.5 py-px rounded-sm">Aprovado</span>}
             </div>
           </div>
 
           {/* Attribute ring */}
-          <div style={{ ...SURFACE, padding: "16px 12px 12px", flexShrink: 0 }}>
-            <div style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#3F3F46", letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "Cinzel, serif", marginBottom: 4 }}>
-              Atributos <span style={{ color: "#27272A", fontWeight: 400 }}>— passe o mouse para editar</span>
+          <div className="bg-bg-surface border border-border rounded overflow-hidden px-3 pt-4 pb-3 shrink-0">
+            <div className="text-center text-[9px] font-bold text-text-ghost tracking-[0.2em] uppercase font-cinzel mb-1">
+              Atributos <span className="text-[#27272A] font-normal">— passe o mouse para editar</span>
             </div>
             <AttributeRing attrs={attrs} maestriaBonus={character.maestriaBonus} onChangeAttr={handleAttrChange} onRollAttr={handleRollAttr} />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 4px 2px" }}>
-              <span style={{ fontSize: 8, color: "#52525B", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", minWidth: 20 }}>XP</span>
-              <div style={{ flex: 1, height: 3, background: "#1A1A1A", borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", background: "linear-gradient(90deg, #2A2A2A, #D1D5DB)", width: `${xpPct}%`, transition: "width 0.4s ease" }} />
+            <div className="flex items-center gap-2.5 px-1 pt-2.5 pb-0.5">
+              <span className="text-[8px] text-text-faint font-bold tracking-[0.14em] uppercase min-w-[20px]">XP</span>
+              <div className="flex-1 h-[3px] bg-border-subtle rounded overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-[#2A2A2A] to-[#D1D5DB] transition-[width_0.4s_ease]" style={{ width: `${xpPct}%` }} />
               </div>
-              <span style={{ fontSize: 10, color: "#52525B", minWidth: 80, textAlign: "right" }}>{character.xpAtual.toLocaleString("pt-BR")} / {xpNext.toLocaleString("pt-BR")}</span>
+              <span className="text-[10px] text-text-faint min-w-[80px] text-right">{character.xpAtual.toLocaleString("pt-BR")} / {xpNext.toLocaleString("pt-BR")}</span>
             </div>
           </div>
 
           {/* Status bars */}
-          <div style={{ ...SURFACE, padding: 16, display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
+          <div className="bg-bg-surface border border-border rounded overflow-hidden p-4 flex flex-col gap-3 shrink-0">
             <StatusBar
               label="Pontos de Vida"
               current={hp} max={hpMax}
@@ -1224,58 +1195,53 @@ export function CharacterSheet({ character }: { character: Character }) {
           </div>
 
           {/* Defense */}
-          <div style={{ ...SURFACE, padding: "14px 16px", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ position: "relative", flexShrink: 0 }}>
+          <div className="bg-bg-surface border border-border rounded overflow-hidden px-4 py-3.5 shrink-0">
+            <div className="flex items-center gap-3.5">
+              <div className="relative shrink-0">
                 <svg width="54" height="60" viewBox="0 0 54 60" fill="none">
                   <path d="M27 3L5 13V33C5 46 27 57 27 57C27 57 49 46 49 33V13L27 3Z" fill="#0A0A0A" stroke="#2A2A2A" strokeWidth="1.5" />
                   <path d="M27 9L10 18V32C10 41.5 27 51 27 51C27 51 44 41.5 44 32V18L27 9Z" fill="transparent" stroke="#1F1F1F" strokeWidth="1" />
                 </svg>
-                <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -52%)", fontSize: 18, fontWeight: 800, color: "#FFF" }}>{defesa}</span>
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] text-lg font-extrabold text-white">{defesa}</span>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 9, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 5, fontFamily: "Cinzel, serif" }}>Defesa</div>
-                <div style={{ fontSize: 12, color: "#6B7280" }}>10 + AGI ({attrs.AGI})</div>
+              <div className="flex-1">
+                <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1 font-cinzel">Defesa</div>
+                <div className="text-xs text-text-muted">10 + AGI ({attrs.AGI})</div>
               </div>
-              <div style={{ textAlign: "center", padding: "8px 14px", background: "#0A0A0A", border: "1px solid #1F1F1F", borderRadius: 2 }}>
-                <div style={{ fontSize: 9, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>Maestria</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#7C3AED", lineHeight: 1 }}>+{character.maestriaBonus}</div>
+              <div className="text-center px-3.5 py-2 bg-bg-input border border-border rounded-sm">
+                <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Maestria</div>
+                <div className="text-[22px] font-extrabold text-brand leading-none">+{character.maestriaBonus}</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* ══════════════ MIDDLE — Perícias ══════════════ */}
-        <div style={{ ...SURFACE, display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "12px 18px", borderBottom: "1px solid #1A1A1A", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#E5E7EB", letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>Perícias</span>
-            <span style={{ fontSize: 9, color: "#3F3F46" }}>pontos: 0–20 por perícia</span>
+        <div className="bg-bg-surface border border-border rounded overflow-hidden flex flex-col">
+          <div className="px-[18px] py-3 border-b border-border-subtle flex justify-between items-center shrink-0">
+            <span className="text-[11px] font-bold text-text-base tracking-[0.18em] uppercase font-cinzel">Perícias</span>
+            <span className="text-[9px] text-text-ghost">pontos: 0–20 por perícia</span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 36px 40px 90px", gap: 2, padding: "7px 18px", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+          <div className="grid gap-0.5 px-[18px] py-[7px] border-b border-border-subtle shrink-0" style={{ gridTemplateColumns: "1fr 36px 40px 90px" }}>
             {(["PERÍCIA", "BÔN.", "DADO", "TREINAMENTO"] as const).map((h, i) => (
-              <span key={h} style={{ fontSize: 9, color: "#3F3F46", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: i === 0 ? "left" : "center" }}>{h}</span>
+              <span key={h} className={`text-[9px] text-text-ghost font-bold uppercase tracking-[0.08em] ${i === 0 ? "text-left" : "text-center"}`}>{h}</span>
             ))}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div className="flex-1 overflow-y-auto">
             {ALL_SKILLS.map((skill, i) => {
               const pontos   = skillPoints[skill.nome] ?? 0;
               const treinada = pontos > 0;
               const attrVal  = attrs[skill.atributoBase as keyof Attrs] ?? 0;
               const maestria = treinada ? character.maestriaBonus : 0;
               return (
-                <div key={skill.nome} style={{
-                  display: "grid", gridTemplateColumns: "1fr 36px 40px 90px", gap: 2,
-                  padding: "5px 18px", alignItems: "center",
-                  background: i % 2 !== 0 ? "rgba(255,255,255,0.012)" : "transparent",
-                  borderBottom: "1px solid rgba(26,26,26,0.9)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <div key={skill.nome} className="grid gap-0.5 px-[18px] py-[5px] items-center border-b border-[rgba(26,26,26,0.9)]" style={{ gridTemplateColumns: "1fr 36px 40px 90px", background: i % 2 !== 0 ? "rgba(255,255,255,0.012)" : "transparent" }}>
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <button
                       onClick={() => handleRollSkill(skill.nome)}
                       title={`Rolar ${skill.nome}`}
-                      style={{ background: "transparent", border: "none", cursor: "pointer", color: "#3F3F46", padding: "1px 2px", display: "flex", alignItems: "center", borderRadius: 2, flexShrink: 0, transition: "color 0.15s" }}
+                      className="bg-transparent border-none cursor-pointer text-text-ghost p-px flex items-center rounded-sm shrink-0 transition-colors duration-150"
                       onMouseEnter={e => (e.currentTarget.style.color = "#A855F7")}
                       onMouseLeave={e => (e.currentTarget.style.color = "#3F3F46")}
                     ><Dices size={12} /></button>
@@ -1284,19 +1250,19 @@ export function CharacterSheet({ character }: { character: Character }) {
                       background: treinada ? "#3B82F6" : "#1F1F1F",
                       boxShadow: treinada ? "0 0 5px rgba(59,130,246,0.5)" : "none",
                     }} />
-                    <span style={{ fontSize: 12, fontWeight: treinada ? 500 : 400, color: treinada ? "#E5E7EB" : "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span className={`text-xs overflow-hidden text-ellipsis whitespace-nowrap ${treinada ? "font-medium text-text-base" : "font-normal text-text-muted"}`}>
                       {skill.nome}
                     </span>
-                    <span style={{ fontSize: 9, color: "#3F3F46", flexShrink: 0 }}>({skill.atributoBase})</span>
+                    <span className="text-[9px] text-text-ghost shrink-0">({skill.atributoBase})</span>
                   </div>
 
-                  <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", color: (attrVal + maestria) > 0 ? "#D1D5DB" : "#3F3F46" }}>
+                  <span className={`text-[13px] font-bold text-center ${(attrVal + maestria) > 0 ? "text-text-light" : "text-text-ghost"}`}>
                     +{attrVal + maestria}
                   </span>
 
-                  <span style={{ fontSize: 10, color: "#3F3F46", textAlign: "center" }}>d20</span>
+                  <span className="text-[10px] text-text-ghost text-center">d20</span>
 
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                  <div className="flex items-center justify-center gap-0.5">
                     <button
                       onClick={() => handleSkillPoints(skill.nome, -1)}
                       disabled={pontos === 0}
@@ -1337,14 +1303,14 @@ export function CharacterSheet({ character }: { character: Character }) {
             })}
           </div>
 
-          <div style={{ padding: "7px 18px", borderTop: "1px solid #1A1A1A", flexShrink: 0 }}>
-            <span style={{ fontSize: 10, color: "#3F3F46" }}>● Treinada se pontos &gt; 0 · Bônus = atributo + maestria</span>
+          <div className="px-[18px] py-[7px] border-t border-border-subtle shrink-0">
+            <span className="text-[10px] text-text-ghost">● Treinada se pontos &gt; 0 · Bônus = atributo + maestria</span>
           </div>
         </div>
 
         {/* ══════════════ RIGHT — Tabs ══════════════ */}
-        <div style={{ ...SURFACE, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+        <div className="bg-bg-surface border border-border rounded overflow-hidden flex flex-col">
+          <div className="flex border-b border-border-subtle shrink-0">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                 flex: 1, padding: "11px 2px", background: "transparent", border: "none", cursor: "pointer",
@@ -1362,15 +1328,15 @@ export function CharacterSheet({ character }: { character: Character }) {
             ))}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+          <div className="flex-1 overflow-y-auto p-4">
 
             {activeTab === "classe" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="flex flex-col gap-4">
                 <SectionDivider>Especialização</SectionDivider>
 
                 {/* Spec cards */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {specs.length === 0 && <span style={{ fontSize: 12, color: "#52525B" }}>Carregando…</span>}
+                <div className="flex flex-col gap-1.5">
+                  {specs.length === 0 && <span className="text-xs text-text-faint">Carregando…</span>}
                   {specs.map(s => {
                     const active = selectedSpec?.id === s.id;
                     const bonuses = Object.entries(s.bonusAtributos ?? {}).filter(([, v]) => v > 0);
@@ -1381,20 +1347,20 @@ export function CharacterSheet({ character }: { character: Character }) {
                         borderRadius: 2, padding: "10px 12px", cursor: "pointer", textAlign: "left",
                         transition: "all 0.15s", boxShadow: active ? "0 0 12px rgba(124,58,237,0.15)" : "none",
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div className="flex justify-between items-center">
                           <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#A855F7" : "#D1D5DB" }}>{s.nome}</span>
-                          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                            <span style={{ fontSize: 10, color: "#EF4444" }}>♥{s.hpPorNivel}</span>
-                            <span style={{ fontSize: 10, color: "#7C3AED" }}>⚡{s.energiaPorNivel}</span>
+                          <div className="flex gap-2.5 items-center">
+                            <span className="text-[10px] text-red-500">♥{s.hpPorNivel}</span>
+                            <span className="text-[10px] text-brand">⚡{s.energiaPorNivel}</span>
                           </div>
                         </div>
                         {bonuses.length > 0 && (
-                          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                          <div className="flex gap-1.5 mt-1 flex-wrap">
                             {bonuses.map(([k, v]) => (
-                              <span key={k} style={{ fontSize: 10, color: "#22C55E", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", padding: "1px 6px", borderRadius: 2 }}>+{v} {k}</span>
+                              <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
                             ))}
                             {s.habilidadesTreinadas?.slice(0,3).map(h => (
-                              <span key={h} style={{ fontSize: 10, color: "#3B82F6", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", padding: "1px 6px", borderRadius: 2 }}>{h}</span>
+                              <span key={h} className="text-[10px] text-blue-400 bg-blue-400/[0.08] border border-blue-400/20 px-1.5 py-px rounded-sm">{h}</span>
                             ))}
                           </div>
                         )}
@@ -1406,8 +1372,8 @@ export function CharacterSheet({ character }: { character: Character }) {
                 <SectionDivider>Origem</SectionDivider>
 
                 {/* Origem cards */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {origens.length === 0 && <span style={{ fontSize: 12, color: "#52525B" }}>Carregando…</span>}
+                <div className="flex flex-col gap-1.5">
+                  {origens.length === 0 && <span className="text-xs text-text-faint">Carregando…</span>}
                   {origens.map(o => {
                     const active = selectedOrigem?.id === o.id;
                     const bonuses = Object.entries(o.bonusAtributos ?? {}).filter(([, v]) => v > 0);
@@ -1418,16 +1384,16 @@ export function CharacterSheet({ character }: { character: Character }) {
                         borderRadius: 2, padding: "10px 12px", cursor: "pointer", textAlign: "left",
                         transition: "all 0.15s",
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div className="flex justify-between items-center">
                           <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#60A5FA" : "#D1D5DB" }}>{o.nome}</span>
                         </div>
                         {bonuses.length > 0 && (
-                          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                          <div className="flex gap-1.5 mt-1 flex-wrap">
                             {bonuses.map(([k, v]) => (
-                              <span key={k} style={{ fontSize: 10, color: "#22C55E", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", padding: "1px 6px", borderRadius: 2 }}>+{v} {k}</span>
+                              <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
                             ))}
                             {o.habilidadesTreinadas?.slice(0,3).map(h => (
-                              <span key={h} style={{ fontSize: 10, color: "#3B82F6", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", padding: "1px 6px", borderRadius: 2 }}>{h}</span>
+                              <span key={h} className="text-[10px] text-blue-400 bg-blue-400/[0.08] border border-blue-400/20 px-1.5 py-px rounded-sm">{h}</span>
                             ))}
                           </div>
                         )}
@@ -1441,9 +1407,9 @@ export function CharacterSheet({ character }: { character: Character }) {
                   const p = previewAttrs();
                   const nonZero = Object.entries(p).filter(([, v]) => v > 0);
                   return nonZero.length > 0 ? (
-                    <div style={{ background: "#0A0A0A", border: "1px solid #22C55E33", borderRadius: 2, padding: "10px 14px" }}>
-                      <div style={{ fontSize: 9, color: "#22C55E", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Bônus totais de atributos</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div className="bg-bg-input border border-green-500/20 rounded-sm px-3.5 py-2.5">
+                      <div className="text-[9px] text-green-400 uppercase tracking-[0.1em] mb-1.5">Bônus totais de atributos</div>
+                      <div className="flex gap-2 flex-wrap">
                         {Object.entries(p).map(([k, v]) => (
                           <span key={k} style={{ fontSize: 13, fontWeight: 700, color: v > 0 ? "#22C55E" : "#3F3F46" }}>{k}: {v > 0 ? `+${v}` : v}</span>
                         ))}
@@ -1453,7 +1419,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                 })()}
 
                 {classeError && (
-                  <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 2, padding: "10px 14px", fontSize: 12, color: "#EF4444" }}>
+                  <div className="bg-red-500/[0.08] border border-red-500/25 rounded-sm px-3.5 py-2.5 text-xs text-red-500">
                     {classeError}
                   </div>
                 )}
@@ -1473,32 +1439,28 @@ export function CharacterSheet({ character }: { character: Character }) {
                   {classeSaving ? "Salvando…" : "✦ Salvar Classe & Origem"}
                 </button>
 
-                <div style={{ borderTop: "1px solid #1A1A1A", paddingTop: 14, marginTop: 4 }}>
+                <div className="border-t border-border-subtle pt-3.5 mt-1">
                   {!confirmDelete ? (
                     <button
                       onClick={() => setConfirmDelete(true)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
-                        background: "transparent", border: "1px solid #3F3F46", borderRadius: 2,
-                        cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 600,
-                        transition: "all 0.15s",
-                      }}
+                      className="flex items-center gap-2 px-3.5 py-2 bg-transparent border border-text-ghost rounded-sm cursor-pointer text-text-muted text-[11px] font-semibold transition-all duration-150"
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = "#3F3F46"; e.currentTarget.style.color = "#6B7280"; }}
                     >
                       <Trash2 size={13} /> Excluir Ficha
                     </button>
                   ) : (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: "#EF4444", flex: 1 }}>Confirmar exclusão da ficha?</span>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-xs text-red-500 flex-1">Confirmar exclusão da ficha?</span>
                       <button
                         onClick={handleExcluir}
                         disabled={deleting}
-                        style={{ padding: "6px 16px", background: "#991B1B", border: "none", borderRadius: 2, cursor: deleting ? "not-allowed" : "pointer", color: "#FFF", fontSize: 11, fontWeight: 700 }}
+                        className="px-4 py-1.5 bg-red-900 border-none rounded-sm cursor-pointer text-white text-[11px] font-bold"
+                        style={{ cursor: deleting ? "not-allowed" : "pointer" }}
                       >{deleting ? "…" : "Excluir"}</button>
                       <button
                         onClick={() => setConfirmDelete(false)}
-                        style={{ padding: "6px 12px", background: "transparent", border: "1px solid #3F3F46", borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11 }}
+                        className="px-3 py-1.5 bg-transparent border border-text-ghost rounded-sm cursor-pointer text-text-muted text-[11px]"
                       >Cancelar</button>
                     </div>
                   )}
@@ -1507,12 +1469,12 @@ export function CharacterSheet({ character }: { character: Character }) {
             )}
 
             {activeTab === "tecnicas" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: 1 }}><SectionDivider>Técnicas ({localTechniques.length})</SectionDivider></div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1"><SectionDivider>Técnicas ({localTechniques.length})</SectionDivider></div>
                   <button
                     onClick={() => setShowAddTech(true)}
-                    style={{ flexShrink: 0, padding: "4px 12px", background: "transparent", border: "1px solid #7C3AED", borderRadius: 2, cursor: "pointer", color: "#A855F7", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", fontFamily: "Cinzel, serif", whiteSpace: "nowrap", transition: "background 0.15s" }}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-brand rounded-sm cursor-pointer text-brand-light text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,58,237,0.15)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >+ Adicionar</button>
@@ -1525,12 +1487,12 @@ export function CharacterSheet({ character }: { character: Character }) {
             )}
 
             {activeTab === "armas" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: 1 }}><SectionDivider>Arsenal ({localWeapons.length})</SectionDivider></div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1"><SectionDivider>Arsenal ({localWeapons.length})</SectionDivider></div>
                   <button
                     onClick={() => setShowAddWeapon(true)}
-                    style={{ flexShrink: 0, padding: "4px 12px", background: "transparent", border: "1px solid #991B1B", borderRadius: 2, cursor: "pointer", color: "#EF4444", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", fontFamily: "Cinzel, serif", whiteSpace: "nowrap", transition: "background 0.15s" }}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-[#991B1B] rounded-sm cursor-pointer text-red-500 text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(153,27,27,0.15)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >+ Adicionar</button>
@@ -1543,17 +1505,17 @@ export function CharacterSheet({ character }: { character: Character }) {
             )}
 
             {activeTab === "aptidoes" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 <SectionDivider>Aptidões ({character.aptitudes.length})</SectionDivider>
                 {character.aptitudes.length === 0
                   ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão adquirida" />
                   : character.aptitudes.map((a, i) => (
-                    <div key={i} style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: "3px solid #7C3AED", borderRadius: "0 2px 2px 0", padding: "12px 14px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{a.aptitude.nome}</span>
-                        <span style={{ fontSize: 10, color: "#52525B", background: "#1A1A1A", padding: "1px 6px", borderRadius: 2 }}>Nv. {a.adquiridaNoNivel}</span>
+                    <div key={i} className="bg-bg-input border border-border border-l-[3px] border-l-brand rounded-[0_2px_2px_0] px-3.5 py-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[13px] font-semibold text-text-base">{a.aptitude.nome}</span>
+                        <span className="text-[10px] text-text-faint bg-border-subtle px-1.5 py-px rounded-sm">Nv. {a.adquiridaNoNivel}</span>
                       </div>
-                      <p style={{ fontSize: 12, color: "#9CA3AF", margin: 0, lineHeight: 1.6 }}>{a.aptitude.descricao}</p>
+                      <p className="text-xs text-text-dim m-0 leading-relaxed">{a.aptitude.descricao}</p>
                     </div>
                   ))
                 }
@@ -1561,14 +1523,14 @@ export function CharacterSheet({ character }: { character: Character }) {
             )}
 
             {activeTab === "combate" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 <SectionDivider>Estado de Combate</SectionDivider>
                 <EmptyState icon={<Shield size={26} />} message="Sem combate ativo" sub="Entre em uma campanha e aguarde o Mestre iniciar o combate" />
               </div>
             )}
 
             {activeTab === "descricao" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div className="flex flex-col gap-5">
                 <SectionDivider>Ficha</SectionDivider>
                 {([
                   { label: "Origem", value: character.origemRelacao?.nome || "Não definida." },
@@ -1578,8 +1540,8 @@ export function CharacterSheet({ character }: { character: Character }) {
                   { label: "Bônus de Maestria", value: `+${character.maestriaBonus} em perícias treinadas` },
                 ] as { label: string; value: string }[]).map(item => (
                   <div key={item.label}>
-                    <div style={{ fontSize: 9, color: "#52525B", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 6, fontFamily: "Cinzel, serif" }}>{item.label}</div>
-                    <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0, lineHeight: 1.7 }}>{item.value}</p>
+                    <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">{item.label}</div>
+                    <p className="text-[13px] text-text-dim m-0 leading-[1.7]">{item.value}</p>
                   </div>
                 ))}
               </div>

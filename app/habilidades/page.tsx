@@ -43,36 +43,31 @@ function AbilityRow({ ab }: { ab: Ability }) {
   const color = TIPO_COLORS[ab.tipo] ?? "#52525B";
 
   return (
-    <div style={{ borderBottom: "1px solid #111" }}>
+    <div className="border-b border-[#111]">
       <button
         onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", background: "none", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "12px 16px",
-          textAlign: "left",
-        }}
+        className="w-full bg-transparent border-none cursor-pointer flex items-center gap-3 px-4 py-3 text-left"
       >
         {/* Nivel */}
-        <div style={{
-          width: 28, height: 28, flexShrink: 0,
-          border: `1px solid ${color}44`,
-          borderRadius: 2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: `${color}11`,
-        }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: "Cinzel, serif" }}>{ab.nivelRequerido}</span>
+        <div
+          className="w-7 h-7 shrink-0 rounded-sm flex items-center justify-center"
+          style={{ border: `1px solid ${color}44`, background: `${color}11` }}
+        >
+          <span className="text-[11px] font-bold font-cinzel" style={{ color }}>{ab.nivelRequerido}</span>
         </div>
 
         {/* Name + badges */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>{ab.nome}</span>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color, background: `${color}18`, border: `1px solid ${color}44`, padding: "1px 6px", borderRadius: 2 }}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[13px] font-semibold text-text-base">{ab.nome}</span>
+            <span
+              className="text-[9px] font-bold tracking-[0.1em] px-1.5 py-px rounded-sm"
+              style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
+            >
               {ab.tipo.toUpperCase()}
             </span>
           </div>
-          <div style={{ fontSize: 11, color: "#52525B", marginTop: 2, display: "flex", gap: 12 }}>
+          <div className="text-[11px] text-text-faint mt-0.5 flex gap-3">
             {ab.custo !== "nenhum" && <span>Custo: {ab.custo}</span>}
             {ab.alcance !== "pessoal" && <span>Alcance: {ab.alcance}</span>}
             {ab.duracao !== "imediato" && <span>Duração: {ab.duracao}</span>}
@@ -83,8 +78,8 @@ function AbilityRow({ ab }: { ab: Ability }) {
       </button>
 
       {open && (
-        <div style={{ padding: "0 16px 14px 56px" }}>
-          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0, lineHeight: 1.6 }}>{ab.descricao}</p>
+        <div className="px-4 pb-3.5 pl-14">
+          <p className="text-[13px] text-text-dim m-0 leading-relaxed">{ab.descricao}</p>
         </div>
       )}
     </div>
@@ -95,32 +90,21 @@ function AptitudeRow({ apt }: { apt: Aptitude }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div style={{ borderBottom: "1px solid #111" }}>
+    <div className="border-b border-[#111]">
       <button
         onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", background: "none", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "12px 16px",
-          textAlign: "left",
-        }}
+        className="w-full bg-transparent border-none cursor-pointer flex items-center gap-3 px-4 py-3 text-left"
       >
-        <div style={{
-          width: 28, height: 28, flexShrink: 0,
-          border: "1px solid #27272A",
-          borderRadius: 2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "#111",
-        }}>
+        <div className="w-7 h-7 shrink-0 border border-border-strong rounded-sm flex items-center justify-center bg-[#111]">
           <Sparkles size={12} color="#52525B" />
         </div>
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#E5E7EB", textAlign: "left" }}>{apt.nome}</span>
+        <span className="flex-1 text-[13px] font-semibold text-text-base text-left">{apt.nome}</span>
         {open ? <ChevronDown size={14} color="#52525B" /> : <ChevronRight size={14} color="#52525B" />}
       </button>
 
       {open && (
-        <div style={{ padding: "0 16px 14px 56px" }}>
-          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0, lineHeight: 1.6 }}>{apt.descricao}</p>
+        <div className="px-4 pb-3.5 pl-14">
+          <p className="text-[13px] text-text-dim m-0 leading-relaxed">{apt.descricao}</p>
         </div>
       )}
     </div>
@@ -131,7 +115,6 @@ function SpecSection({ spec }: { spec: Specialization }) {
   const [open, setOpen] = useState(false);
   const hue = spec.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
-  // Group abilities by level
   const byLevel = spec.abilities.reduce<Record<number, Ability[]>>((acc, ab) => {
     (acc[ab.nivelRequerido] ??= []).push(ab);
     return acc;
@@ -139,59 +122,41 @@ function SpecSection({ spec }: { spec: Specialization }) {
   const levels = Object.keys(byLevel).map(Number).sort((a, b) => a - b);
 
   return (
-    <div style={{
-      background: "#0F0F0F",
-      border: "1px solid #1F1F1F",
-      borderRadius: 4,
-      overflow: "hidden",
-      marginBottom: 12,
-    }}>
+    <div className="bg-bg-deep border border-border rounded overflow-hidden mb-3">
       {/* Header */}
       <button
         onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", background: "none", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "16px 20px",
-          textAlign: "left",
-        }}
+        className="w-full bg-transparent border-none cursor-pointer flex items-center gap-3.5 px-5 py-4 text-left"
       >
-        <div style={{
-          width: 40, height: 40, flexShrink: 0,
-          border: `1px solid hsl(${hue},45%,30%)`,
-          borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: `hsl(${hue},40%,8%)`,
-          boxShadow: `0 0 14px hsl(${hue},45%,15%)`,
-        }}>
+        <div
+          className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center"
+          style={{
+            border: `1px solid hsl(${hue},45%,30%)`,
+            background: `hsl(${hue},40%,8%)`,
+            boxShadow: `0 0 14px hsl(${hue},45%,15%)`,
+          }}
+        >
           <Sparkles size={16} color={`hsl(${hue},60%,55%)`} />
         </div>
-        <div style={{ flex: 1 }}>
-          <h3 className="font-cinzel" style={{ fontSize: 15, fontWeight: 700, color: "#F3F4F6", margin: "0 0 3px", letterSpacing: "0.06em" }}>
+        <div className="flex-1">
+          <h3 className="font-cinzel text-[15px] font-bold text-text-near m-0 mb-0.5 tracking-[0.06em]">
             {spec.nome}
           </h3>
-          <span style={{ fontSize: 11, color: "#52525B" }}>
+          <span className="text-[11px] text-text-faint">
             {spec.abilities.length} habilidade(s) · HP +{spec.hpPorNivel}/nível · Energia +{spec.energiaPorNivel}/nível
           </span>
         </div>
-        {open
-          ? <ChevronDown size={16} color="#52525B" />
-          : <ChevronRight size={16} color="#52525B" />}
+        {open ? <ChevronDown size={16} color="#52525B" /> : <ChevronRight size={16} color="#52525B" />}
       </button>
 
       {open && (
-        <div style={{ borderTop: "1px solid #1A1A1A" }}>
+        <div className="border-t border-[#1A1A1A]">
           {levels.length === 0 && (
-            <p style={{ fontSize: 12, color: "#3F3F46", padding: "16px 20px", margin: 0 }}>Nenhuma habilidade cadastrada.</p>
+            <p className="text-[12px] text-text-ghost px-5 py-4 m-0">Nenhuma habilidade cadastrada.</p>
           )}
           {levels.map(lvl => (
             <div key={lvl}>
-              <div style={{
-                padding: "8px 16px",
-                background: "#0A0A0A",
-                borderBottom: "1px solid #111",
-                fontSize: 9, color: "#52525B", letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
-              }}>
+              <div className="px-4 py-2 bg-bg-input border-b border-[#111] text-[9px] text-text-faint tracking-[0.15em] uppercase font-cinzel">
                 Nível {lvl}
               </div>
               {byLevel[lvl].map(ab => <AbilityRow key={ab.id} ab={ab} />)}
@@ -230,10 +195,9 @@ export default function HabilidadesPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #7C3AED", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando habilidades…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-border border-t-brand animate-spin-fast" />
+        <span className="text-xs text-text-faint tracking-[0.1em]">Carregando habilidades…</span>
       </div>
     );
   }
@@ -250,37 +214,30 @@ export default function HabilidadesPage() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", paddingTop: "calc(68px + 32px)", paddingBottom: 60 }}>
-      <div className="bg-grid" style={{ position: "fixed", inset: 0, opacity: 0.3, pointerEvents: "none" }} />
+    <div className="min-h-screen bg-bg-main pt-[calc(68px+32px)] pb-[60px]">
+      <div className="bg-grid fixed inset-0 opacity-30 pointer-events-none" />
 
-      <div style={{ position: "relative", maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+      <div className="relative max-w-[900px] mx-auto px-6">
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
+        <div className="flex items-end justify-between mb-7 flex-wrap gap-4">
           <div>
-            <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 6px", fontFamily: "Cinzel, serif" }}>
+            <p className="text-[10px] text-text-faint tracking-[0.2em] uppercase m-0 mb-1.5 font-cinzel">
               Poderes & Técnicas
             </p>
-            <h1 className="font-cinzel" style={{ fontSize: 26, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "0.08em" }}>
+            <h1 className="font-cinzel text-[26px] font-bold text-white m-0 tracking-[0.08em]">
               Habilidades
             </h1>
           </div>
-          {/* Search */}
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar habilidade…"
-            style={{
-              background: "#0F0F0F", border: "1px solid #27272A", borderRadius: 3,
-              padding: "8px 14px", color: "#E5E7EB", fontSize: 13, outline: "none",
-              width: 220, transition: "border-color 0.15s",
-            }}
-            onFocus={e => (e.target.style.borderColor = "#7C3AED")}
-            onBlur={e => (e.target.style.borderColor = "#27272A")}
+            className="ficha-input w-[220px]"
           />
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #1A1A1A", marginBottom: 24 }}>
+        <div className="flex gap-0 border-b border-[#1A1A1A] mb-6">
           {([
             { id: "especializacoes", label: "Por Especialização" },
             { id: "gerais",          label: "Habilidades Gerais" },
@@ -288,15 +245,11 @@ export default function HabilidadesPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                padding: "12px 20px",
-                fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif",
-                color: tab === t.id ? "#F3F4F6" : "#52525B",
-                borderBottom: `2px solid ${tab === t.id ? "#7C3AED" : "transparent"}`,
-                marginBottom: -1,
-                transition: "color 0.15s",
-              }}
+              className={`bg-transparent border-none border-b-2 -mb-px cursor-pointer px-5 py-3 text-xs font-bold tracking-[0.1em] font-cinzel transition-colors ${
+                tab === t.id
+                  ? "text-text-near border-brand"
+                  : "text-text-faint border-transparent hover:text-text-dim"
+              }`}
             >
               {t.label}
             </button>
@@ -306,21 +259,21 @@ export default function HabilidadesPage() {
         {/* Content */}
         {tab === "especializacoes" && (
           filteredSpecs.length === 0
-            ? <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <BookOpen size={32} color="#27272A" style={{ marginBottom: 12 }} />
-                <p style={{ color: "#52525B", fontSize: 13 }}>Nenhum resultado.</p>
+            ? <div className="text-center py-[60px]">
+                <BookOpen size={32} color="#27272A" className="mb-3 mx-auto" />
+                <p className="text-[13px] text-text-faint">Nenhum resultado.</p>
               </div>
             : filteredSpecs.map(s => <SpecSection key={s.id} spec={s} />)
         )}
 
         {tab === "gerais" && (
           filteredApts.length === 0
-            ? <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <Sparkles size={32} color="#27272A" style={{ marginBottom: 12 }} />
-                <p style={{ color: "#52525B", fontSize: 13 }}>Nenhum resultado.</p>
+            ? <div className="text-center py-[60px]">
+                <Sparkles size={32} color="#27272A" className="mb-3 mx-auto" />
+                <p className="text-[13px] text-text-faint">Nenhum resultado.</p>
               </div>
             : (
-              <div style={{ background: "#0F0F0F", border: "1px solid #1F1F1F", borderRadius: 4, overflow: "hidden" }}>
+              <div className="bg-bg-deep border border-border rounded overflow-hidden">
                 {filteredApts.map(a => <AptitudeRow key={a.id} apt={a} />)}
               </div>
             )

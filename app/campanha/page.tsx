@@ -20,88 +20,53 @@ interface Campaign {
 function CampaignCard({ campaign, token, userId }: { campaign: Campaign; token: string; userId: string }) {
   const isMaster = campaign.master.id === userId;
 
-  // Deterministic gradient from campaign id
   const hue = campaign.id
     .split("")
     .reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
 
   return (
-    <div style={{
-      background: "#111111",
-      border: "1px solid #1F1F1F",
-      borderRadius: 4,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      transition: "border-color 0.2s",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
+    <div
+      className="bg-bg-surface border border-border rounded overflow-hidden flex flex-col transition-colors hover:border-brand"
     >
       {/* Campaign image placeholder */}
-      <div style={{
-        width: "100%",
-        aspectRatio: "16/9",
-        background: `radial-gradient(ellipse at 30% 40%, hsl(${hue},40%,18%) 0%, #0A0A0A 70%)`,
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        {/* Grid overlay */}
-        <div style={{
-          position: "absolute", inset: 0,
+      <div
+        className="w-full relative overflow-hidden flex items-center justify-center"
+        style={{
+          aspectRatio: "16/9",
+          background: `radial-gradient(ellipse at 30% 40%, hsl(${hue},40%,18%) 0%, #0A0A0A 70%)`,
+        }}
+      >
+        <div className="absolute inset-0" style={{
           backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }} />
-        {/* Center rune */}
-        <div style={{
-          width: 64, height: 64,
-          border: `1px solid hsl(${hue},50%,35%)`,
-          borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          opacity: 0.5,
-          boxShadow: `0 0 24px hsl(${hue},50%,25%)`,
-        }}>
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center opacity-50"
+          style={{ border: `1px solid hsl(${hue},50%,35%)`, boxShadow: `0 0 24px hsl(${hue},50%,25%)` }}
+        >
           <Shield size={24} color={`hsl(${hue},60%,55%)`} />
         </div>
-        {/* Active combat badge */}
         {campaign.isActiveCombat && (
-          <div style={{
-            position: "absolute", top: 10, right: 10,
-            background: "#991B1B", border: "1px solid #EF4444",
-            padding: "2px 8px", borderRadius: 2,
-            fontSize: 9, fontWeight: 700, color: "#FCA5A5", letterSpacing: "0.1em",
-          }}>
+          <div className="absolute top-2.5 right-2.5 bg-[#991B1B] border border-[#EF4444] px-2 py-0.5 rounded-sm text-[9px] font-bold text-[#FCA5A5] tracking-[0.1em]">
             EM COMBATE
           </div>
         )}
-        {/* Master badge */}
         {isMaster && (
-          <div style={{
-            position: "absolute", top: 10, left: 10,
-            background: "rgba(124,58,237,0.25)", border: "1px solid #7C3AED",
-            padding: "2px 8px", borderRadius: 2,
-            fontSize: 9, fontWeight: 700, color: "#A78BFA", letterSpacing: "0.1em",
-          }}>
+          <div className="absolute top-2.5 left-2.5 bg-[rgba(124,58,237,0.25)] border border-brand px-2 py-0.5 rounded-sm text-[9px] font-bold text-brand-muted tracking-[0.1em]">
             MESTRE
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ padding: "16px 18px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="px-[18px] py-4 flex-1 flex flex-col gap-2.5">
         <div>
-          <h2 className="font-cinzel" style={{
-            fontSize: 17, fontWeight: 700, color: "#F3F4F6",
-            margin: "0 0 4px", letterSpacing: "0.05em",
-          }}>
+          <h2 className="font-cinzel text-[17px] font-bold text-[#F3F4F6] m-0 mb-1 tracking-[0.05em]">
             {campaign.name}
           </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="flex items-center gap-1.5">
             <Users size={11} color="#52525B" />
-            <span style={{ fontSize: 11, color: "#52525B" }}>
+            <span className="text-[11px] text-text-faint">
               {campaign._count?.characters ?? 0} agente(s) · Mestre: {campaign.master.email.split("@")[0]}
             </span>
           </div>
@@ -109,26 +74,8 @@ function CampaignCard({ campaign, token, userId }: { campaign: Campaign; token: 
 
         <Link
           href={`/campanha/${campaign.id}`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "9px 0",
-            background: "#7C3AED",
-            color: "#fff",
-            textDecoration: "none",
-            fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-            borderRadius: 2,
-            fontFamily: "Cinzel, serif",
-            boxShadow: "0 0 16px rgba(124,58,237,0.3)",
-            transition: "background 0.15s, box-shadow 0.15s",
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "#6D28D9";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 28px rgba(124,58,237,0.5)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "#7C3AED";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 16px rgba(124,58,237,0.3)";
-          }}
+          className="flex items-center justify-center gap-2 py-[9px] bg-brand text-white no-underline text-xs font-bold tracking-[0.1em] uppercase rounded-sm font-cinzel transition-all hover:bg-brand-dark"
+          style={{ boxShadow: "0 0 16px rgba(124,58,237,0.3)" }}
         >
           Acessar <ChevronRight size={14} />
         </Link>
@@ -161,36 +108,29 @@ function CreateCampaignModal({ token, onClose, onCreated }: { token: string; onC
   }
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      backdropFilter: "blur(4px)",
-    }} onClick={onClose}>
-      <div style={{
-        background: "#111111",
-        border: "1px solid #27272A",
-        borderRadius: 6,
-        padding: "32px 28px",
-        width: "100%", maxWidth: 420,
-        position: "relative",
-      }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div
+      className="fixed inset-0 z-[200] bg-[rgba(0,0,0,0.75)] flex items-center justify-center backdrop-blur-sm px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-bg-surface border border-border-strong rounded-md p-7 w-full max-w-[420px] relative"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2.5">
             <Swords size={18} color="#7C3AED" />
-            <h2 className="font-cinzel" style={{ fontSize: 16, fontWeight: 700, color: "#F3F4F6", margin: 0, letterSpacing: "0.08em" }}>
+            <h2 className="font-cinzel text-base font-bold text-[#F3F4F6] m-0 tracking-[0.08em]">
               Nova Campanha
             </h2>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", padding: 4 }}>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-text-faint p-1">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label style={{ display: "block", fontSize: 10, color: "#71717A", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8, fontFamily: "Cinzel, serif" }}>
+            <label className="block text-[10px] text-text-mid tracking-[0.15em] uppercase mb-2 font-cinzel">
               Nome da Campanha
             </label>
             <input
@@ -199,36 +139,21 @@ function CreateCampaignModal({ token, onClose, onCreated }: { token: string; onC
               onChange={e => setName(e.target.value)}
               placeholder="Ex: A Maldição de Ferro..."
               maxLength={80}
-              style={{
-                width: "100%", boxSizing: "border-box",
-                background: "#0A0A0A", border: "1px solid #27272A",
-                borderRadius: 3, padding: "10px 12px",
-                color: "#F3F4F6", fontSize: 14,
-                outline: "none",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={e => (e.target.style.borderColor = "#7C3AED")}
-              onBlur={e => (e.target.style.borderColor = "#27272A")}
+              className="ficha-input"
             />
           </div>
 
           {error && (
-            <p style={{ fontSize: 12, color: "#F87171", margin: 0 }}>{error}</p>
+            <p className="text-xs text-[#F87171] m-0">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={saving || !name.trim()}
+            className="flex items-center justify-center gap-2 py-2.5 border-none rounded cursor-pointer text-xs font-bold tracking-[0.1em] uppercase font-cinzel transition-colors disabled:cursor-not-allowed"
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "10px 0",
               background: saving || !name.trim() ? "#3B0764" : "#7C3AED",
-              border: "none", borderRadius: 3,
               color: saving || !name.trim() ? "#6D28D9" : "#fff",
-              fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              fontFamily: "Cinzel, serif",
-              cursor: saving || !name.trim() ? "not-allowed" : "pointer",
-              transition: "background 0.15s",
             }}
           >
             {saving ? "Criando…" : <><Plus size={13} /> Criar Campanha</>}
@@ -261,17 +186,16 @@ export default function CampanhaPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ height: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 36, height: 36, border: "2px solid #1F1F1F", borderTop: "2px solid #7C3AED", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 12, color: "#52525B", letterSpacing: "0.1em" }}>Carregando campanhas…</span>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="h-screen bg-bg-dark flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-border border-t-brand animate-spin-fast" />
+        <span className="text-xs text-text-faint tracking-[0.1em]">Carregando campanhas…</span>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", paddingTop: "calc(68px + 32px)", paddingBottom: 60 }}>
-      <div className="bg-grid" style={{ position: "fixed", inset: 0, opacity: 0.4, pointerEvents: "none" }} />
+    <div className="min-h-screen bg-bg-main pt-[calc(68px+32px)] pb-16">
+      <div className="bg-grid fixed inset-0 opacity-40 pointer-events-none" />
 
       {showCreate && token && (
         <CreateCampaignModal
@@ -281,54 +205,29 @@ export default function CampanhaPage() {
         />
       )}
 
-      <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div className="relative max-w-[1100px] mx-auto px-6">
 
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 36 }}>
+        <div className="flex items-end justify-between mb-9 flex-wrap gap-4">
           <div>
-            <p style={{ fontSize: 10, color: "#52525B", letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 6px", fontFamily: "Cinzel, serif" }}>
+            <p className="text-[10px] text-text-faint tracking-[0.2em] uppercase m-0 mb-1.5 font-cinzel">
               Suas mesas
             </p>
-            <h1 className="font-cinzel" style={{ fontSize: 26, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "0.08em" }}>
+            <h1 className="font-cinzel text-[26px] font-bold text-white m-0 tracking-[0.08em]">
               Campanhas
             </h1>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div className="flex gap-2.5 flex-wrap">
             <button
               onClick={() => setShowCreate(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "8px 16px",
-                background: "#7C3AED",
-                border: "none",
-                borderRadius: 2,
-                color: "#fff",
-                fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                fontFamily: "Cinzel, serif",
-                cursor: "pointer",
-                boxShadow: "0 0 16px rgba(124,58,237,0.3)",
-                transition: "background 0.15s, box-shadow 0.15s",
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#6D28D9"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(124,58,237,0.5)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#7C3AED"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 16px rgba(124,58,237,0.3)"; }}
+              className="flex items-center gap-[7px] px-4 py-2 bg-brand border-none rounded-sm text-white text-xs font-bold tracking-[0.08em] uppercase font-cinzel cursor-pointer transition-all hover:bg-brand-dark"
+              style={{ boxShadow: "0 0 16px rgba(124,58,237,0.3)" }}
             >
               <Plus size={13} /> Criar Campanha
             </button>
             <Link
               href="/ficha"
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "8px 16px",
-                background: "transparent",
-                border: "1px solid #27272A",
-                borderRadius: 2,
-                color: "#A1A1AA",
-                fontSize: 12, fontWeight: 600, letterSpacing: "0.06em",
-                textDecoration: "none",
-                transition: "border-color 0.15s, color 0.15s",
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#7C3AED"; (e.currentTarget as HTMLAnchorElement).style.color = "#A78BFA"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#27272A"; (e.currentTarget as HTMLAnchorElement).style.color = "#A1A1AA"; }}
+              className="flex items-center gap-[7px] px-4 py-2 bg-transparent border border-border-strong rounded-sm text-text-secondary text-xs font-semibold tracking-[0.06em] no-underline transition-colors hover:border-brand hover:text-brand-muted"
             >
               <Plus size={13} /> Entrar em campanha
             </Link>
@@ -337,22 +236,15 @@ export default function CampanhaPage() {
 
         {/* Grid */}
         {campaigns.length === 0 ? (
-          <div style={{
-            textAlign: "center", padding: "80px 24px",
-            border: "1px dashed #1F1F1F", borderRadius: 4,
-          }}>
-            <Shield size={36} color="#27272A" style={{ marginBottom: 16 }} />
-            <p style={{ fontSize: 14, color: "#52525B", margin: "0 0 6px" }}>Nenhuma campanha encontrada.</p>
-            <p style={{ fontSize: 12, color: "#3F3F46", margin: 0 }}>
-              Peça um código ao Mestre e acesse pelo menu <strong style={{ color: "#71717A" }}>Ficha</strong>.
+          <div className="text-center py-20 px-6 border border-dashed border-border rounded">
+            <Shield size={36} color="#27272A" className="mb-4 mx-auto" />
+            <p className="text-[14px] text-text-faint m-0 mb-1.5">Nenhuma campanha encontrada.</p>
+            <p className="text-xs text-text-ghost m-0">
+              Peça um código ao Mestre e acesse pelo menu <strong className="text-text-mid">Ficha</strong>.
             </p>
           </div>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 20,
-          }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {campaigns.map(c => (
               <CampaignCard key={c.id} campaign={c} token={token!} userId={userId ?? ""} />
             ))}
