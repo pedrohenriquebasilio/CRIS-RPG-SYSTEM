@@ -946,9 +946,8 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "classe" | "habilidades";
+type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "habilidades";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "classe",      label: "CLASSE"      },
   { id: "tecnicas",    label: "TÉCNICAS"    },
   { id: "armas",       label: "ARMAS"       },
   { id: "habilidades", label: "HABILIDADES" },
@@ -977,7 +976,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [hpMax, setHpMax]         = useState(character.hpMax);
   const [energia, setEnergia]     = useState(character.energiaAtual);
   const [energiaMax, setEnergiaMax] = useState(character.energiaMax);
-  const [activeTab, setActiveTab] = useState<Tab>(character.specialization ? "tecnicas" : "classe");
+  const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
   const [charSpec, setCharSpec]     = useState(character.specialization);
   const [charOrigem, setCharOrigem] = useState(character.origemRelacao ?? null);
   const [nome, setNome]             = useState(character.nome);
@@ -1352,16 +1351,62 @@ export function CharacterSheet({ character }: { character: Character }) {
                     )}
                   </div>
 
-                  {([
-                    { label: "Origem", value: charOrigem?.nome ?? "—" },
-                    { label: "Classe", value: charSpec?.nome ?? "—", accent: true },
-                    { label: "Nível",  value: String(character.nivel) },
-                  ] as { label: string; value: string; accent?: boolean }[]).map(f => (
-                    <div key={f.label}>
-                      <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">{f.label}</div>
-                      <div className={`text-[13px] font-semibold overflow-hidden text-ellipsis whitespace-nowrap ${f.accent ? "text-brand-light" : "text-text-base"}`}>{f.value}</div>
+                  {/* Nível — sempre visível */}
+                  <div>
+                    <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Nível</div>
+                    <div className="text-[13px] font-semibold text-text-base">{character.nivel}</div>
+                  </div>
+
+                  {charSpec ? (
+                    /* ── Confirmado: somente leitura ── */
+                    <>
+                      <div>
+                        <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Origem</div>
+                        <div className="text-[13px] font-semibold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{charOrigem?.nome ?? "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Classe</div>
+                        <div className="text-[13px] font-semibold text-brand-light overflow-hidden text-ellipsis whitespace-nowrap">{charSpec.nome}</div>
+                      </div>
+                    </>
+                  ) : (
+                    /* ── Seleção inline ── */
+                    <div style={{ gridColumn: "1 / -1" }} className="flex flex-col gap-2 pt-1">
+                      <div>
+                        <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Especialização *</div>
+                        <select
+                          value={selectedSpec?.id ?? ""}
+                          onChange={e => { setClasseError(""); setSelectedSpec(specs.find(x => x.id === e.target.value) ?? null); }}
+                          style={{ width: "100%", padding: "6px 8px", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: selectedSpec ? "#A855F7" : "#6B7280", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+                          onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                          onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                        >
+                          <option value="">Selecionar…</option>
+                          {specs.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Origem</div>
+                        <select
+                          value={selectedOrigem?.id ?? ""}
+                          onChange={e => { setClasseError(""); setSelectedOrigem(origens.find(x => x.id === e.target.value) ?? null); }}
+                          style={{ width: "100%", padding: "6px 8px", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: selectedOrigem ? "#60A5FA" : "#6B7280", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+                          onFocus={e => (e.currentTarget.style.borderColor = "#3B82F6")}
+                          onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                        >
+                          <option value="">Selecionar…</option>
+                          {origens.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                        </select>
+                      </div>
+                      {classeError && <p style={{ margin: 0, fontSize: 10, color: "#EF4444" }}>{classeError}</p>}
+                      {selectedSpec && (
+                        <button
+                          onClick={() => setShowClasseConfirm(true)}
+                          style={{ padding: "7px", background: "#7C3AED", border: "none", borderRadius: 2, cursor: "pointer", color: "#FFF", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif", boxShadow: "0 0 12px rgba(124,58,237,0.3)" }}
+                        >✦ Confirmar Seleção</button>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -1425,6 +1470,24 @@ export function CharacterSheet({ character }: { character: Character }) {
                 <div className="text-[8px] text-text-ghost mt-0.5">{manuallyTrainedCount}/{trainingLimit} perícias</div>
               </div>
             </div>
+          </div>
+
+          {/* Excluir ficha */}
+          <div className="shrink-0 px-1">
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-transparent border border-[#27272A] rounded-sm cursor-pointer text-text-ghost text-[10px] font-semibold transition-all duration-150"
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#27272A"; e.currentTarget.style.color = "#52525B"; }}
+              ><Trash2 size={11} /> Excluir Ficha</button>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <span className="text-[10px] text-red-500 flex-1">Confirmar exclusão?</span>
+                <button onClick={handleExcluir} disabled={deleting} className="px-3 py-1 bg-red-900 border-none rounded-sm cursor-pointer text-white text-[10px] font-bold" style={{ cursor: deleting ? "not-allowed" : "pointer" }}>{deleting ? "…" : "Excluir"}</button>
+                <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 bg-transparent border border-[#3F3F46] rounded-sm cursor-pointer text-text-muted text-[10px]">Cancelar</button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1597,141 +1660,6 @@ export function CharacterSheet({ character }: { character: Character }) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-
-            {activeTab === "classe" && (
-              <div className="flex flex-col gap-5">
-                {charSpec ? (
-                  /* ── Already selected — read-only ── */
-                  <div className="flex flex-col gap-4">
-                    <div className="bg-brand/[0.06] border border-brand/20 rounded-sm px-4 py-3 text-[11px] text-brand-muted">
-                      ✦ Classe e Origem já definidas — não podem ser alteradas.
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Especialização</div>
-                      <div className="bg-bg-input border border-border-md rounded-sm px-3.5 py-2.5 text-[14px] font-semibold text-brand-light">{charSpec.nome}</div>
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Origem</div>
-                      <div className="bg-bg-input border border-border-md rounded-sm px-3.5 py-2.5 text-[14px] font-semibold text-text-base">{charOrigem?.nome ?? "—"}</div>
-                    </div>
-                  </div>
-                ) : (
-                  /* ── Selection mode ── */
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Especialização *</div>
-                      <select
-                        value={selectedSpec?.id ?? ""}
-                        onChange={e => {
-                          const s = specs.find(x => x.id === e.target.value) ?? null;
-                          setSelectedSpec(s);
-                        }}
-                        style={{
-                          width: "100%", padding: "9px 12px", background: "#0A0A0A",
-                          border: "1px solid #2A2A2A", borderRadius: 2, color: selectedSpec ? "#A855F7" : "#6B7280",
-                          fontSize: 13, fontWeight: 600, outline: "none", cursor: "pointer",
-                          appearance: "auto",
-                        }}
-                        onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                      >
-                        <option value="">Selecionar especialização…</option>
-                        {specs.map(s => (
-                          <option key={s.id} value={s.id}>{s.nome}</option>
-                        ))}
-                      </select>
-                      {selectedSpec && (
-                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                          {Object.entries(selectedSpec.bonusAtributos ?? {}).filter(([,v]) => v > 0).map(([k,v]) => (
-                            <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
-                          ))}
-                          <span className="text-[10px] text-red-500">♥{selectedSpec.hpPorNivel}/nv</span>
-                          <span className="text-[10px] text-brand">⚡{selectedSpec.energiaPorNivel}/nv</span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Origem</div>
-                      <select
-                        value={selectedOrigem?.id ?? ""}
-                        onChange={e => {
-                          const o = origens.find(x => x.id === e.target.value) ?? null;
-                          setSelectedOrigem(o);
-                        }}
-                        style={{
-                          width: "100%", padding: "9px 12px", background: "#0A0A0A",
-                          border: "1px solid #2A2A2A", borderRadius: 2, color: selectedOrigem ? "#60A5FA" : "#6B7280",
-                          fontSize: 13, fontWeight: 600, outline: "none", cursor: "pointer",
-                          appearance: "auto",
-                        }}
-                        onFocus={e => (e.currentTarget.style.borderColor = "#3B82F6")}
-                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                      >
-                        <option value="">Selecionar origem…</option>
-                        {origens.map(o => (
-                          <option key={o.id} value={o.id}>{o.nome}</option>
-                        ))}
-                      </select>
-                      {selectedOrigem && (
-                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                          {Object.entries(selectedOrigem.bonusAtributos ?? {}).filter(([,v]) => v > 0).map(([k,v]) => (
-                            <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {classeError && (
-                      <div className="bg-red-500/[0.08] border border-red-500/25 rounded-sm px-3.5 py-2.5 text-xs text-red-500">
-                        {classeError}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => { if (!selectedSpec) { setClasseError("Selecione uma especialização."); return; } setClasseError(""); setShowClasseConfirm(true); }}
-                      disabled={!selectedSpec}
-                      style={{
-                        padding: "12px", background: !selectedSpec ? "#1A1A1A" : "#7C3AED",
-                        border: "none", borderRadius: 2, cursor: !selectedSpec ? "not-allowed" : "pointer",
-                        color: !selectedSpec ? "#52525B" : "#FFF",
-                        fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                        fontFamily: "Cinzel, serif", transition: "background 0.2s",
-                        boxShadow: selectedSpec ? "0 0 16px rgba(124,58,237,0.3)" : "none",
-                      }}
-                    >
-                      ✦ Confirmar Seleção
-                    </button>
-                  </div>
-                )}
-
-                <div className="border-t border-border-subtle pt-3.5">
-                  {!confirmDelete ? (
-                    <button
-                      onClick={() => setConfirmDelete(true)}
-                      className="flex items-center gap-2 px-3.5 py-2 bg-transparent border border-text-ghost rounded-sm cursor-pointer text-text-muted text-[11px] font-semibold transition-all duration-150"
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#3F3F46"; e.currentTarget.style.color = "#6B7280"; }}
-                    >
-                      <Trash2 size={13} /> Excluir Ficha
-                    </button>
-                  ) : (
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xs text-red-500 flex-1">Confirmar exclusão da ficha?</span>
-                      <button
-                        onClick={handleExcluir}
-                        disabled={deleting}
-                        className="px-4 py-1.5 bg-red-900 border-none rounded-sm cursor-pointer text-white text-[11px] font-bold"
-                        style={{ cursor: deleting ? "not-allowed" : "pointer" }}
-                      >{deleting ? "…" : "Excluir"}</button>
-                      <button
-                        onClick={() => setConfirmDelete(false)}
-                        className="px-3 py-1.5 bg-transparent border border-text-ghost rounded-sm cursor-pointer text-text-muted text-[11px]"
-                      >Cancelar</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {activeTab === "tecnicas" && (
               <div className="flex flex-col gap-2">
