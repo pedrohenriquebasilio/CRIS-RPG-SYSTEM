@@ -43,8 +43,13 @@ export interface AptitudeSeed {
   prerequisitos: any[]; modificadores: any[];
 }
 export interface Aptitude {
+  id: string;
   aptitude: { id?: string; nome: string; descricao: string };
-  adquiridaNoNivel: number;
+  adquiridaNoNivel?: number;
+  tipo?: string;
+  cooldown?: number;
+  ativo?: boolean;
+  prerequisitoNivel?: number;
 }
 export interface CharacterAbility {
   id: string;
@@ -1092,19 +1097,18 @@ function AbilityRoller({ onRoll }: { onRoll: (skillNome: string) => void }) {
 }
 
 // ─── Add Aptidão Modal ────────────────────────────────────────────────────────
-function AddAptidaoModal({ characterId, backendToken, acquiredIds, pendingSlots, onAdded, onClose }: {
+function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose }: {
   characterId: string; backendToken: string;
-  acquiredIds: Set<string>; pendingSlots: number;
+  level: number;
   onAdded: (a: Aptitude) => void; onClose: () => void;
 }) {
-  const [aptitudes, setAptitudes] = useState<AptitudeSeed[] | null>(null);
-  const [search, setSearch] = useState("");
-  const [saving, setSaving] = useState<string | null>(null);
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [prerequisitoNivel, setPrerequisitoNivel] = useState(1);
+  const [tipo, setTipo] = useState<"dano" | "buff" | "cura">("buff");
+  const [cooldown, setCooldown] = useState(0);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    apiCall<AptitudeSeed[]>("/seeds/aptitudes", backendToken).then(setAptitudes).catch(() => setAptitudes([]));
-  }, [backendToken]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -1112,76 +1116,99 @@ function AddAptidaoModal({ characterId, backendToken, acquiredIds, pendingSlots,
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  const visible = (aptitudes ?? []).filter(a =>
-    !search || a.nome.toLowerCase().includes(search.toLowerCase()) || a.descricao.toLowerCase().includes(search.toLowerCase())
-  );
-
-  async function handleAdd(apt: AptitudeSeed) {
-    if (pendingSlots <= 0) { setError("Sem slots de aptidão disponíveis."); return; }
-    setSaving(apt.id); setError("");
+  async function handleCreate() {
+    if (!nome.trim()) { setError("Nome é obrigatório."); return; }
+    if (!descricao.trim()) { setError("Descrição é obrigatória."); return; }
+    if (prerequisitoNivel > level) { setError(`Pré-requisito de nível não pode ser maior que seu nível (${level}).`); return; }
+    
+    setSaving(true);
+    setError("");
     try {
-      const res = await apiCall<any>(`/characters/${characterId}/aptitudes/${apt.id}`, backendToken, { method: "POST" });
+      const res = await apiCall<any>(`/characters/${characterId}/aptitudes`, backendToken, {
+        method: "POST",
+        body: { nome: nome.trim(), descricao: descricao.trim(), prerequisitoNivel, tipo, cooldown },
+      });
       onAdded(res);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro ao adicionar."); setSaving(null); }
+      setNome("");
+      setDescricao("");
+      setPrerequisitoNivel(1);
+      setTipo("buff");
+      setCooldown(0);
+    } catch (e: unknown) { 
+      setError(e instanceof Error ? e.message : "Erro ao criar aptidão."); 
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-300 bg-black/78 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col"
-        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15)" }}>
-        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
-          <div>
-            <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Aptidão</span>
-            <span className="ml-3 text-[10px] text-text-faint">{pendingSlots} slot{pendingSlots !== 1 ? "s" : ""} disponível{pendingSlots !== 1 ? "is" : ""}</span>
-          </div>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.12)" }}>
+        <div className="px-5.5 pt-4.5 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Criar Aptidão</span>
           <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
         </div>
 
-        <div className="px-[22px] pt-3 shrink-0">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar aptidão…"
-            className="ficha-input mb-0"
-            onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-            onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-[22px] py-3 flex flex-col gap-1.5">
-          {aptitudes === null && <p className="text-text-faint text-xs text-center py-4">Carregando…</p>}
-          {visible.length === 0 && aptitudes !== null && <p className="text-text-ghost text-xs text-center py-4">Nenhuma aptidão encontrada.</p>}
-          {visible.map(apt => {
-            const acquired = acquiredIds.has(apt.id);
-            return (
-              <div key={apt.id} className="bg-bg-input border border-border border-l-[3px] rounded-[0_2px_2px_0] px-3.5 py-3"
-                style={{ borderLeftColor: acquired ? "#3F3F46" : "#7C3AED", opacity: acquired ? 0.5 : 1 }}>
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-text-base mb-1">{apt.nome}</div>
-                    <p className="text-[11px] text-text-dim m-0 leading-relaxed">{apt.descricao}</p>
-                  </div>
-                  <button
-                    onClick={() => !acquired && handleAdd(apt)}
-                    disabled={acquired || saving !== null || pendingSlots <= 0}
-                    style={{
-                      padding: "5px 12px", background: acquired ? "#1A1A1A" : saving === apt.id ? "#3B0764" : "#4C1D95",
-                      border: "none", borderRadius: 3, cursor: acquired || saving !== null || pendingSlots <= 0 ? "not-allowed" : "pointer",
-                      color: acquired ? "#52525B" : "#E9D5FF", fontSize: 10, fontWeight: 700, fontFamily: "Cinzel, serif",
-                      letterSpacing: "0.08em", whiteSpace: "nowrap", flexShrink: 0,
-                    }}
-                  >
-                    {acquired ? "Adquirida" : saving === apt.id ? "…" : "+ Adquirir"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {error && (
-          <div className="px-[22px] py-2 border-t border-border-subtle shrink-0">
-            <p className="text-xs text-red-500 m-0">{error}</p>
+        <form onSubmit={e => { e.preventDefault(); handleCreate(); }} className="flex flex-col gap-3.5 px-5.5 py-4 overflow-y-auto">
+          <div>
+            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Nome *</label>
+            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Golpe Devastador"
+              className="ficha-input w-full" style={{ background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px" }}
+            />
           </div>
-        )}
+
+          <div>
+            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Descrição *</label>
+            <textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descreva o efeito da aptidão…" rows={3}
+              className="ficha-input w-full" style={{ background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", fontFamily: "Inter, sans-serif" }}
+            />
+          </div>
+
+          <div className="grid gap-3 grid-cols-2">
+            <div>
+              <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Pré-req. Nível</label>
+              <select value={prerequisitoNivel} onChange={e => setPrerequisitoNivel(parseInt(e.target.value))}
+                style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", cursor: "pointer" }}
+              >
+                {Array.from({ length: level }, (_, i) => i + 1).map(n => <option key={n} value={n}>Nível {n}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Tipo</label>
+              <select value={tipo} onChange={e => setTipo(e.target.value as any)}
+                style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", cursor: "pointer" }}
+              >
+                <option value="dano">Dano</option>
+                <option value="buff">Buff</option>
+                <option value="cura">Cura</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Cooldown (rodadas)</label>
+            <input type="number" value={cooldown} onChange={e => setCooldown(Math.max(0, parseInt(e.target.value) || 0))} min="0" max="20"
+              style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px" }}
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 bg-transparent border border-[#27272A] rounded-sm cursor-pointer text-text-muted text-[10px] font-bold"
+              onMouseEnter={e => { e.currentTarget.style.color = "#E5E7EB"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "#6B7280"; }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving} className="flex-1 px-3 py-2 bg-brand border-none rounded-sm cursor-pointer text-white text-[10px] font-bold"
+              style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", background: "#7C3AED" }}>
+              {saving ? "…" : "+ Criar"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -1404,7 +1431,7 @@ export function CharacterSheet({ character }: { character: Character }) {
     apiCall<typeof specAbilities>(`/specializations/${charSpec.id}/abilities`, backendToken)
       .then(setSpecAbilities)
       .catch(() => {});
-  }, [backendToken, charSpec?.id, activeTab]); // eslint-disable-line
+  }, [backendToken, charSpec?.id, activeTab]);  
 
   // WebSocket: join campaign room and react to updates in real-time
   useEffect(() => {
@@ -1454,7 +1481,7 @@ export function CharacterSheet({ character }: { character: Character }) {
       socket.off("combatFinished",  onCombatFinished);
       socket.emit("leaveCampaign", { campaignId: character.campaignId });
     };
-  }, [backendToken, character.campaignId, character.id]); // eslint-disable-line
+  }, [backendToken, character.campaignId, character.id]);  
 
   // Initial fetch for active combat when on COMBATE tab (socket keeps it updated after)
   useEffect(() => {
@@ -1476,7 +1503,7 @@ export function CharacterSheet({ character }: { character: Character }) {
     }
     fetchCombat();
     return () => { cancelled = true; };
-  }, [backendToken, character.campaignId, activeTab]); // eslint-disable-line
+  }, [backendToken, character.campaignId, activeTab]);  
 
   async function handleSalvarClasse() {
     if (!backendToken || !selectedSpec) { setClasseError("Selecione pelo menos uma especialização."); return; }
@@ -2176,29 +2203,68 @@ export function CharacterSheet({ character }: { character: Character }) {
                   <div className="flex-1"><SectionDivider>Aptidões ({localAptitudes.length})</SectionDivider></div>
                   <button
                     onClick={() => setShowAddAptidao(true)}
-                    disabled={pendingAptidaoSlots <= 0}
-                    className="shrink-0 px-3 py-1 bg-transparent border border-brand rounded-sm cursor-pointer text-brand-muted text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onMouseEnter={e => { if (pendingAptidaoSlots > 0) e.currentTarget.style.background = "rgba(124,58,237,0.12)"; }}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-brand rounded-sm cursor-pointer text-brand-muted text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,58,237,0.12)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    title={pendingAptidaoSlots <= 0 ? "Sem slots disponíveis" : `${pendingAptidaoSlots} slot(s) disponível(is)`}
-                  >+ Adicionar</button>
+                    title="Criar nova aptidão"
+                  >+ Criar</button>
                 </div>
-                {pendingAptidaoSlots > 0 && (
-                  <div className="text-[10px] text-brand-muted bg-brand/5 border border-brand/20 rounded-sm px-3 py-1.5">
-                    {pendingAptidaoSlots} slot{pendingAptidaoSlots !== 1 ? "s" : ""} de aptidão disponível{pendingAptidaoSlots !== 1 ? "is" : ""}
-                  </div>
-                )}
                 {localAptitudes.length === 0
-                  ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão adquirida" />
-                  : localAptitudes.map((a, i) => (
-                    <div key={i} className="bg-bg-input border border-border border-l-[3px] border-l-brand rounded-[0_2px_2px_0] px-3.5 py-3">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[13px] font-semibold text-text-base">{a.aptitude.nome}</span>
-                        <span className="text-[10px] text-text-faint bg-border-subtle px-1.5 py-px rounded-sm">Nv. {a.adquiridaNoNivel}</span>
+                  ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão criada" sub="Crie uma nova aptidão clicando em '+ Criar'" />
+                  : localAptitudes.map((a, i) => {
+                    const isActive = (a as any).ativo === true;
+                    const colorByType = {
+                      dano: "#EF4444",
+                      buff: "#3B82F6", 
+                      cura: "#22C55E"
+                    };
+                    const typeColor = colorByType[(a as any).tipo as keyof typeof colorByType] || "#A855F7";
+                    return (
+                      <div key={i} className="bg-bg-input border border-border border-l-[3px] rounded-[0_2px_2px_0] px-3.5 py-3" style={{ borderLeftColor: isActive ? typeColor : "#3F3F46", opacity: isActive ? 1 : 0.7 }}>
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isActive}
+                              onChange={async (e) => {
+                                if (backendToken) {
+                                  try {
+                                    await apiCall(`/characters/${character.id}/aptitudes/${(a as any).id}/toggle`, backendToken, { method: "PATCH", body: { ativo: e.target.checked } });
+                                    setLocalAptitudes(prev => prev.map((apt, idx) => idx === i ? { ...apt, ativo: e.target.checked } : apt));
+                                  } catch { /* ignore */ }
+                                }
+                              }}
+                              style={{ cursor: "pointer", width: 16, height: 16 }}
+                              title={isActive ? "Desativar efeito" : "Ativar efeito"}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[13px] font-semibold text-text-base">{a.aptitude.nome}</span>
+                              <span className="ml-2 text-[9px] px-1.5 py-px rounded-sm" style={{ background: `${typeColor}22`, color: typeColor, border: `1px solid ${typeColor}44`, fontWeight: 600 }}>{(a as any).tipo || "buff"}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (backendToken) {
+                                try {
+                                  await apiCall(`/characters/${character.id}/aptitudes/${(a as any).id}`, backendToken, { method: "DELETE" });
+                                  setLocalAptitudes(prev => prev.filter((_, idx) => idx !== i));
+                                } catch { /* ignore */ }
+                              }
+                            }}
+                            className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150 shrink-0"
+                            onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+                            title="Remover aptidão"
+                          ><Trash2 size={11} /></button>
+                        </div>
+                        {a.aptitude.descricao && <p className="text-xs text-text-dim m-0 mb-1 leading-relaxed">{a.aptitude.descricao}</p>}
+                        <div className="flex gap-2 text-[9px] text-text-faint">
+                          {(a as any).prerequisitoNivel && <span>Nível: {(a as any).prerequisitoNivel}</span>}
+                          {(a as any).cooldown > 0 && <span>Cooldown: {(a as any).cooldown} rodada{(a as any).cooldown !== 1 ? "s" : ""}</span>}
+                        </div>
                       </div>
-                      <p className="text-xs text-text-dim m-0 leading-relaxed">{a.aptitude.descricao}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 }
               </div>
             )}
@@ -2310,15 +2376,13 @@ export function CharacterSheet({ character }: { character: Character }) {
       )}
 
       {showAddAptidao && backendToken && (
-        <AddAptidaoModal
+        <CreateAptidaoModal
           characterId={character.id}
           backendToken={backendToken}
-          acquiredIds={new Set(localAptitudes.map(a => a.aptitude.id ?? ""))}
-          pendingSlots={pendingAptidaoSlots}
+          level={character.nivel}
           onAdded={(a) => {
             setLocalAptitudes(prev => [...prev, a]);
-            setPendingAptidaoSlots(p => Math.max(0, p - 1));
-            if (pendingAptidaoSlots <= 1) setShowAddAptidao(false);
+            setShowAddAptidao(false);
           }}
           onClose={() => setShowAddAptidao(false)}
         />
