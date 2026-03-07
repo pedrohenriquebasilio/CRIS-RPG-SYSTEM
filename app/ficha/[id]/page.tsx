@@ -72,6 +72,7 @@ export default function FichaPage() {
           energiaMax:     full.energiaMax,
           maestriaBonus:  full.maestriaBonus,
           isApproved:     full.isApproved,
+          pendingAptidaoSlots: full.pendingAptidaoSlots ?? 0,
           specialization: full.specialization
             ? { id: full.specialization.id, nome: full.specialization.nome, bonusAtributos: full.specialization.bonusAtributos, habilidadesTreinadas: full.specialization.habilidadesTreinadas }
             : null,

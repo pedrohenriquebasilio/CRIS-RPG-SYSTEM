@@ -1221,7 +1221,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
   const [charSpec, setCharSpec]         = useState(character.specialization);
   const [charOrigem, setCharOrigem]     = useState(character.origemRelacao ?? null);
-  const [maestriaBonus, setMaestriaBonus] = useState(maestriaBonus);
+  const [maestriaBonus, setMaestriaBonus] = useState(character.maestriaBonus);
   const [nome, setNome]                 = useState(character.nome);
   const [editingNome, setEditingNome] = useState(false);
 
