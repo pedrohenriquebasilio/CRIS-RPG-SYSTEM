@@ -59,6 +59,8 @@ export interface CharacterAbility {
   alcance: string;
   duracao: string;
   descricao: string;
+  damageDice?: string | null;
+  atributoBase?: string | null;
 }
 export interface Character {
   id: string; nome: string; origem?: string;
@@ -933,18 +935,22 @@ function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClos
 }
 
 // ─── Add Ability Modal ────────────────────────────────────────────────────────
+const ATRIBUTOS_LIST = ["FOR", "AGI", "VIG", "INT", "PRE"];
+
 function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
   characterId: string; backendToken: string;
   onAdded: (a: CharacterAbility) => void; onClose: () => void;
 }) {
-  const [nome, setNome]       = useState("");
-  const [tipo, setTipo]       = useState("ativa");
-  const [custo, setCusto]     = useState("nenhum");
-  const [alcance, setAlcance] = useState("pessoal");
-  const [duracao, setDuracao] = useState("imediato");
-  const [descricao, setDesc]  = useState("");
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState("");
+  const [nome, setNome]             = useState("");
+  const [tipo, setTipo]             = useState("ativa");
+  const [custo, setCusto]           = useState("nenhum");
+  const [alcance, setAlcance]       = useState("pessoal");
+  const [duracao, setDuracao]       = useState("imediato");
+  const [descricao, setDesc]        = useState("");
+  const [damageDice, setDamageDice] = useState("");
+  const [atributoBase, setAtributoBase] = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState("");
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -959,40 +965,45 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
     try {
       const res = await apiCall<CharacterAbility>(`/characters/${characterId}/abilities`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), tipo, custo: custo.trim() || "nenhum", alcance: alcance.trim() || "pessoal", duracao: duracao.trim() || "imediato", descricao: descricao.trim() },
+        body: {
+          nome: nome.trim(), tipo,
+          custo: custo.trim() || "nenhum",
+          alcance: alcance.trim() || "pessoal",
+          duracao: duracao.trim() || "imediato",
+          descricao: descricao.trim(),
+          damageDice: damageDice.trim() || null,
+          atributoBase: atributoBase || null,
+        },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
   }
 
-  const inputStyle = {
-    width: "100%", padding: "8px 10px", background: "#0A0A0A",
+  const inp = {
+    width: "100%", padding: "7px 9px", background: "#0A0A0A",
     border: "1px solid #2A2A2A", borderRadius: 2, color: "#D1D5DB",
     fontSize: 12, outline: "none",
   } as React.CSSProperties;
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#F59E0B");
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#2A2A2A");
 
   const TIPOS = ["ativa", "passiva", "reação"];
 
   return (
-    <div
-      className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.12)" }}>
-        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
-          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Criar Habilidade Personalizada</span>
-          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+    <div className="fixed inset-0 z-300 bg-black/78 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-130 flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.12)" }}>
+        <div className="px-5.5 pt-4.5 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-widest font-cinzel">Nova Habilidade</span>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-[22px] py-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-5.5 py-4 overflow-y-auto">
           <div>
             <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
-            <input
-              autoFocus value={nome} onChange={e => setNome(e.target.value)}
-              placeholder="Nome da habilidade" style={inputStyle}
-              onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
-              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-            />
+            <input autoFocus value={nome} onChange={e => setNome(e.target.value)}
+              placeholder="Nome da habilidade" style={inp} onFocus={focus} onBlur={blur} />
           </div>
 
           <div>
@@ -1000,10 +1011,10 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
             <div className="flex gap-1">
               {TIPOS.map(t => (
                 <button key={t} type="button" onClick={() => setTipo(t)} style={{
-                  flex: 1, padding: "7px 0", background: tipo === t ? "rgba(245,158,11,0.15)" : "#0A0A0A",
-                  border: `1px solid ${tipo === t ? "#F59E0B" : "#2A2A2A"}`, borderRadius: 2,
-                  cursor: "pointer", color: tipo === t ? "#F59E0B" : "#6B7280",
-                  fontSize: 10, fontWeight: 700, textTransform: "capitalize",
+                  flex: 1, padding: "7px 0", borderRadius: 2, cursor: "pointer", fontSize: 10, fontWeight: 700,
+                  background: tipo === t ? "rgba(245,158,11,0.15)" : "#0A0A0A",
+                  border: `1px solid ${tipo === t ? "#F59E0B" : "#2A2A2A"}`,
+                  color: tipo === t ? "#F59E0B" : "#6B7280",
                 }}>{t}</button>
               ))}
             </div>
@@ -1012,53 +1023,58 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
           <div className="grid grid-cols-3 gap-2.5">
             <div>
               <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo</label>
-              <input value={custo} onChange={e => setCusto(e.target.value)} placeholder="ex: 2 energia"
-                style={inputStyle}
-                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-              />
+              <input value={custo} onChange={e => setCusto(e.target.value)} placeholder="ex: 2 energia" style={inp} onFocus={focus} onBlur={blur} />
             </div>
             <div>
               <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Alcance</label>
-              <input value={alcance} onChange={e => setAlcance(e.target.value)} placeholder="ex: 6m"
-                style={inputStyle}
-                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-              />
+              <input value={alcance} onChange={e => setAlcance(e.target.value)} placeholder="ex: 6m" style={inp} onFocus={focus} onBlur={blur} />
             </div>
             <div>
               <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Duração</label>
-              <input value={duracao} onChange={e => setDuracao(e.target.value)} placeholder="ex: 1 rodada"
-                style={inputStyle}
-                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-              />
+              <input value={duracao} onChange={e => setDuracao(e.target.value)} placeholder="ex: 1 rodada" style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano</label>
+              <input value={damageDice} onChange={e => setDamageDice(e.target.value)}
+                placeholder="ex: 2d6, 1d8+2" style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo Base</label>
+              <select value={atributoBase} onChange={e => setAtributoBase(e.target.value)} style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
+                <option value="">— Nenhum —</option>
+                {ATRIBUTOS_LIST.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
             </div>
           </div>
 
           <div>
             <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
-            <textarea
-              value={descricao} onChange={e => setDesc(e.target.value)}
+            <textarea value={descricao} onChange={e => setDesc(e.target.value)}
               rows={3} placeholder="Descreva o efeito da habilidade…"
-              style={{ ...inputStyle, resize: "none" }}
-              onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
-              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-            />
+              style={{ ...inp, resize: "none" }} onFocus={focus} onBlur={blur} />
           </div>
 
           {error && <p className="text-xs text-red-500 m-0">{error}</p>}
 
-          <button type="submit" disabled={saving || !nome.trim()} style={{
-            padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#92400E",
-            border: `1px solid ${saving || !nome.trim() ? "#2A2A2A" : "#F59E0B"}`,
-            borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
-            color: saving || !nome.trim() ? "#52525B" : "#FDE68A",
-            fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-            fontFamily: "Cinzel, serif",
-          }}>
-            {saving ? "Criando…" : "✦ Criar Habilidade"}
-          </button>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: "9px", background: "transparent", border: "1px solid #2A2A2A",
+              borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 700,
+            }}>Cancelar</button>
+            <button type="submit" disabled={saving || !nome.trim()} style={{
+              flex: 2, padding: "9px", borderRadius: 2, fontSize: 12, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
+              background: saving || !nome.trim() ? "#1A1A1A" : "#92400E",
+              border: `1px solid ${saving || !nome.trim() ? "#2A2A2A" : "#F59E0B"}`,
+              cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
+              color: saving || !nome.trim() ? "#52525B" : "#FDE68A",
+            }}>
+              {saving ? "Criando…" : "✦ Criar Habilidade"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -1098,18 +1114,24 @@ function AbilityRoller({ onRoll }: { onRoll: (skillNome: string) => void }) {
 }
 
 // ─── Add Aptidão Modal ────────────────────────────────────────────────────────
+const APTIDAO_TIPOS = [
+  { value: "buff", label: "Buff",  color: "#3B82F6" },
+  { value: "dano", label: "Dano",  color: "#EF4444" },
+  { value: "cura", label: "Cura",  color: "#22C55E" },
+];
+
 function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose }: {
   characterId: string; backendToken: string;
   level: number;
   onAdded: (a: Aptitude) => void; onClose: () => void;
 }) {
-  const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [prerequisitoNivel, setPrerequisitoNivel] = useState(1);
-  const [tipo, setTipo] = useState<"dano" | "buff" | "cura">("buff");
-  const [cooldown, setCooldown] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [nome, setNome]                     = useState("");
+  const [descricao, setDescricao]           = useState("");
+  const [prerequisitoNivel, setPrereq]      = useState(1);
+  const [tipo, setTipo]                     = useState<"dano" | "buff" | "cura">("buff");
+  const [cooldown, setCooldown]             = useState(0);
+  const [saving, setSaving]                 = useState(false);
+  const [error, setError]                   = useState("");
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -1117,96 +1139,118 @@ function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function handleCreate() {
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
     if (!nome.trim()) { setError("Nome é obrigatório."); return; }
     if (!descricao.trim()) { setError("Descrição é obrigatória."); return; }
-    if (prerequisitoNivel > level) { setError(`Pré-requisito de nível não pode ser maior que seu nível (${level}).`); return; }
-    
-    setSaving(true);
-    setError("");
+    setSaving(true); setError("");
     try {
       const res = await apiCall<any>(`/characters/${characterId}/aptitudes`, backendToken, {
         method: "POST",
         body: { nome: nome.trim(), descricao: descricao.trim(), prerequisitoNivel, tipo, cooldown },
       });
       onAdded(res);
-      setNome("");
-      setDescricao("");
-      setPrerequisitoNivel(1);
-      setTipo("buff");
-      setCooldown(0);
-    } catch (e: unknown) { 
-      setError(e instanceof Error ? e.message : "Erro ao criar aptidão."); 
-    } finally {
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao criar aptidão.");
       setSaving(false);
     }
   }
 
+  const inp = {
+    width: "100%", padding: "7px 9px", background: "#0A0A0A",
+    border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB",
+    fontSize: 12, outline: "none",
+  } as React.CSSProperties;
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#7C3AED");
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#2A2A2A");
+
+  const tipoAtual = APTIDAO_TIPOS.find(t => t.value === tipo)!;
+
   return (
     <div className="fixed inset-0 z-300 bg-black/78 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] flex flex-col"
-        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.12)" }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-120 flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.14)" }}>
+
+        {/* Header */}
         <div className="px-5.5 pt-4.5 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
-          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Criar Aptidão</span>
-          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+          <span className="text-[13px] font-bold text-text-near tracking-widest font-cinzel">Nova Aptidão</span>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-text-faint text-xl leading-none hover:text-text-base transition-colors">×</button>
         </div>
 
-        <form onSubmit={e => { e.preventDefault(); handleCreate(); }} className="flex flex-col gap-3.5 px-5.5 py-4 overflow-y-auto">
+        <form onSubmit={handleCreate} className="flex flex-col gap-4 px-5.5 py-4 overflow-y-auto">
+          {/* Nome */}
           <div>
-            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Nome *</label>
-            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Golpe Devastador"
-              className="ficha-input w-full" style={{ background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px" }}
-            />
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+            <input autoFocus value={nome} onChange={e => setNome(e.target.value)}
+              placeholder="Ex: Golpe Devastador" style={inp} onFocus={focus} onBlur={blur} />
           </div>
 
+          {/* Tipo (toggle buttons) */}
           <div>
-            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Descrição *</label>
-            <textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descreva o efeito da aptidão…" rows={3}
-              className="ficha-input w-full" style={{ background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", fontFamily: "Inter, sans-serif" }}
-            />
-          </div>
-
-          <div className="grid gap-3 grid-cols-2">
-            <div>
-              <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Pré-req. Nível</label>
-              <select value={prerequisitoNivel} onChange={e => setPrerequisitoNivel(parseInt(e.target.value))}
-                style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", cursor: "pointer" }}
-              >
-                {Array.from({ length: level }, (_, i) => i + 1).map(n => <option key={n} value={n}>Nível {n}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Tipo</label>
-              <select value={tipo} onChange={e => setTipo(e.target.value as any)}
-                style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px", cursor: "pointer" }}
-              >
-                <option value="dano">Dano</option>
-                <option value="buff">Buff</option>
-                <option value="cura">Cura</option>
-              </select>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1.5 font-cinzel">Tipo</label>
+            <div className="flex gap-1.5">
+              {APTIDAO_TIPOS.map(t => (
+                <button key={t.value} type="button" onClick={() => setTipo(t.value as any)} style={{
+                  flex: 1, padding: "8px 0", borderRadius: 2, cursor: "pointer", fontSize: 11, fontWeight: 700,
+                  background: tipo === t.value ? `${t.color}22` : "#0A0A0A",
+                  border: `1px solid ${tipo === t.value ? t.color : "#2A2A2A"}`,
+                  color: tipo === t.value ? t.color : "#6B7280",
+                  letterSpacing: "0.06em",
+                }}>{t.label}</button>
+              ))}
             </div>
           </div>
 
+          {/* Nível req + Cooldown */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível requerido</label>
+              <select value={prerequisitoNivel} onChange={e => setPrereq(parseInt(e.target.value))}
+                style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
+                {Array.from({ length: level }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={n}>Nível {n}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Cooldown (rodadas)</label>
+              <input type="number" value={cooldown} min={0} max={20}
+                onChange={e => setCooldown(Math.max(0, parseInt(e.target.value) || 0))}
+                style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+          </div>
+
+          {/* Descrição */}
           <div>
-            <label className="text-[10px] text-text-faint uppercase tracking-[0.12em] block mb-1.5 font-cinzel">Cooldown (rodadas)</label>
-            <input type="number" value={cooldown} onChange={e => setCooldown(Math.max(0, parseInt(e.target.value) || 0))} min="0" max="20"
-              style={{ width: "100%", background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB", fontSize: 12, padding: "6px 8px" }}
-            />
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição *</label>
+            <textarea value={descricao} onChange={e => setDescricao(e.target.value)}
+              rows={3} placeholder="Descreva o efeito da aptidão…"
+              style={{ ...inp, resize: "none", fontFamily: "Inter, sans-serif" }} onFocus={focus} onBlur={blur} />
           </div>
 
           {error && <p className="text-xs text-red-500 m-0">{error}</p>}
 
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 bg-transparent border border-[#27272A] rounded-sm cursor-pointer text-text-muted text-[10px] font-bold"
-              onMouseEnter={e => { e.currentTarget.style.color = "#E5E7EB"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "#6B7280"; }}>
+          {/* Ações */}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: "9px", background: "transparent", border: "1px solid #2A2A2A",
+              borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 700,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#E5E7EB")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#6B7280")}>
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className="flex-1 px-3 py-2 bg-brand border-none rounded-sm cursor-pointer text-white text-[10px] font-bold"
-              style={{ opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", background: "#7C3AED" }}>
-              {saving ? "…" : "+ Criar"}
+            <button type="submit" disabled={saving || !nome.trim()} style={{
+              flex: 2, padding: "9px", borderRadius: 2, fontSize: 12, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
+              background: saving || !nome.trim() ? "#1A1A1A" : tipoAtual.color,
+              border: `1px solid ${saving || !nome.trim() ? "#2A2A2A" : tipoAtual.color}`,
+              cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
+              color: saving || !nome.trim() ? "#52525B" : "#fff",
+              opacity: saving ? 0.7 : 1,
+            }}>
+              {saving ? "Criando…" : "✦ Criar Aptidão"}
             </button>
           </div>
         </form>
@@ -2187,10 +2231,12 @@ export function CharacterSheet({ character }: { character: Character }) {
                         </div>
                       </div>
                       {a.descricao && <p className="text-xs text-text-dim m-0 mb-1.5 leading-relaxed">{a.descricao}</p>}
-                      <div className="flex gap-3 text-[10px] text-text-faint">
+                      <div className="flex flex-wrap gap-3 text-[10px] text-text-faint">
                         {a.custo !== "nenhum" && <span>Custo: {a.custo}</span>}
                         {a.alcance !== "pessoal" && <span>Alcance: {a.alcance}</span>}
                         {a.duracao !== "imediato" && <span>Duração: {a.duracao}</span>}
+                        {a.damageDice && <span className="text-amber-400/80">Dano: {a.damageDice}</span>}
+                        {a.atributoBase && <span className="text-brand-muted/80">Base: {a.atributoBase}</span>}
                       </div>
                     </div>
                   ))
@@ -2230,7 +2276,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                               onChange={async (e) => {
                                 if (backendToken) {
                                   try {
-                                    await apiCall(`/characters/${character.id}/aptitudes/${(a as any).id}/toggle`, backendToken, { method: "PATCH", body: { ativo: e.target.checked } });
+                                    await apiCall(`/characters/${character.id}/aptitudes/${a.aptitude.id}/toggle`, backendToken, { method: "PATCH", body: { ativo: e.target.checked } });
                                     setLocalAptitudes(prev => prev.map((apt, idx) => idx === i ? { ...apt, ativo: e.target.checked } : apt));
                                   } catch { /* ignore */ }
                                 }
@@ -2247,7 +2293,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                             onClick={async () => {
                               if (backendToken) {
                                 try {
-                                  await apiCall(`/characters/${character.id}/aptitudes/${(a as any).id}`, backendToken, { method: "DELETE" });
+                                  await apiCall(`/characters/${character.id}/aptitudes/${a.aptitude.id}`, backendToken, { method: "DELETE" });
                                   setLocalAptitudes(prev => prev.filter((_, idx) => idx !== i));
                                 } catch { /* ignore */ }
                               }
