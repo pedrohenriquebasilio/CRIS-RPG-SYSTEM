@@ -207,7 +207,7 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
         <div className="flex flex-col gap-2">
           {([
             { label: "HP",  cur: hp, max: hpMax, color: "#C62828", field: "hpAtual"      as const },
-            { label: "EN",  cur: en, max: enMax, color: "#6A1B9A", field: "energiaAtual" as const },
+            { label: char?.specialization?.nome === "Restringido" ? "VIG" : "EN",  cur: en, max: enMax, color: char?.specialization?.nome === "Restringido" ? "#15803D" : "#6A1B9A", field: "energiaAtual" as const },
           ] as const).map(({ label: _label, cur, max, color, field }) => {
             const pct = max > 0 ? Math.min(100, (cur / max) * 100) : 0;
             return (

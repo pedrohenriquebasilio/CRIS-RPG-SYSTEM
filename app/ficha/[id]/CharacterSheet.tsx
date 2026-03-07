@@ -35,9 +35,15 @@ export interface TechTemplate {
 export interface Weapon {
   id: string; nome: string; damageDice: string; damageType: string;
   threatRange: number; criticalMultiplier: number; descricao?: string;
+  skill?: { id: string; nome: string; atributoBase: string } | null;
+  skillId?: string | null;
+}
+export interface AptitudeSeed {
+  id: string; nome: string; descricao: string;
+  prerequisitos: any[]; modificadores: any[];
 }
 export interface Aptitude {
-  aptitude: { nome: string; descricao: string };
+  aptitude: { id?: string; nome: string; descricao: string };
   adquiridaNoNivel: number;
 }
 export interface CharacterAbility {
@@ -57,6 +63,7 @@ export interface Character {
   hpAtual: number; hpMax: number;
   energiaAtual: number; energiaMax: number;
   maestriaBonus: number; isApproved: boolean;
+  pendingAptidaoSlots: number;
   specialization: { id?: string; nome: string; bonusAtributos?: Record<string, number>; habilidadesTreinadas?: string[] } | null;
   origemRelacao?: { id?: string; nome: string; bonusAtributos?: Record<string, number>; habilidadesTreinadas?: string[] } | null;
   campaign: { name: string };
@@ -78,24 +85,28 @@ export interface OrigemSeed {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const ALL_SKILLS: { nome: string; atributoBase: string }[] = [
-  { nome: "Acrobacia",       atributoBase: "AGI" },
-  { nome: "Arcana",          atributoBase: "INT" },
-  { nome: "Atletismo",       atributoBase: "FOR" },
-  { nome: "Destreza Manual", atributoBase: "AGI" },
-  { nome: "Determinação",    atributoBase: "VIG" },
-  { nome: "Enganação",       atributoBase: "PRE" },
-  { nome: "Fortitude",       atributoBase: "VIG" },
-  { nome: "Furtividade",     atributoBase: "AGI" },
-  { nome: "História",        atributoBase: "INT" },
-  { nome: "Intimidação",     atributoBase: "FOR" },
-  { nome: "Intuição",        atributoBase: "PRE" },
-  { nome: "Investigação",    atributoBase: "INT" },
-  { nome: "Medicina",        atributoBase: "INT" },
-  { nome: "Natureza",        atributoBase: "INT" },
-  { nome: "Percepção",       atributoBase: "PRE" },
-  { nome: "Performance",     atributoBase: "PRE" },
-  { nome: "Persuasão",       atributoBase: "PRE" },
-  { nome: "Religião",        atributoBase: "INT" },
+  // FOR
+  { nome: "Atletismo",  atributoBase: "FOR" },
+  { nome: "Luta",       atributoBase: "FOR" },
+  // AGI
+  { nome: "Acrobacia",  atributoBase: "AGI" },
+  { nome: "Furtividade",atributoBase: "AGI" },
+  { nome: "Iniciativa", atributoBase: "AGI" },
+  { nome: "Pontaria",   atributoBase: "AGI" },
+  // VIG
+  { nome: "Fortitude",  atributoBase: "VIG" },
+  { nome: "Vontade",    atributoBase: "VIG" },
+  // INT
+  { nome: "Feitiçaria", atributoBase: "INT" },
+  { nome: "Investigação",atributoBase: "INT" },
+  { nome: "Medicina",   atributoBase: "INT" },
+  { nome: "Ocultismo",  atributoBase: "INT" },
+  // PRE
+  { nome: "Diplomacia", atributoBase: "PRE" },
+  { nome: "Enganação",  atributoBase: "PRE" },
+  { nome: "Intimidação",atributoBase: "PRE" },
+  { nome: "Intuição",   atributoBase: "PRE" },
+  { nome: "Percepção",  atributoBase: "PRE" },
 ];
 
 const XP_TABLE: Record<number, number> = {
@@ -356,6 +367,7 @@ function WeaponCard({ w, onRoll }: { w: Weapon; onRoll: () => void }) {
           <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
         </div>
         <div className="flex gap-4">
+          {w.skill && <div><span className="text-[10px] text-text-faint mr-1">PERÍCIA</span><span className="text-[11px] text-brand-muted">{w.skill.nome}</span></div>}
           <div><span className="text-[10px] text-text-faint mr-1">TIPO</span><span className="text-[11px] text-text-dim">{w.damageType.toLowerCase()}</span></div>
           <div><span className="text-[10px] text-text-faint mr-1">CRÍTICO</span><span style={{ fontSize: 11, color: w.threatRange < 20 ? "#F59E0B" : "#6B7280" }}>≥{w.threatRange} (×{w.criticalMultiplier})</span></div>
         </div>
@@ -376,18 +388,24 @@ interface DiceRoll {
   dice: number;
   modifier: number;
   total: number;
+  // Weapon attack extras
+  damage?: number;
+  damageDice?: string;
+  isCritical?: boolean;
 }
 
 function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
-  const isCrit   = roll.dice === 20;
+  const isCrit   = roll.isCritical ?? roll.dice === 20;
   const isFumble = roll.dice === 1;
   const diceColor = isCrit ? "#F59E0B" : isFumble ? "#EF4444" : roll.dice >= 15 ? "#E5E7EB" : "#9CA3AF";
   const accentColor = isCrit ? "#F59E0B" : isFumble ? "#EF4444" : "#7C3AED";
   const glow = isCrit ? "rgba(245,158,11,0.35)" : isFumble ? "rgba(239,68,68,0.25)" : "rgba(124,58,237,0.2)";
+  const isWeapon = roll.damage !== undefined;
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[1000] bg-bg-surface border border-border-md rounded p-4 min-w-[200px] max-w-[240px]"
+      className="fixed bottom-6 right-6 z-[1000] bg-bg-surface border border-border-md rounded p-4 min-w-[200px] max-w-[260px]"
       style={{
         boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04), 0 0 28px ${glow}`,
         transition: "opacity 0.35s ease, transform 0.35s ease",
@@ -395,6 +413,8 @@ function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
         transform: visible ? "translateY(0) scale(1)" : "translateY(10px) scale(0.96)",
         pointerEvents: visible ? "auto" : "none",
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t" style={{ background: accentColor }} />
 
@@ -407,34 +427,73 @@ function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
         {isFumble && <span className="text-[9px] text-red-500 font-extrabold ml-auto tracking-[0.08em]">FALHA!</span>}
       </div>
 
-      <div className="flex items-end gap-2">
-        <div>
-          <div className="text-[8px] text-text-ghost mb-px text-center">d20</div>
-          <div style={{
-            fontSize: 46, fontWeight: 900, lineHeight: 1, color: diceColor,
-            fontFamily: "Cinzel, serif",
-            textShadow: isCrit ? "0 0 24px rgba(245,158,11,0.9)" : isFumble ? "0 0 18px rgba(239,68,68,0.7)" : "none",
-          }}>{roll.dice}</div>
+      {isWeapon ? (
+        hovered ? (
+          /* Hover: show breakdown */
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <div className="text-[8px] text-text-ghost mb-1 uppercase tracking-[0.1em]">Acerto</div>
+              <div className="text-[9px] text-text-dim">d20({roll.dice}) + {roll.modifier} = <span className="font-bold text-text-base">{roll.total}</span></div>
+            </div>
+            <div className="w-px bg-border-subtle" />
+            <div className="flex-1">
+              <div className="text-[8px] text-text-ghost mb-1 uppercase tracking-[0.1em]">Dano</div>
+              <div className="text-[9px] text-text-dim">{roll.damageDice}{isCrit ? " ×crit" : ""} = <span className="font-bold text-red-400">{roll.damage}</span></div>
+            </div>
+          </div>
+        ) : (
+          /* Default: ACERTO | DANO side by side */
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 text-center">
+              <div className="text-[8px] text-text-ghost mb-0.5 uppercase tracking-[0.08em]">Acerto</div>
+              <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1, color: diceColor, fontFamily: "Cinzel, serif",
+                textShadow: isCrit ? "0 0 20px rgba(245,158,11,0.8)" : isFumble ? "0 0 14px rgba(239,68,68,0.6)" : "none" }}>
+                {roll.total}
+              </div>
+            </div>
+            <div className="w-px bg-border-subtle self-stretch" />
+            <div className="flex-1 text-center">
+              <div className="text-[8px] text-text-ghost mb-0.5 uppercase tracking-[0.08em]">Dano</div>
+              <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1, color: "#EF4444", fontFamily: "Cinzel, serif",
+                textShadow: isCrit ? "0 0 20px rgba(239,68,68,0.6)" : "none" }}>
+                {roll.damage}
+              </div>
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="flex items-end gap-2">
+          <div>
+            <div className="text-[8px] text-text-ghost mb-px text-center">d20</div>
+            <div style={{
+              fontSize: 46, fontWeight: 900, lineHeight: 1, color: diceColor,
+              fontFamily: "Cinzel, serif",
+              textShadow: isCrit ? "0 0 24px rgba(245,158,11,0.9)" : isFumble ? "0 0 18px rgba(239,68,68,0.7)" : "none",
+            }}>{roll.dice}</div>
+          </div>
+          {roll.modifier !== 0 && (
+            <>
+              <div className="pb-1.5 text-text-ghost text-base font-light">+</div>
+              <div>
+                <div className="text-[8px] text-text-ghost mb-px text-center">bônus</div>
+                <div className="text-[22px] font-bold leading-none text-brand pb-1">{roll.modifier}</div>
+              </div>
+              <div className="pb-1.5 text-text-ghost text-base font-light">=</div>
+              <div>
+                <div className="text-[8px] text-text-ghost mb-px text-center">total</div>
+                <div className="text-[28px] font-black leading-none text-text-base pb-px">{roll.total}</div>
+              </div>
+            </>
+          )}
         </div>
-        {roll.modifier !== 0 && (
-          <>
-            <div className="pb-1.5 text-text-ghost text-base font-light">+</div>
-            <div>
-              <div className="text-[8px] text-text-ghost mb-px text-center">bônus</div>
-              <div className="text-[22px] font-bold leading-none text-brand pb-1">{roll.modifier}</div>
-            </div>
-            <div className="pb-1.5 text-text-ghost text-base font-light">=</div>
-            <div>
-              <div className="text-[8px] text-text-ghost mb-px text-center">total</div>
-              <div className="text-[28px] font-black leading-none text-text-base pb-px">{roll.total}</div>
-            </div>
-          </>
-        )}
-      </div>
+      )}
 
       <div key={roll.rollId} className="mt-3 h-0.5 bg-border-subtle rounded-sm overflow-hidden">
         <div className="h-full w-full animate-dice-drain opacity-50" style={{ background: accentColor }} />
       </div>
+      {isWeapon && !hovered && (
+        <div className="text-[8px] text-text-faint text-center mt-1">passe o mouse para ver o breakdown</div>
+      )}
     </div>
   );
 }
@@ -628,8 +687,9 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
 }
 
 // ─── Add Weapon Modal ─────────────────────────────────────────────────────────
-function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
+function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClose }: {
   characterId: string; backendToken: string;
+  skillIdMap: Record<string, string>;
   onAdded: (w: Weapon) => void; onClose: () => void;
 }) {
   type Mode = "catalogo" | "custom";
@@ -638,6 +698,10 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
   const [wSearch, setWSearch]     = useState("");
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
+  // skill picker (shared between modes)
+  const [skillNome, setSkillNome] = useState("");
+  // catalog: pending template awaiting skill confirm
+  const [pendingTemplate, setPendingTemplate] = useState<WeaponTemplate | null>(null);
   // custom form
   const [nome, setNome]           = useState("");
   const [dice, setDice]           = useState("1d6");
@@ -645,6 +709,7 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
   const [threat, setThreat]       = useState("20");
   const [crit, setCrit]           = useState("2");
   const [descricao, setDescricao] = useState("");
+  const skillNames = Object.keys(skillIdMap).sort();
 
   useEffect(() => {
     if (mode === "catalogo" && templates === null) {
@@ -659,12 +724,13 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function addFromTemplate(t: WeaponTemplate) {
+  async function confirmTemplate(t: WeaponTemplate) {
     setSaving(true); setError("");
+    const skillId = skillNome ? skillIdMap[skillNome] : undefined;
     try {
       const res = await apiCall<Weapon>(`/characters/${characterId}/weapons`, backendToken, {
         method: "POST",
-        body: { nome: t.nome, damageDice: t.damageDice, damageType: t.tipoDano, threatRange: t.threatRange, criticalMultiplier: t.criticalMultiplier },
+        body: { nome: t.nome, damageDice: t.damageDice, damageType: t.tipoDano, threatRange: t.threatRange, criticalMultiplier: t.criticalMultiplier, ...(skillId ? { skillId } : {}) },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
@@ -674,10 +740,11 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
     e.preventDefault();
     if (!nome.trim() || !dice.trim()) { setError("Nome e dado de dano são obrigatórios."); return; }
     setSaving(true); setError("");
+    const skillId = skillNome ? skillIdMap[skillNome] : undefined;
     try {
       const res = await apiCall<Weapon>(`/characters/${characterId}/weapons`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), damageDice: dice.trim(), damageType: damType, threatRange: parseInt(threat) || 20, criticalMultiplier: parseInt(crit) || 2, descricao: descricao.trim() },
+        body: { nome: nome.trim(), damageDice: dice.trim(), damageType: damType, threatRange: parseInt(threat) || 20, criticalMultiplier: parseInt(crit) || 2, descricao: descricao.trim(), ...(skillId ? { skillId } : {}) },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
@@ -710,7 +777,7 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
         </div>
 
         <div className="flex-1 overflow-y-auto px-[22px] py-4">
-          {mode === "catalogo" && (
+          {mode === "catalogo" && !pendingTemplate && (
             <>
               <input value={wSearch} onChange={e => setWSearch(e.target.value)} placeholder="Buscar…"
                 className="ficha-input mb-3"
@@ -721,7 +788,7 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
               {visibleTemplates.length === 0 && templates !== null && <p className="text-text-ghost text-xs text-center">Nenhuma arma encontrada.</p>}
               <div className="flex flex-col gap-1.5">
                 {visibleTemplates.map(t => (
-                  <button key={t.id} onClick={() => addFromTemplate(t)} disabled={saving}
+                  <button key={t.id} onClick={() => { setPendingTemplate(t); setSkillNome(""); setError(""); }} disabled={saving}
                     style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: `3px solid ${TIPO_COLORS[t.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left", transition: "border-color 0.15s" }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
@@ -746,6 +813,40 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
             </>
           )}
 
+          {mode === "catalogo" && pendingTemplate && (
+            <div className="flex flex-col gap-4">
+              <div style={{ background: "#0A0A0A", border: `1px solid #1F1F1F`, borderLeft: `3px solid ${TIPO_COLORS[pendingTemplate.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "12px 16px" }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] font-semibold text-text-base">{pendingTemplate.nome}</span>
+                  <span className="text-sm font-extrabold text-red-500">{pendingTemplate.damageDice}</span>
+                </div>
+                <div className="flex gap-2.5 mt-1">
+                  <span className="text-[10px] text-text-muted">{pendingTemplate.distancia}</span>
+                  {pendingTemplate.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{pendingTemplate.threatRange}</span>}
+                </div>
+              </div>
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1.5 font-cinzel">Perícia utilizada</label>
+                <select
+                  value={skillNome}
+                  onChange={e => setSkillNome(e.target.value)}
+                  className="ficha-input"
+                  style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
+                >
+                  <option value="">— Sem perícia (usa FOR) —</option>
+                  {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => { setPendingTemplate(null); setError(""); }} style={{ flex: 1, padding: "9px", background: "transparent", border: "1px solid #3F3F46", borderRadius: 3, cursor: "pointer", color: "#9CA3AF", fontSize: 11, fontWeight: 600 }}>← Voltar</button>
+                <button type="button" onClick={() => confirmTemplate(pendingTemplate)} disabled={saving} style={{ flex: 2, padding: "9px", background: saving ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving ? "not-allowed" : "pointer", color: saving ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif" }}>
+                  {saving ? "Adicionando…" : "✦ Adicionar"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {mode === "custom" && (
             <form onSubmit={addCustom} className="flex flex-col gap-3.5">
               <div>
@@ -754,6 +855,18 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
                   onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
+              </div>
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia utilizada</label>
+                <select
+                  value={skillNome}
+                  onChange={e => setSkillNome(e.target.value)}
+                  className="ficha-input"
+                  style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
+                >
+                  <option value="">— Sem perícia (usa FOR) —</option>
+                  {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
@@ -946,6 +1059,134 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
   );
 }
 
+// ─── Ability Roll Inline ──────────────────────────────────────────────────────
+function AbilityRoller({ onRoll }: { onRoll: (skillNome: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [skill, setSkill] = useState(ALL_SKILLS[0].nome);
+  return open ? (
+    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+      <select
+        value={skill}
+        onChange={e => setSkill(e.target.value)}
+        className="ficha-input text-[10px] px-1 py-0.5"
+        style={{ background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#A78BFA", cursor: "pointer", width: 100 }}
+      >
+        {ALL_SKILLS.map(s => <option key={s.nome} value={s.nome}>{s.nome}</option>)}
+      </select>
+      <button
+        onClick={() => { onRoll(skill); setOpen(false); }}
+        className="bg-transparent border-none cursor-pointer text-amber-400 p-0.5 flex items-center rounded-sm transition-colors duration-150"
+        style={{ fontSize: 10, fontWeight: 700, fontFamily: "Cinzel, serif" }}
+      ><Dices size={13} /></button>
+      <button onClick={() => setOpen(false)} className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 text-[10px] leading-none">×</button>
+    </div>
+  ) : (
+    <button
+      onClick={e => { e.stopPropagation(); setOpen(true); }}
+      className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
+      title="Rolar com perícia"
+      onMouseEnter={e => (e.currentTarget.style.color = "#F59E0B")}
+      onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+    ><Dices size={13} /></button>
+  );
+}
+
+// ─── Add Aptidão Modal ────────────────────────────────────────────────────────
+function AddAptidaoModal({ characterId, backendToken, acquiredIds, pendingSlots, onAdded, onClose }: {
+  characterId: string; backendToken: string;
+  acquiredIds: Set<string>; pendingSlots: number;
+  onAdded: (a: Aptitude) => void; onClose: () => void;
+}) {
+  const [aptitudes, setAptitudes] = useState<AptitudeSeed[] | null>(null);
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiCall<AptitudeSeed[]>("/seeds/aptitudes", backendToken).then(setAptitudes).catch(() => setAptitudes([]));
+  }, [backendToken]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  const visible = (aptitudes ?? []).filter(a =>
+    !search || a.nome.toLowerCase().includes(search.toLowerCase()) || a.descricao.toLowerCase().includes(search.toLowerCase())
+  );
+
+  async function handleAdd(apt: AptitudeSeed) {
+    if (pendingSlots <= 0) { setError("Sem slots de aptidão disponíveis."); return; }
+    setSaving(apt.id); setError("");
+    try {
+      const res = await apiCall<any>(`/characters/${characterId}/aptitudes/${apt.id}`, backendToken, { method: "POST" });
+      onAdded(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro ao adicionar."); setSaving(null); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15)" }}>
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <div>
+            <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Aptidão</span>
+            <span className="ml-3 text-[10px] text-text-faint">{pendingSlots} slot{pendingSlots !== 1 ? "s" : ""} disponível{pendingSlots !== 1 ? "is" : ""}</span>
+          </div>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+        </div>
+
+        <div className="px-[22px] pt-3 shrink-0">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar aptidão…"
+            className="ficha-input mb-0"
+            onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+            onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-[22px] py-3 flex flex-col gap-1.5">
+          {aptitudes === null && <p className="text-text-faint text-xs text-center py-4">Carregando…</p>}
+          {visible.length === 0 && aptitudes !== null && <p className="text-text-ghost text-xs text-center py-4">Nenhuma aptidão encontrada.</p>}
+          {visible.map(apt => {
+            const acquired = acquiredIds.has(apt.id);
+            return (
+              <div key={apt.id} className="bg-bg-input border border-border border-l-[3px] rounded-[0_2px_2px_0] px-3.5 py-3"
+                style={{ borderLeftColor: acquired ? "#3F3F46" : "#7C3AED", opacity: acquired ? 0.5 : 1 }}>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-text-base mb-1">{apt.nome}</div>
+                    <p className="text-[11px] text-text-dim m-0 leading-relaxed">{apt.descricao}</p>
+                  </div>
+                  <button
+                    onClick={() => !acquired && handleAdd(apt)}
+                    disabled={acquired || saving !== null || pendingSlots <= 0}
+                    style={{
+                      padding: "5px 12px", background: acquired ? "#1A1A1A" : saving === apt.id ? "#3B0764" : "#4C1D95",
+                      border: "none", borderRadius: 3, cursor: acquired || saving !== null || pendingSlots <= 0 ? "not-allowed" : "pointer",
+                      color: acquired ? "#52525B" : "#E9D5FF", fontSize: 10, fontWeight: 700, fontFamily: "Cinzel, serif",
+                      letterSpacing: "0.08em", whiteSpace: "nowrap", flexShrink: 0,
+                    }}
+                  >
+                    {acquired ? "Adquirida" : saving === apt.id ? "…" : "+ Adquirir"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {error && (
+          <div className="px-[22px] py-2 border-t border-border-subtle shrink-0">
+            <p className="text-xs text-red-500 m-0">{error}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "habilidades";
 const TABS: { id: Tab; label: string }[] = [
@@ -978,9 +1219,10 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [energia, setEnergia]     = useState(character.energiaAtual);
   const [energiaMax, setEnergiaMax] = useState(character.energiaMax);
   const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
-  const [charSpec, setCharSpec]     = useState(character.specialization);
-  const [charOrigem, setCharOrigem] = useState(character.origemRelacao ?? null);
-  const [nome, setNome]             = useState(character.nome);
+  const [charSpec, setCharSpec]         = useState(character.specialization);
+  const [charOrigem, setCharOrigem]     = useState(character.origemRelacao ?? null);
+  const [maestriaBonus, setMaestriaBonus] = useState(maestriaBonus);
+  const [nome, setNome]                 = useState(character.nome);
   const [editingNome, setEditingNome] = useState(false);
 
   // ── Class / Origin selection ──
@@ -996,9 +1238,12 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [localTechniques, setLocalTechniques] = useState<Technique[]>(character.techniques);
   const [localWeapons, setLocalWeapons]       = useState<Weapon[]>(character.weapons);
   const [localAbilities, setLocalAbilities]   = useState<CharacterAbility[]>(character.abilities ?? []);
+  const [localAptitudes, setLocalAptitudes]   = useState<Aptitude[]>(character.aptitudes);
+  const [pendingAptidaoSlots, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddWeapon, setShowAddWeapon]     = useState(false);
   const [showAddAbility, setShowAddAbility]   = useState(false);
+  const [showAddAptidao, setShowAddAptidao]   = useState(false);
 
   // ── Dice rolls ──
   const [skillIdMap, setSkillIdMap]   = useState<Record<string, string>>({});
@@ -1066,7 +1311,7 @@ export function CharacterSheet({ character }: { character: Character }) {
 
   async function handleRollTechnique(t: Technique) {
     const attrVal   = attrs[t.atributoBase as keyof Attrs] ?? 0;
-    const modifier  = attrVal + character.maestriaBonus;
+    const modifier  = attrVal + maestriaBonus;
     if (backendToken && (t as any).id && character.campaignId) {
       try {
         const res = await apiCall<{ dice: number; total: number }>(
@@ -1083,16 +1328,43 @@ export function CharacterSheet({ character }: { character: Character }) {
   async function handleRollWeapon(w: Weapon) {
     if (backendToken && character.campaignId) {
       try {
-        const res = await apiCall<{ naturalRoll: number; attackTotal: number }>(
+        const res = await apiCall<{ naturalRoll: number; attackTotal: number; isCritical: boolean; finalDamage: number; baseDamage: number }>(
           "/roll/weapon-attack", backendToken, { method: "POST", body: { characterId: character.id, weaponId: w.id, campaignId: character.campaignId } }
         );
         const mod = res.attackTotal - res.naturalRoll;
-        showRoll(w.nome, res.naturalRoll, mod);
+        rollIdRef.current += 1;
+        if (rollTimer.current) clearTimeout(rollTimer.current);
+        setCurrentRoll({
+          rollId: rollIdRef.current,
+          label: w.nome,
+          dice: res.naturalRoll,
+          modifier: mod,
+          total: res.attackTotal,
+          damage: res.finalDamage,
+          damageDice: w.damageDice,
+          isCritical: res.isCritical,
+        });
+        setRollVisible(true);
+        rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
         return;
       } catch { /* fallback */ }
     }
+    // Offline fallback: roll d20 + local damage
     const dice = Math.floor(Math.random() * 20) + 1;
-    showRoll(w.nome, dice, 0);
+    const dmg = rollDiceStr(w.damageDice);
+    rollIdRef.current += 1;
+    if (rollTimer.current) clearTimeout(rollTimer.current);
+    setCurrentRoll({ rollId: rollIdRef.current, label: w.nome, dice, modifier: 0, total: dice, damage: dmg, damageDice: w.damageDice, isCritical: false });
+    setRollVisible(true);
+    rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
+  }
+
+  function rollDiceStr(diceStr: string): number {
+    const m = diceStr.match(/^(\d+)d(\d+)$/i);
+    if (!m) return parseInt(diceStr) || 0;
+    let total = 0;
+    for (let i = 0; i < parseInt(m[1]); i++) total += Math.floor(Math.random() * parseInt(m[2])) + 1;
+    return total;
   }
 
   // Load seeds on mount
@@ -1222,6 +1494,7 @@ export function CharacterSheet({ character }: { character: Character }) {
       if (updated.attributes) setAttrs(updated.attributes);
       if (updated.specialization) setCharSpec(updated.specialization);
       setCharOrigem(updated.origemRelacao ?? null);
+      if (updated.maestriaBonus !== undefined) setMaestriaBonus(updated.maestriaBonus);
       const newHpMax = updated.hpMax;
       const newHp    = Math.min(hp, newHpMax);
       const newEnMax = updated.energiaMax;
@@ -1230,14 +1503,24 @@ export function CharacterSheet({ character }: { character: Character }) {
       setHp(newHp);
       setEnergiaMax(newEnMax);
       setEnergia(newEn);
+      // Update skills: auto-trained fixed skills are reflected immediately
+      if (updated.skills && Array.isArray(updated.skills)) {
+        const newSkillPoints: Record<string, number> = { ...skillPoints };
+        for (const cs of updated.skills) {
+          if (cs.skill?.nome) newSkillPoints[cs.skill.nome] = cs.pontosInvestidos ?? 0;
+        }
+        setSkillPoints(newSkillPoints);
+      }
       persist(sKey, {
         attributes: updated.attributes,
         specialization: updated.specialization,
         origemRelacao: updated.origemRelacao,
+        maestriaBonus: updated.maestriaBonus,
         hpMax: newHpMax,
         hpAtual: newHp,
         energiaMax: newEnMax,
         energiaAtual: newEn,
+        skills: updated.skills,
       });
       setActiveTab("tecnicas");
     } catch (e: unknown) {
@@ -1297,10 +1580,10 @@ export function CharacterSheet({ character }: { character: Character }) {
 
   // ── Skill training limit (maestriaBonus controls how many non-granted skills can be trained) ──
   const grantedSkillNames = new Set([
-    ...(selectedSpec?.habilidadesTreinadas ?? []),
-    ...(selectedOrigem?.habilidadesTreinadas ?? []),
+    ...((charSpec as any)?.habilidadesTreinadas ?? []),
+    ...(charOrigem?.habilidadesTreinadas ?? []),
   ]);
-  const trainingLimit = character.maestriaBonus;
+  const trainingLimit = maestriaBonus;
   const manuallyTrainedCount = ALL_SKILLS.filter(s => (skillPoints[s.nome] ?? 0) > 0 && !grantedSkillNames.has(s.nome)).length;
 
   const handleSkillPoints = (skillName: string, delta: number) => {
@@ -1327,8 +1610,11 @@ export function CharacterSheet({ character }: { character: Character }) {
   const handleEnChange      = (v: number) => { setEnergia(v);  persist(sKey, { energiaAtual: v }); debouncedStatPatch("energiaAtual", v); };
   const handleEnMaxChange   = (v: number) => { setEnergiaMax(v); persist(sKey, { energiaMax: v }); debouncedStatPatch("energiaMax", v); };
 
-  // ── Derived ──
-  const defesa = 10 + attrs.AGI;
+  // ── Defesa ──
+  const [defesaAttr, setDefesaAttr] = useState<string>("AGI");
+  const [defesaOutros, setDefesaOutros] = useState<number>(0);
+  const defesaAttrVal = (attrs as any)[defesaAttr] ?? 0;
+  const defesa = 10 + defesaAttrVal + defesaOutros;
   const xpNext = XP_TABLE[character.nivel] ?? 355000;
   const xpPct  = Math.min(100, (character.xpAtual / xpNext) * 100);
 
@@ -1472,7 +1758,7 @@ export function CharacterSheet({ character }: { character: Character }) {
             <div className="text-center text-[9px] font-bold text-text-ghost tracking-[0.2em] uppercase font-cinzel mb-1">
               Atributos <span className="text-[#27272A] font-normal">— passe o mouse para editar</span>
             </div>
-            <AttributeRing attrs={attrs} maestriaBonus={character.maestriaBonus} onChangeAttr={handleAttrChange} onRollAttr={handleRollAttr} />
+            <AttributeRing attrs={attrs} maestriaBonus={maestriaBonus} onChangeAttr={handleAttrChange} onRollAttr={handleRollAttr} />
             <div className="flex items-center gap-2.5 px-1 pt-2.5 pb-0.5">
               <span className="text-[8px] text-text-faint font-bold tracking-[0.14em] uppercase min-w-[20px]">XP</span>
               <div className="flex-1 h-[3px] bg-border-subtle rounded overflow-hidden">
@@ -1492,9 +1778,10 @@ export function CharacterSheet({ character }: { character: Character }) {
               onChangeMax={handleHpMaxChange}
             />
             <StatusBar
-              label="Energia Amaldiçoada"
+              label={charSpec?.nome === "Restringido" ? "Pontos de Vigor" : "Energia Amaldiçoada"}
               current={energia} max={energiaMax}
-              color="#A855F7" dimColor="#4C1D95"
+              color={charSpec?.nome === "Restringido" ? "#22C55E" : "#A855F7"}
+              dimColor={charSpec?.nome === "Restringido" ? "#14532D" : "#4C1D95"}
               onChange={handleEnChange}
               onChangeMax={handleEnMaxChange}
             />
@@ -1511,12 +1798,35 @@ export function CharacterSheet({ character }: { character: Character }) {
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] text-lg font-extrabold text-white">{defesa}</span>
               </div>
               <div className="flex-1">
-                <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1 font-cinzel">Defesa</div>
-                <div className="text-xs text-text-muted">10 + AGI ({attrs.AGI})</div>
+                <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Defesa = 10 + atrib + outros</div>
+                <div className="flex gap-1.5 items-center">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <select
+                      value={defesaAttr}
+                      onChange={e => setDefesaAttr(e.target.value)}
+                      className="ficha-input text-center text-[11px] font-bold px-1 py-0.5"
+                      style={{ width: 52, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#A78BFA", cursor: "pointer" }}
+                    >
+                      {["FOR","AGI","VIG","INT","PRE"].map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <span className="text-[8px] text-text-faint">({defesaAttrVal})</span>
+                  </div>
+                  <span className="text-text-ghost text-xs">+</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <input
+                      type="number"
+                      value={defesaOutros}
+                      onChange={e => setDefesaOutros(parseInt(e.target.value) || 0)}
+                      className="ficha-input text-center text-[11px] font-bold px-1 py-0.5"
+                      style={{ width: 42, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB" }}
+                    />
+                    <span className="text-[8px] text-text-faint">outros</span>
+                  </div>
+                </div>
               </div>
               <div className="text-center px-3.5 py-2 bg-bg-input border border-border rounded-sm">
                 <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Maestria</div>
-                <div className="text-[22px] font-extrabold text-brand leading-none">+{character.maestriaBonus}</div>
+                <div className="text-[22px] font-extrabold text-brand leading-none">+{maestriaBonus}</div>
                 <div className="text-[8px] text-text-ghost mt-0.5">{manuallyTrainedCount}/{trainingLimit} perícias</div>
               </div>
             </div>
@@ -1725,7 +2035,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                   </div>
                   <div>
                     <div className="text-text-faint uppercase tracking-[0.1em] mb-0.5">Maestria</div>
-                    <div className="text-text-base font-bold">+{character.maestriaBonus}</div>
+                    <div className="text-text-base font-bold">+{maestriaBonus}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1739,7 +2049,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                 </div>
                 {localTechniques.length === 0
                   ? <EmptyState icon={<Zap size={26} />} message="Nenhuma técnica cadastrada" sub="Clique em + Adicionar para começar" />
-                  : localTechniques.map((t, i) => <TechniqueCard key={t.id ?? i} t={t} attrs={attrs} maestriaBonus={character.maestriaBonus} onRoll={() => handleRollTechnique(t)} />)
+                  : localTechniques.map((t, i) => <TechniqueCard key={t.id ?? i} t={t} attrs={attrs} maestriaBonus={maestriaBonus} onRoll={() => handleRollTechnique(t)} />)
                 }
               </div>
             )}
@@ -1776,7 +2086,10 @@ export function CharacterSheet({ character }: { character: Character }) {
                     .map(a => (
                       <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-[#F59E0B] rounded-[0_2px_2px_0] px-3.5 py-3">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                          <div className="flex items-center gap-2">
+                            <AbilityRoller onRoll={handleRollSkill} />
+                            <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[9px] text-amber-400 border border-amber-400/30 px-1.5 py-px rounded-sm">{a.tipo}</span>
                             <span className="text-[9px] text-text-faint">Nv.{a.nivelRequerido}</span>
@@ -1824,7 +2137,10 @@ export function CharacterSheet({ character }: { character: Character }) {
                   localAbilities.map(a => (
                     <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-amber-600 rounded-[0_2px_2px_0] px-3.5 py-3">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                        <div className="flex items-center gap-2">
+                          <AbilityRoller onRoll={handleRollSkill} />
+                          <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[9px] text-amber-500 border border-amber-600/30 px-1.5 py-px rounded-sm">{a.tipo}</span>
                           <button
@@ -1856,10 +2172,25 @@ export function CharacterSheet({ character }: { character: Character }) {
 
             {activeTab === "aptidoes" && (
               <div className="flex flex-col gap-2">
-                <SectionDivider>Aptidões ({character.aptitudes.length})</SectionDivider>
-                {character.aptitudes.length === 0
+                <div className="flex items-center gap-2">
+                  <div className="flex-1"><SectionDivider>Aptidões ({localAptitudes.length})</SectionDivider></div>
+                  <button
+                    onClick={() => setShowAddAptidao(true)}
+                    disabled={pendingAptidaoSlots <= 0}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-brand rounded-sm cursor-pointer text-brand-muted text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                    onMouseEnter={e => { if (pendingAptidaoSlots > 0) e.currentTarget.style.background = "rgba(124,58,237,0.12)"; }}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    title={pendingAptidaoSlots <= 0 ? "Sem slots disponíveis" : `${pendingAptidaoSlots} slot(s) disponível(is)`}
+                  >+ Adicionar</button>
+                </div>
+                {pendingAptidaoSlots > 0 && (
+                  <div className="text-[10px] text-brand-muted bg-brand/5 border border-brand/20 rounded-sm px-3 py-1.5">
+                    {pendingAptidaoSlots} slot{pendingAptidaoSlots !== 1 ? "s" : ""} de aptidão disponível{pendingAptidaoSlots !== 1 ? "is" : ""}
+                  </div>
+                )}
+                {localAptitudes.length === 0
                   ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão adquirida" />
-                  : character.aptitudes.map((a, i) => (
+                  : localAptitudes.map((a, i) => (
                     <div key={i} className="bg-bg-input border border-border border-l-[3px] border-l-brand rounded-[0_2px_2px_0] px-3.5 py-3">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-[13px] font-semibold text-text-base">{a.aptitude.nome}</span>
@@ -1933,7 +2264,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                   { label: "Status", value: character.isApproved ? "✓ Aprovada pelo Mestre" : "⏳ Aguardando aprovação" },
                   { label: "XP Acumulado", value: `${character.xpAtual.toLocaleString("pt-BR")} pontos` },
                   { label: "Próximo nível em", value: `${Math.max(0, xpNext - character.xpAtual).toLocaleString("pt-BR")} XP` },
-                  { label: "Maestria", value: `${character.maestriaBonus} perícias base treinadas (bônus de técnicas: +${character.maestriaBonus})` },
+                  { label: "Maestria", value: `${maestriaBonus} perícias base treinadas (bônus de técnicas: +${maestriaBonus})` },
                 ] as { label: string; value: string }[]).map(item => (
                   <div key={item.label}>
                     <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">{item.label}</div>
@@ -1963,6 +2294,7 @@ export function CharacterSheet({ character }: { character: Character }) {
         <AddWeaponModal
           characterId={character.id}
           backendToken={backendToken}
+          skillIdMap={skillIdMap}
           onAdded={(w) => { setLocalWeapons(prev => [...prev, w]); setShowAddWeapon(false); }}
           onClose={() => setShowAddWeapon(false)}
         />
@@ -1974,6 +2306,21 @@ export function CharacterSheet({ character }: { character: Character }) {
           backendToken={backendToken}
           onAdded={(a) => { setLocalAbilities(prev => [...prev, a]); setShowAddAbility(false); }}
           onClose={() => setShowAddAbility(false)}
+        />
+      )}
+
+      {showAddAptidao && backendToken && (
+        <AddAptidaoModal
+          characterId={character.id}
+          backendToken={backendToken}
+          acquiredIds={new Set(localAptitudes.map(a => a.aptitude.id ?? ""))}
+          pendingSlots={pendingAptidaoSlots}
+          onAdded={(a) => {
+            setLocalAptitudes(prev => [...prev, a]);
+            setPendingAptidaoSlots(p => Math.max(0, p - 1));
+            if (pendingAptidaoSlots <= 1) setShowAddAptidao(false);
+          }}
+          onClose={() => setShowAddAptidao(false)}
         />
       )}
 
