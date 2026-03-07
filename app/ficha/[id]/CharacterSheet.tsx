@@ -98,6 +98,7 @@ export const ALL_SKILLS: { nome: string; atributoBase: string }[] = [
   { nome: "Furtividade",atributoBase: "AGI" },
   { nome: "Iniciativa", atributoBase: "AGI" },
   { nome: "Pontaria",   atributoBase: "AGI" },
+  { nome: "Reflexos",   atributoBase: "AGI" },
   // VIG
   { nome: "Fortitude",  atributoBase: "VIG" },
   { nome: "Vontade",    atributoBase: "VIG" },
