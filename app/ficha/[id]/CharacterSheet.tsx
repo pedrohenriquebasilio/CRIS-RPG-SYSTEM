@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Zap, Shield, Star, Swords, User, Trash2, Dices } from "lucide-react";
+import { Zap, Shield, Star, Swords, User, Trash2, Dices, Pencil } from "lucide-react";
 import { apiCall } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 
@@ -356,7 +356,7 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
   );
 }
 
-function WeaponCard({ w, onRoll }: { w: Weapon; onRoll: () => void }) {
+function WeaponCard({ w, onRoll, onEdit, onDelete }: { w: Weapon; onRoll: () => void; onEdit: () => void; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className="bg-bg-input border border-border border-l-[3px] border-l-[#991B1B] rounded-[0_2px_2px_0]">
@@ -372,7 +372,19 @@ function WeaponCard({ w, onRoll }: { w: Weapon; onRoll: () => void }) {
             ><Dices size={14} /></button>
             <span className="text-[13px] font-semibold text-text-base">{w.nome}</span>
           </div>
-          <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
+            <button onClick={e => { e.stopPropagation(); onEdit(); }} title="Editar arma"
+              className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150"
+              onMouseEnter={e => (e.currentTarget.style.color = "#F59E0B")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+            ><Pencil size={11} /></button>
+            <button onClick={e => { e.stopPropagation(); onDelete(); }} title="Remover arma"
+              className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150"
+              onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+            ><Trash2 size={11} /></button>
+          </div>
         </div>
         <div className="flex gap-4">
           {w.skill && <div><span className="text-[10px] text-text-faint mr-1">PERÍCIA</span><span className="text-[11px] text-brand-muted">{w.skill.nome}</span></div>}
@@ -934,6 +946,139 @@ function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClos
   );
 }
 
+// ─── Edit Weapon Modal ────────────────────────────────────────────────────────
+function EditWeaponModal({ characterId, backendToken, weapon, skillIdMap, onSaved, onClose }: {
+  characterId: string; backendToken: string;
+  weapon: Weapon; skillIdMap: Record<string, string>;
+  onSaved: (w: Weapon) => void; onClose: () => void;
+}) {
+  const [nome, setNome]         = useState(weapon.nome);
+  const [dice, setDice]         = useState(weapon.damageDice);
+  const [damType, setDamType]   = useState(weapon.damageType);
+  const [threat, setThreat]     = useState(String(weapon.threatRange));
+  const [crit, setCrit]         = useState(String(weapon.criticalMultiplier));
+  const [descricao, setDescricao] = useState(weapon.descricao ?? "");
+  const [skillNome, setSkillNome] = useState(weapon.skill?.nome ?? "");
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState("");
+  const skillNames = Object.keys(skillIdMap).sort();
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim() || !dice.trim()) { setError("Nome e dado de dano são obrigatórios."); return; }
+    setSaving(true); setError("");
+    const skillId = skillNome ? skillIdMap[skillNome] : null;
+    try {
+      const res = await apiCall<Weapon>(`/characters/${characterId}/weapons/${weapon.id}`, backendToken, {
+        method: "PATCH",
+        body: {
+          nome: nome.trim(),
+          damageDice: dice.trim(),
+          damageType: damType,
+          threatRange: parseInt(threat) || 20,
+          criticalMultiplier: parseInt(crit) || 2,
+          descricao: descricao.trim(),
+          skillId: skillId ?? null,
+        },
+      });
+      onSaved(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro ao salvar."); setSaving(false); }
+  }
+
+  const inp = {
+    width: "100%", padding: "7px 9px", background: "#0A0A0A",
+    border: "1px solid #2A2A2A", borderRadius: 2, color: "#D1D5DB", fontSize: 12, outline: "none",
+  } as React.CSSProperties;
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => (e.currentTarget.style.borderColor = "#EF4444");
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => (e.currentTarget.style.borderColor = "#2A2A2A");
+  const DAM_TYPES = ["FISICO", "ENERGETICO", "MENTAL", "ESPIRITUAL"];
+
+  return (
+    <div className="fixed inset-0 z-300 bg-black/78 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-130 flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(153,27,27,0.15)" }}>
+        <div className="px-5.5 pt-4.5 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-widest font-cinzel">Editar Arma</span>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-text-faint text-xl leading-none">×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-5.5 py-4 overflow-y-auto">
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+            <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da arma" style={inp} onFocus={focus} onBlur={blur} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano *</label>
+              <input value={dice} onChange={e => setDice(e.target.value)} placeholder="ex: 1d8" style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
+              <select value={damType} onChange={e => setDamType(e.target.value)} style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
+                {DAM_TYPES.map(d => <option key={d} value={d}>{d.toLowerCase()}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Ameaça Crítico</label>
+              <input type="number" value={threat} onChange={e => setThreat(e.target.value)} min={1} max={20} style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Mult. Crítico</label>
+              <input type="number" value={crit} onChange={e => setCrit(e.target.value)} min={1} max={5} style={inp} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia</label>
+              <select value={skillNome} onChange={e => setSkillNome(e.target.value)} style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
+                <option value="">— Nenhuma —</option>
+                {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+            <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={2}
+              placeholder="Propriedades especiais, notas…" style={{ ...inp, resize: "none", fontFamily: "Inter, sans-serif" }} onFocus={focus} onBlur={blur} />
+          </div>
+
+          {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: "9px", background: "transparent", border: "1px solid #2A2A2A",
+              borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 700,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#E5E7EB")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#6B7280")}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving || !nome.trim()} style={{
+              flex: 2, padding: "9px", borderRadius: 2, fontSize: 12, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
+              background: saving || !nome.trim() ? "#1A1A1A" : "#991B1B",
+              border: "none", cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
+              color: saving || !nome.trim() ? "#52525B" : "#FFF",
+            }}>
+              {saving ? "Salvando…" : "✦ Salvar Arma"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Add Ability Modal ────────────────────────────────────────────────────────
 const ATRIBUTOS_LIST = ["FOR", "AGI", "VIG", "INT", "PRE"];
 
@@ -1290,6 +1435,8 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [hpMax, setHpMax]         = useState(character.hpMax);
   const [energia, setEnergia]     = useState(character.energiaAtual);
   const [energiaMax, setEnergiaMax] = useState(character.energiaMax);
+  const [xpAtual, setXpAtual]     = useState(character.xpAtual);
+  const [nivel, setNivel]         = useState(character.nivel);
   const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
   const [charSpec, setCharSpec]         = useState(character.specialization);
   const [charOrigem, setCharOrigem]     = useState(character.origemRelacao ?? null);
@@ -1314,6 +1461,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [pendingAptidaoSlots, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddWeapon, setShowAddWeapon]     = useState(false);
+  const [editingWeapon, setEditingWeapon]     = useState<Weapon | null>(null);
   const [showAddAbility, setShowAddAbility]   = useState(false);
   const [showAddAptidao, setShowAddAptidao]   = useState(false);
 
@@ -1489,12 +1637,16 @@ export function CharacterSheet({ character }: { character: Character }) {
 
     function onCharacterUpdate(data: any) {
       if (data.id !== character.id) return;
-      if (data.nome   !== undefined) setNome(data.nome);
-      if (data.hpAtual     !== undefined) setHp(data.hpAtual);
-      if (data.hpMax       !== undefined) setHpMax(data.hpMax);
-      if (data.energiaAtual !== undefined) setEnergia(data.energiaAtual);
-      if (data.energiaMax   !== undefined) setEnergiaMax(data.energiaMax);
-      if (data.attributes  !== undefined) setAttrs(data.attributes);
+      if (data.nome             !== undefined) setNome(data.nome);
+      if (data.hpAtual          !== undefined) setHp(data.hpAtual);
+      if (data.hpMax            !== undefined) setHpMax(data.hpMax);
+      if (data.energiaAtual     !== undefined) setEnergia(data.energiaAtual);
+      if (data.energiaMax       !== undefined) setEnergiaMax(data.energiaMax);
+      if (data.attributes       !== undefined) setAttrs(data.attributes);
+      if (data.xpAtual          !== undefined) setXpAtual(data.xpAtual);
+      if (data.nivel            !== undefined) setNivel(data.nivel);
+      if (data.maestriaBonus    !== undefined) setMaestriaBonus(data.maestriaBonus);
+      if (data.pendingAptidaoSlots !== undefined) setPendingAptidaoSlots(data.pendingAptidaoSlots);
     }
 
     function onCombatCreated(data: any) {
@@ -1683,12 +1835,15 @@ export function CharacterSheet({ character }: { character: Character }) {
   const handleEnMaxChange   = (v: number) => { setEnergiaMax(v); persist(sKey, { energiaMax: v }); debouncedStatPatch("energiaMax", v); };
 
   // ── Defesa ──
-  const [defesaAttr, setDefesaAttr] = useState<string>("AGI");
-  const [defesaOutros, setDefesaOutros] = useState<number>(0);
-  const defesaAttrVal = (attrs as any)[defesaAttr] ?? 0;
-  const defesa = 10 + defesaAttrVal + defesaOutros;
-  const xpNext = XP_TABLE[character.nivel] ?? 355000;
-  const xpPct  = Math.min(100, (character.xpAtual / xpNext) * 100);
+  const [defesaOutros, setDefesaOutros] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(storageKey(userId));
+      return raw ? (JSON.parse(raw).defesaOutros ?? 0) : 0;
+    } catch { return 0; }
+  });
+  const defesa = 10 + (attrs.AGI ?? 0) + defesaOutros;
+  const xpNext = XP_TABLE[nivel] ?? 355000;
+  const xpPct  = Math.min(100, (xpAtual / xpNext) * 100);
 
   return (
     <div className="h-screen pt-[68px] px-4 pb-4 bg-bg-dark overflow-hidden font-sans">
@@ -1762,7 +1917,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                   {/* Nível — sempre visível */}
                   <div>
                     <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Nível</div>
-                    <div className="text-[13px] font-semibold text-text-base">{character.nivel}</div>
+                    <div className="text-[13px] font-semibold text-text-base">{nivel}</div>
                   </div>
 
                   {charSpec ? (
@@ -1836,7 +1991,7 @@ export function CharacterSheet({ character }: { character: Character }) {
               <div className="flex-1 h-[3px] bg-border-subtle rounded overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-[#2A2A2A] to-[#D1D5DB] transition-[width_0.4s_ease]" style={{ width: `${xpPct}%` }} />
               </div>
-              <span className="text-[10px] text-text-faint min-w-[80px] text-right">{character.xpAtual.toLocaleString("pt-BR")} / {xpNext.toLocaleString("pt-BR")}</span>
+              <span className="text-[10px] text-text-faint min-w-[80px] text-right">{xpAtual.toLocaleString("pt-BR")} / {xpNext.toLocaleString("pt-BR")}</span>
             </div>
           </div>
 
@@ -1870,25 +2025,25 @@ export function CharacterSheet({ character }: { character: Character }) {
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%] text-lg font-extrabold text-white">{defesa}</span>
               </div>
               <div className="flex-1">
-                <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Defesa = 10 + atrib + outros</div>
+                <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">10 + AGI + outros</div>
                 <div className="flex gap-1.5 items-center">
                   <div className="flex flex-col items-center gap-0.5">
-                    <select
-                      value={defesaAttr}
-                      onChange={e => setDefesaAttr(e.target.value)}
-                      className="ficha-input text-center text-[11px] font-bold px-1 py-0.5"
-                      style={{ width: 52, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#A78BFA", cursor: "pointer" }}
-                    >
-                      {["FOR","AGI","VIG","INT","PRE"].map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                    <span className="text-[8px] text-text-faint">({defesaAttrVal})</span>
+                    <div className="text-center text-[11px] font-bold px-1 py-0.5 text-brand-muted"
+                      style={{ width: 42, background: "#0A0A0A", border: "1px solid #1F1F1F", borderRadius: 2, lineHeight: "1.6" }}>
+                      AGI
+                    </div>
+                    <span className="text-[8px] text-text-faint">({attrs.AGI ?? 0})</span>
                   </div>
                   <span className="text-text-ghost text-xs">+</span>
                   <div className="flex flex-col items-center gap-0.5">
                     <input
                       type="number"
                       value={defesaOutros}
-                      onChange={e => setDefesaOutros(parseInt(e.target.value) || 0)}
+                      onChange={e => {
+                        const v = parseInt(e.target.value) || 0;
+                        setDefesaOutros(v);
+                        persist(sKey, { defesaOutros: v });
+                      }}
                       className="ficha-input text-center text-[11px] font-bold px-1 py-0.5"
                       style={{ width: 42, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB" }}
                     />
@@ -2139,7 +2294,19 @@ export function CharacterSheet({ character }: { character: Character }) {
                 </div>
                 {localWeapons.length === 0
                   ? <EmptyState icon={<Swords size={26} />} message="Nenhuma arma equipada" sub="Clique em + Adicionar para equipar" />
-                  : localWeapons.map((w, i) => <WeaponCard key={w.id ?? i} w={w} onRoll={() => handleRollWeapon(w)} />)
+                  : localWeapons.map((w, i) => (
+                    <WeaponCard key={w.id ?? i} w={w}
+                      onRoll={() => handleRollWeapon(w)}
+                      onEdit={() => setEditingWeapon(w)}
+                      onDelete={async () => {
+                        if (!backendToken) return;
+                        try {
+                          await apiCall(`/characters/${character.id}/weapons/${w.id}`, backendToken, { method: "DELETE" });
+                          setLocalWeapons(prev => prev.filter(x => x.id !== w.id));
+                        } catch { /* ignore */ }
+                      }}
+                    />
+                  ))
                 }
               </div>
             )}
@@ -2147,14 +2314,14 @@ export function CharacterSheet({ character }: { character: Character }) {
             {activeTab === "habilidades" && (
               <div className="flex flex-col gap-2">
                 {/* Habilidades da Classe */}
-                <SectionDivider>Habilidades da Classe ({specAbilities.filter(a => a.nivelRequerido <= character.nivel).length})</SectionDivider>
+                <SectionDivider>Habilidades da Classe ({specAbilities.filter(a => a.nivelRequerido <= nivel).length})</SectionDivider>
                 {!charSpec ? (
                   <EmptyState icon={<Star size={26} />} message="Nenhuma classe definida" sub="Defina sua especialização na aba CLASSE" />
-                ) : specAbilities.filter(a => a.nivelRequerido <= character.nivel).length === 0 ? (
+                ) : specAbilities.filter(a => a.nivelRequerido <= nivel).length === 0 ? (
                   <EmptyState icon={<Star size={26} />} message="Nenhuma habilidade disponível" sub="Habilidades aparecem conforme você sobe de nível" />
                 ) : (
                   specAbilities
-                    .filter(a => a.nivelRequerido <= character.nivel)
+                    .filter(a => a.nivelRequerido <= nivel)
                     .map(a => (
                       <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-[#F59E0B] rounded-[0_2px_2px_0] px-3.5 py-3">
                         <div className="flex justify-between items-center mb-1">
@@ -2176,11 +2343,11 @@ export function CharacterSheet({ character }: { character: Character }) {
                       </div>
                     ))
                 )}
-                {charSpec && specAbilities.filter(a => a.nivelRequerido > character.nivel).length > 0 && (
+                {charSpec && specAbilities.filter(a => a.nivelRequerido > nivel).length > 0 && (
                   <div className="mt-2">
                     <SectionDivider>Futuras (Nível insuficiente)</SectionDivider>
                     {specAbilities
-                      .filter(a => a.nivelRequerido > character.nivel)
+                      .filter(a => a.nivelRequerido > nivel)
                       .map(a => (
                         <div key={a.id} className="bg-bg-input border border-[#1A1A1A] border-l-[3px] border-l-[#3F3F46] rounded-[0_2px_2px_0] px-3.5 py-2.5 mb-1.5 opacity-50">
                           <div className="flex justify-between items-center">
@@ -2375,8 +2542,8 @@ export function CharacterSheet({ character }: { character: Character }) {
                 {([
                   { label: "Origem", value: character.origemRelacao?.nome || "Não definida." },
                   { label: "Status", value: character.isApproved ? "✓ Aprovada pelo Mestre" : "⏳ Aguardando aprovação" },
-                  { label: "XP Acumulado", value: `${character.xpAtual.toLocaleString("pt-BR")} pontos` },
-                  { label: "Próximo nível em", value: `${Math.max(0, xpNext - character.xpAtual).toLocaleString("pt-BR")} XP` },
+                  { label: "XP Acumulado", value: `${xpAtual.toLocaleString("pt-BR")} pontos` },
+                  { label: "Próximo nível em", value: `${Math.max(0, xpNext - xpAtual).toLocaleString("pt-BR")} XP` },
                   { label: "Maestria", value: `${maestriaBonus} perícias base treinadas (bônus de técnicas: +${maestriaBonus})` },
                 ] as { label: string; value: string }[]).map(item => (
                   <div key={item.label}>
@@ -2412,6 +2579,16 @@ export function CharacterSheet({ character }: { character: Character }) {
           onClose={() => setShowAddWeapon(false)}
         />
       )}
+      {editingWeapon && backendToken && (
+        <EditWeaponModal
+          characterId={character.id}
+          backendToken={backendToken}
+          weapon={editingWeapon}
+          skillIdMap={skillIdMap}
+          onSaved={(w) => { setLocalWeapons(prev => prev.map(x => x.id === w.id ? w : x)); setEditingWeapon(null); }}
+          onClose={() => setEditingWeapon(null)}
+        />
+      )}
 
       {showAddAbility && backendToken && (
         <AddAbilityModal
@@ -2426,7 +2603,7 @@ export function CharacterSheet({ character }: { character: Character }) {
         <CreateAptidaoModal
           characterId={character.id}
           backendToken={backendToken}
-          level={character.nivel}
+          level={nivel}
           onAdded={(a) => {
             setLocalAptitudes(prev => [...prev, a]);
             setShowAddAptidao(false);
