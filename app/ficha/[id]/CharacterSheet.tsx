@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Zap, Shield, Star, Swords, User, Trash2, Dices } from "lucide-react";
 import { apiCall } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type Attrs = { FOR: number; AGI: number; VIG: number; INT: number; PRE: number };
@@ -1133,7 +1134,57 @@ export function CharacterSheet({ character }: { character: Character }) {
       .catch(() => {});
   }, [backendToken, charSpec?.id, activeTab]); // eslint-disable-line
 
-  // Poll for active combat when on COMBATE tab
+  // WebSocket: join campaign room and react to updates in real-time
+  useEffect(() => {
+    if (!backendToken || !character.campaignId) return;
+    const socket = getSocket(backendToken);
+
+    function onConnect() {
+      socket.emit("joinCampaign", { campaignId: character.campaignId });
+    }
+
+    function onCharacterUpdate(data: any) {
+      if (data.id !== character.id) return;
+      if (data.nome   !== undefined) setNome(data.nome);
+      if (data.hpAtual     !== undefined) setHp(data.hpAtual);
+      if (data.hpMax       !== undefined) setHpMax(data.hpMax);
+      if (data.energiaAtual !== undefined) setEnergia(data.energiaAtual);
+      if (data.energiaMax   !== undefined) setEnergiaMax(data.energiaMax);
+      if (data.attributes  !== undefined) setAttrs(data.attributes);
+    }
+
+    function onCombatCreated(data: any) {
+      if (data?.id) {
+        apiCall<any>(`/combats/${data.id}`, backendToken!).then(setActiveCombat).catch(() => {});
+      }
+    }
+
+    function onCombatUpdate(data: any) {
+      if (data?.id) setActiveCombat(data);
+    }
+
+    function onCombatFinished() {
+      setActiveCombat(null);
+    }
+
+    if (socket.connected) onConnect();
+    socket.on("connect", onConnect);
+    socket.on("characterUpdate", onCharacterUpdate);
+    socket.on("combatCreated",   onCombatCreated);
+    socket.on("combatUpdate",    onCombatUpdate);
+    socket.on("combatFinished",  onCombatFinished);
+
+    return () => {
+      socket.off("connect",         onConnect);
+      socket.off("characterUpdate", onCharacterUpdate);
+      socket.off("combatCreated",   onCombatCreated);
+      socket.off("combatUpdate",    onCombatUpdate);
+      socket.off("combatFinished",  onCombatFinished);
+      socket.emit("leaveCampaign", { campaignId: character.campaignId });
+    };
+  }, [backendToken, character.campaignId, character.id]); // eslint-disable-line
+
+  // Initial fetch for active combat when on COMBATE tab (socket keeps it updated after)
   useEffect(() => {
     if (!backendToken || !character.campaignId || activeTab !== "combate") return;
     let cancelled = false;
@@ -1152,8 +1203,7 @@ export function CharacterSheet({ character }: { character: Character }) {
       } catch { /* ignore */ }
     }
     fetchCombat();
-    const interval = setInterval(fetchCombat, 5000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => { cancelled = true; };
   }, [backendToken, character.campaignId, activeTab]); // eslint-disable-line
 
   async function handleSalvarClasse() {
@@ -1314,7 +1364,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                         onBlur={async () => {
                           setEditingNome(false);
                           const trimmed = nome.trim();
-                          if (!trimmed || trimmed === nome) {
+                          if (!trimmed || trimmed === character.nome) {
                             if (!trimmed) setNome(character.nome);
                             return;
                           }

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { apiCall } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 import {
   Shield, Swords, ChevronLeft, Play,
   StopCircle, Users, RefreshCw, ChevronRight,
@@ -51,9 +52,12 @@ interface Combat {
 
 interface CampaignLog {
   id: string; timestamp: string;
-  actorName: string | null;
-  action: string;
-  result: string | null;
+  actor: string | null;
+  actionType: string;
+  diceResult: number | null;
+  total: number | null;
+  target: string | null;
+  wasOutOfTurn: boolean;
   details: Record<string, unknown> | null;
 }
 
@@ -633,15 +637,11 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs.length]);
 
-  function parseDetails(log: CampaignLog): { ataque?: number; dano?: number; roll?: number } {
-    if (!log.details) return {};
-    const d = log.details as Record<string, unknown>;
-    return {
-      ataque: typeof d.total === "number" ? d.total : typeof d.roll === "number" ? d.roll : undefined,
-      dano:   typeof d.damage === "number" ? d.damage : undefined,
-      roll:   typeof d.total === "number" ? d.total : typeof d.roll === "number" ? d.roll : undefined,
-    };
-  }
+  const ACTION_LABELS: Record<string, string> = {
+    SKILL: "Perícia", TECHNIQUE: "Técnica", DAMAGE: "Dano", CONDITION: "Condição",
+    XP: "XP", LEVELUP: "Level Up", ATAQUE: "Ataque", DEFESA: "Defesa",
+    CD_TEST: "Teste CD", DANO: "Dano",
+  };
 
   return (
     <div className="w-[260px] shrink-0 bg-bg-input border-r border-border-subtle flex flex-col h-full overflow-hidden">
@@ -656,33 +656,31 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
             Nenhum registro ainda.
           </p>
         )}
-        {logs.map(log => {
-          const { ataque, dano } = parseDetails(log);
-          const hasNumbers = ataque !== undefined || dano !== undefined;
+        {[...logs].reverse().map(log => {
+          const hasDice = log.diceResult !== null;
+          const label = ACTION_LABELS[log.actionType] ?? log.actionType;
 
           return (
             <div key={log.id} className="px-[14px] py-[10px] border-b border-[#111]">
-              <div className="text-[11px] text-text-muted mb-1">
-                {log.actorName ?? "Sistema"}
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-[11px] text-text-muted">{log.actor ?? "Sistema"}</span>
+                {log.wasOutOfTurn && (
+                  <span className="text-[8px] text-[#F59E0B] border border-[#78350F] px-1 py-0.5 rounded-sm">fora do turno</span>
+                )}
               </div>
-              <div className="text-[12px] text-[#D1D5DB]" style={{ marginBottom: hasNumbers ? 6 : 0 }}>
-                {log.action}
-                {log.result ? ` · ${log.result}` : ""}
+              <div className="text-[11px] text-text-dim mb-1">
+                {label}{log.target ? ` → ${log.target}` : ""}
               </div>
-              {hasNumbers && (
+              {hasDice && (
                 <div className="flex gap-2">
-                  {ataque !== undefined && (
-                    <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
-                      <div className="text-[18px] font-bold text-brand-muted font-cinzel">{ataque}</div>
-                      <div className="text-[8px] text-text-faint tracking-[0.1em]">ROLAGEM</div>
-                    </div>
-                  )}
-                  {dano !== undefined && (
-                    <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
-                      <div className="text-[18px] font-bold text-red-500 font-cinzel">{dano}</div>
-                      <div className="text-[8px] text-text-faint tracking-[0.1em]">DANO</div>
-                    </div>
-                  )}
+                  <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
+                    <div className="text-[18px] font-bold text-brand-muted font-cinzel">{log.total ?? log.diceResult}</div>
+                    <div className="text-[8px] text-text-faint tracking-[0.1em]">TOTAL</div>
+                  </div>
+                  <div className="flex-1 bg-bg-surface border border-border rounded-[2px] px-2 py-1 text-center">
+                    <div className="text-[18px] font-bold text-text-dim font-cinzel">{log.diceResult}</div>
+                    <div className="text-[8px] text-text-faint tracking-[0.1em]">DADO</div>
+                  </div>
                 </div>
               )}
               <div className="text-[9px] text-text-ghost mt-1">
@@ -986,29 +984,86 @@ export default function EscudoPage() {
     fetchAll();
   }, [status, token, fetchAll, router]);
 
-  // Poll campaign data every 10s to keep agent stats up to date
+  // WebSocket: real-time updates replacing all polling
   useEffect(() => {
-    if (!token) return;
-    const interval = setInterval(async () => {
-      try {
-        const camp = await apiCall<Campaign>(`/campaigns/${id}`, token);
-        setCampaign(camp);
-      } catch { /* ignore */ }
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [token, id]);
+    if (!token || !id) return;
+    const socket = getSocket(token);
 
-  // Poll logs every 5s when on combates tab
-  useEffect(() => {
-    if (!token || tab !== "combates") return;
-    const interval = setInterval(async () => {
-      try {
-        const logsData = await apiCall<CampaignLog[]>(`/campaigns/${id}/logs`, token);
-        setLogs(logsData);
-      } catch { /* ignore */ }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [token, id, tab]);
+    function onConnect() {
+      socket.emit("joinCampaign", { campaignId: id });
+    }
+
+    function onCharacterUpdate(data: any) {
+      setCampaign(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          characters: prev.characters.map(c =>
+            c.id === data.id
+              ? {
+                  ...c,
+                  ...(data.nome         !== undefined ? { nome:         data.nome         } : {}),
+                  ...(data.hpAtual      !== undefined ? { hpAtual:      data.hpAtual      } : {}),
+                  ...(data.hpMax        !== undefined ? { hpMax:        data.hpMax        } : {}),
+                  ...(data.energiaAtual !== undefined ? { energiaAtual: data.energiaAtual } : {}),
+                  ...(data.energiaMax   !== undefined ? { energiaMax:   data.energiaMax   } : {}),
+                  ...(data.attributes   !== undefined ? { attributes:   data.attributes   } : {}),
+                  ...(data.nivel        !== undefined ? { nivel:        data.nivel        } : {}),
+                }
+              : c
+          ),
+        };
+      });
+    }
+
+    function onCombatCreated(data: any) {
+      setCampaign(prev => prev ? { ...prev, isActiveCombat: true } : prev);
+      if (data?.id) {
+        apiCall<Combat>(`/combats/${data.id}`, token!).then(setCombat).catch(() => {});
+      }
+    }
+
+    function onCombatUpdate(data: any) {
+      if (data?.id) setCombat(data);
+    }
+
+    function onCombatFinished() {
+      setCampaign(prev => prev ? { ...prev, isActiveCombat: false } : prev);
+      setCombat(null);
+    }
+
+    function onNewCombatLog(log: CampaignLog) {
+      setLogs(prev => {
+        const already = prev.some(l => l.id === log.id);
+        return already ? prev : [...prev, log];
+      });
+    }
+
+    function onMasterShieldUpdate(data: any) {
+      if (data?.campaign) setCampaign(data.campaign);
+      if (data?.combat)   setCombat(data.combat);
+    }
+
+    if (socket.connected) onConnect();
+    socket.on("connect",           onConnect);
+    socket.on("characterUpdate",   onCharacterUpdate);
+    socket.on("combatCreated",     onCombatCreated);
+    socket.on("combatUpdate",      onCombatUpdate);
+    socket.on("combatFinished",    onCombatFinished);
+    socket.on("newCombatLog",      onNewCombatLog);
+    socket.on("masterShieldUpdate",onMasterShieldUpdate);
+
+    return () => {
+      socket.off("connect",           onConnect);
+      socket.off("characterUpdate",   onCharacterUpdate);
+      socket.off("combatCreated",     onCombatCreated);
+      socket.off("combatUpdate",      onCombatUpdate);
+      socket.off("combatFinished",    onCombatFinished);
+      socket.off("newCombatLog",      onNewCombatLog);
+      socket.off("masterShieldUpdate",onMasterShieldUpdate);
+      socket.emit("leaveCampaign", { campaignId: id });
+    };
+  }, [token, id]); // eslint-disable-line
 
   if (status === "loading" || loading) {
     return (

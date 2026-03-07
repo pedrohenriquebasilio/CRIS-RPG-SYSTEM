@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { apiCall } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 import {
   Shield, Users, Copy, Check, LogOut, UserPlus,
   ChevronRight, Swords, Settings, Calendar,
@@ -320,6 +321,56 @@ export default function CampaignDetailPage() {
     if (status !== "authenticated" || !token) return;
     fetchCampaign();
   }, [status, token, fetchCampaign, router]);
+
+  // WebSocket: real-time updates for character names/stats and combat state
+  useEffect(() => {
+    if (!token || !id) return;
+    const socket = getSocket(token);
+
+    function onConnect() {
+      socket.emit("joinCampaign", { campaignId: id });
+    }
+
+    function onCharacterUpdate(data: any) {
+      setCampaign(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          characters: prev.characters.map(c =>
+            c.id === data.id
+              ? {
+                  ...c,
+                  ...(data.nome  !== undefined ? { nome: data.nome } : {}),
+                  ...(data.nivel !== undefined ? { nivel: data.nivel } : {}),
+                }
+              : c
+          ),
+        };
+      });
+    }
+
+    function onCombatCreated() {
+      setCampaign(prev => prev ? { ...prev, isActiveCombat: true } : prev);
+    }
+
+    function onCombatFinished() {
+      setCampaign(prev => prev ? { ...prev, isActiveCombat: false } : prev);
+    }
+
+    if (socket.connected) onConnect();
+    socket.on("connect",         onConnect);
+    socket.on("characterUpdate", onCharacterUpdate);
+    socket.on("combatCreated",   onCombatCreated);
+    socket.on("combatFinished",  onCombatFinished);
+
+    return () => {
+      socket.off("connect",         onConnect);
+      socket.off("characterUpdate", onCharacterUpdate);
+      socket.off("combatCreated",   onCombatCreated);
+      socket.off("combatFinished",  onCombatFinished);
+      socket.emit("leaveCampaign", { campaignId: id });
+    };
+  }, [token, id]);
 
   async function handleApprove(charId: string) {
     if (!token || !campaign) return;
