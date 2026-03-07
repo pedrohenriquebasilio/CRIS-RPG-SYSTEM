@@ -707,7 +707,7 @@ const AJUSTE_DEFS: { type: AjusteType; label: string; color: string; icon: strin
   { type: "XP",       label: "Experiência",       color: "#F59E0B", icon: "★", field: "xp"            },
 ];
 
-function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; token: string; campaignId: string }) {
+function AjustesPanel({ agents, token, campaignId, onRefresh }: { agents: Character[]; token: string; campaignId: string; onRefresh?: () => void }) {
   const [selectedType, setSelectedType] = useState<AjusteType | null>(null);
   const [direction, setDirection]       = useState<"add" | "sub">("add");
   const [target, setTarget]             = useState<"all" | string>("all");
@@ -754,6 +754,7 @@ function AjustesPanel({ agents, token, campaignId }: { agents: Character[]; toke
       const sign = direction === "add" ? "+" : "−";
       setResult({ ok: true, msg: `${sign}${n} ${def?.label} aplicado a ${who}.` });
       setAmount("");
+      onRefresh?.();
     } catch (e) {
       setResult({ ok: false, msg: e instanceof Error ? e.message : "Erro ao aplicar ajuste." });
     } finally { setApplying(false); }
@@ -967,17 +968,13 @@ export default function EscudoPage() {
       setCampaign(camp);
       setLogs(logsData);
 
-      // If active combat, fetch combat state
-      if (camp.isActiveCombat) {
-        // Get active combat id from campaign endpoint
-        const campFull = await apiCall<{ combats?: { id: string; state: string }[] }>(`/campaigns/${id}`, token);
-        const activeCombat = (campFull as any).combats?.find((c: { state: string }) =>
-          !["IDLE", "COMBAT_FINISHED"].includes(c.state)
-        );
-        if (activeCombat) {
-          const combatState = await apiCall<Combat>(`/combats/${activeCombat.id}`, token);
-          setCombat(combatState);
-        }
+      // If active combat, fetch combat state using combats already returned by campaign endpoint
+      const activeCombatMeta = (camp as any).combats?.find((c: { state: string }) =>
+        !["IDLE", "COMBAT_FINISHED"].includes(c.state)
+      );
+      if (activeCombatMeta) {
+        const combatState = await apiCall<Combat>(`/combats/${activeCombatMeta.id}`, token);
+        setCombat(combatState);
       }
     } catch { /* ignore */ }
     finally { setLoading(false); }
@@ -988,6 +985,18 @@ export default function EscudoPage() {
     if (status !== "authenticated" || !token) return;
     fetchAll();
   }, [status, token, fetchAll, router]);
+
+  // Poll campaign data every 10s to keep agent stats up to date
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(async () => {
+      try {
+        const camp = await apiCall<Campaign>(`/campaigns/${id}`, token);
+        setCampaign(camp);
+      } catch { /* ignore */ }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [token, id]);
 
   // Poll logs every 5s when on combates tab
   useEffect(() => {
@@ -1121,7 +1130,7 @@ export default function EscudoPage() {
 
             {/* AJUSTES */}
             {tab === "ajustes" && (
-              <AjustesPanel agents={agents} token={token!} campaignId={id} />
+              <AjustesPanel agents={agents} token={token!} campaignId={id} onRefresh={fetchAll} />
             )}
           </div>
         </div>

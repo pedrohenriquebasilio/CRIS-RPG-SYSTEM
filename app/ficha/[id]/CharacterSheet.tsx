@@ -33,11 +33,20 @@ export interface TechTemplate {
 }
 export interface Weapon {
   id: string; nome: string; damageDice: string; damageType: string;
-  threatRange: number; criticalMultiplier: number;
+  threatRange: number; criticalMultiplier: number; descricao?: string;
 }
 export interface Aptitude {
   aptitude: { nome: string; descricao: string };
   adquiridaNoNivel: number;
+}
+export interface CharacterAbility {
+  id: string;
+  nome: string;
+  tipo: string;
+  custo: string;
+  alcance: string;
+  duracao: string;
+  descricao: string;
 }
 export interface Character {
   id: string; nome: string; origem?: string;
@@ -53,6 +62,7 @@ export interface Character {
   attributes: Attrs | null;
   skills: CharSkill[]; techniques: Technique[];
   weapons: Weapon[]; aptitudes: Aptitude[];
+  abilities?: CharacterAbility[];
 }
 
 export interface SpecSeed {
@@ -155,9 +165,9 @@ function AttributeRing({ attrs, maestriaBonus, onChangeAttr, onRollAttr }: {
         boxShadow: "0 0 28px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.05)", zIndex: 2,
       }}>
         <div style={{ position: "absolute", inset: 6, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.07)" }} />
-        <span style={{ fontSize: 8, fontWeight: 700, color: "#6B7280", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>ATRIB.</span>
+        <span style={{ fontSize: 8, fontWeight: 700, color: "#6B7280", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>TOTAL</span>
         <div style={{ width: 22, height: 1, background: "rgba(124,58,237,0.5)", margin: "5px 0 4px" }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#7C3AED" }}>+{maestriaBonus}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#7C3AED" }}>{attrs.FOR + attrs.AGI + attrs.VIG + attrs.INT + attrs.PRE}</span>
       </div>
 
       {/* Nodes */}
@@ -308,6 +318,7 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
           <span className="text-[9px] bg-brand/[0.12] text-[#9B75F0] px-1.5 py-0.5 rounded-sm border border-brand/25 font-semibold">NV.{t.nivel}</span>
         </div>
         <div className="flex items-center gap-2.5">
+          <span className="text-[10px] text-text-faint">CD:{10 + t.nivel + maestriaBonus}</span>
           <span className="text-[11px] text-brand">{t.custoEnergia}⚡</span>
           <span className="text-sm font-extrabold text-brand-light">+{attrVal + maestriaBonus}</span>
         </div>
@@ -326,25 +337,33 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
 }
 
 function WeaponCard({ w, onRoll }: { w: Weapon; onRoll: () => void }) {
+  const [expanded, setExpanded] = useState(false);
   return (
-    <div className="bg-bg-input border border-border border-l-[3px] border-l-[#991B1B] rounded-[0_2px_2px_0] px-3.5 py-3">
-      <div className="flex justify-between items-center mb-1.5">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onRoll}
-            title="Rolar ataque"
-            className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
-            onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
-          ><Dices size={14} /></button>
-          <span className="text-[13px] font-semibold text-text-base">{w.nome}</span>
+    <div className="bg-bg-input border border-border border-l-[3px] border-l-[#991B1B] rounded-[0_2px_2px_0]">
+      <div className="px-3.5 py-3 cursor-pointer" onClick={() => setExpanded(x => !x)}>
+        <div className="flex justify-between items-center mb-1.5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={e => { e.stopPropagation(); onRoll(); }}
+              title="Rolar ataque"
+              className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
+              onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+            ><Dices size={14} /></button>
+            <span className="text-[13px] font-semibold text-text-base">{w.nome}</span>
+          </div>
+          <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
         </div>
-        <span className="text-base font-extrabold text-red-500">{w.damageDice}</span>
+        <div className="flex gap-4">
+          <div><span className="text-[10px] text-text-faint mr-1">TIPO</span><span className="text-[11px] text-text-dim">{w.damageType.toLowerCase()}</span></div>
+          <div><span className="text-[10px] text-text-faint mr-1">CRÍTICO</span><span style={{ fontSize: 11, color: w.threatRange < 20 ? "#F59E0B" : "#6B7280" }}>≥{w.threatRange} (×{w.criticalMultiplier})</span></div>
+        </div>
       </div>
-      <div className="flex gap-4">
-        <div><span className="text-[10px] text-text-faint mr-1">TIPO</span><span className="text-[11px] text-text-dim">{w.damageType.toLowerCase()}</span></div>
-        <div><span className="text-[10px] text-text-faint mr-1">CRÍTICO</span><span style={{ fontSize: 11, color: w.threatRange < 20 ? "#F59E0B" : "#6B7280" }}>≥{w.threatRange} (×{w.criticalMultiplier})</span></div>
-      </div>
+      {expanded && w.descricao && (
+        <div className="px-3.5 pb-3 border-t border-border-subtle">
+          <p className="text-xs text-text-dim m-0 pt-2 leading-relaxed">{w.descricao}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -624,6 +643,7 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
   const [damType, setDamType]     = useState("FISICO");
   const [threat, setThreat]       = useState("20");
   const [crit, setCrit]           = useState("2");
+  const [descricao, setDescricao] = useState("");
 
   useEffect(() => {
     if (mode === "catalogo" && templates === null) {
@@ -656,7 +676,7 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
     try {
       const res = await apiCall<Weapon>(`/characters/${characterId}/weapons`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), damageDice: dice.trim(), damageType: damType, threatRange: parseInt(threat) || 20, criticalMultiplier: parseInt(crit) || 2 },
+        body: { nome: nome.trim(), damageDice: dice.trim(), damageType: damType, threatRange: parseInt(threat) || 20, criticalMultiplier: parseInt(crit) || 2, descricao: descricao.trim() },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
@@ -767,6 +787,13 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
                   />
                 </div>
               </div>
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+                <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={2} placeholder="Detalhes da arma (opcional)" className="ficha-input resize-none"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                />
+              </div>
               {error && <p className="text-xs text-red-500 m-0">{error}</p>}
               <button type="submit" disabled={saving || !nome.trim()} style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
                 {saving ? "Adicionando…" : "✦ Adicionar Arma"}
@@ -785,15 +812,149 @@ function AddWeaponModal({ characterId, backendToken, onAdded, onClose }: {
   );
 }
 
+// ─── Add Ability Modal ────────────────────────────────────────────────────────
+function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
+  characterId: string; backendToken: string;
+  onAdded: (a: CharacterAbility) => void; onClose: () => void;
+}) {
+  const [nome, setNome]       = useState("");
+  const [tipo, setTipo]       = useState("ativa");
+  const [custo, setCusto]     = useState("nenhum");
+  const [alcance, setAlcance] = useState("pessoal");
+  const [duracao, setDuracao] = useState("imediato");
+  const [descricao, setDesc]  = useState("");
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState("");
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim()) { setError("Nome é obrigatório."); return; }
+    setSaving(true); setError("");
+    try {
+      const res = await apiCall<CharacterAbility>(`/characters/${characterId}/abilities`, backendToken, {
+        method: "POST",
+        body: { nome: nome.trim(), tipo, custo: custo.trim() || "nenhum", alcance: alcance.trim() || "pessoal", duracao: duracao.trim() || "imediato", descricao: descricao.trim() },
+      });
+      onAdded(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
+  }
+
+  const inputStyle = {
+    width: "100%", padding: "8px 10px", background: "#0A0A0A",
+    border: "1px solid #2A2A2A", borderRadius: 2, color: "#D1D5DB",
+    fontSize: 12, outline: "none",
+  } as React.CSSProperties;
+
+  const TIPOS = ["ativa", "passiva", "reação"];
+
+  return (
+    <div
+      className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.12)" }}>
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Criar Habilidade Personalizada</span>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-[22px] py-4 overflow-y-auto">
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+            <input
+              autoFocus value={nome} onChange={e => setNome(e.target.value)}
+              placeholder="Nome da habilidade" style={inputStyle}
+              onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo</label>
+            <div className="flex gap-1">
+              {TIPOS.map(t => (
+                <button key={t} type="button" onClick={() => setTipo(t)} style={{
+                  flex: 1, padding: "7px 0", background: tipo === t ? "rgba(245,158,11,0.15)" : "#0A0A0A",
+                  border: `1px solid ${tipo === t ? "#F59E0B" : "#2A2A2A"}`, borderRadius: 2,
+                  cursor: "pointer", color: tipo === t ? "#F59E0B" : "#6B7280",
+                  fontSize: 10, fontWeight: 700, textTransform: "capitalize",
+                }}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo</label>
+              <input value={custo} onChange={e => setCusto(e.target.value)} placeholder="ex: 2 energia"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Alcance</label>
+              <input value={alcance} onChange={e => setAlcance(e.target.value)} placeholder="ex: 6m"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Duração</label>
+              <input value={duracao} onChange={e => setDuracao(e.target.value)} placeholder="ex: 1 rodada"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+            <textarea
+              value={descricao} onChange={e => setDesc(e.target.value)}
+              rows={3} placeholder="Descreva o efeito da habilidade…"
+              style={{ ...inputStyle, resize: "none" }}
+              onFocus={e => (e.currentTarget.style.borderColor = "#F59E0B")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+
+          <button type="submit" disabled={saving || !nome.trim()} style={{
+            padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#92400E",
+            border: `1px solid ${saving || !nome.trim() ? "#2A2A2A" : "#F59E0B"}`,
+            borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
+            color: saving || !nome.trim() ? "#52525B" : "#FDE68A",
+            fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+            fontFamily: "Cinzel, serif",
+          }}>
+            {saving ? "Criando…" : "✦ Criar Habilidade"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
-type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "classe";
+type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "classe" | "habilidades";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "classe",    label: "CLASSE"    },
-  { id: "tecnicas",  label: "TÉCNICAS"  },
-  { id: "armas",     label: "ARMAS"     },
-  { id: "aptidoes",  label: "APTIDÕES"  },
-  { id: "combate",   label: "COMBATE"   },
-  { id: "descricao", label: "DESC."     },
+  { id: "classe",      label: "CLASSE"      },
+  { id: "tecnicas",    label: "TÉCNICAS"    },
+  { id: "armas",       label: "ARMAS"       },
+  { id: "habilidades", label: "HABILIDADES" },
+  { id: "aptidoes",    label: "APTIDÕES"    },
+  { id: "combate",     label: "COMBATE"     },
+  { id: "descricao",   label: "DESC."       },
 ];
 
 export function CharacterSheet({ character }: { character: Character }) {
@@ -829,12 +990,15 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [selectedOrigem, setSelectedOrigem] = useState<OrigemSeed | null>(null);
   const [classeSaving, setClasseSaving]   = useState(false);
   const [classeError, setClasseError]     = useState("");
+  const [showClasseConfirm, setShowClasseConfirm] = useState(false);
 
-  // ── Local lists (techniques & weapons) ──
+  // ── Local lists (techniques, weapons & abilities) ──
   const [localTechniques, setLocalTechniques] = useState<Technique[]>(character.techniques);
   const [localWeapons, setLocalWeapons]       = useState<Weapon[]>(character.weapons);
+  const [localAbilities, setLocalAbilities]   = useState<CharacterAbility[]>(character.abilities ?? []);
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddWeapon, setShowAddWeapon]     = useState(false);
+  const [showAddAbility, setShowAddAbility]   = useState(false);
 
   // ── Dice rolls ──
   const [skillIdMap, setSkillIdMap]   = useState<Record<string, string>>({});
@@ -842,6 +1006,21 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [rollVisible, setRollVisible] = useState(false);
   const rollIdRef   = useRef(0);
   const rollTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Specialization abilities (for HABILIDADES tab) ──
+  const [specAbilities, setSpecAbilities] = useState<{
+    id: string; nome: string; nivelRequerido: number; tipo: string;
+    custo: string; alcance: string; duracao: string; descricao: string;
+  }[]>([]);
+
+  // ── Active combat (for COMBATE tab) ──
+  const [activeCombat, setActiveCombat] = useState<{
+    id: string; state: string; roundNumber: number; currentTurnIndex: number;
+    participants: { id: string; ordem: number; initiative: number; hpAtual: number; energiaAtual: number;
+      character: { id: string; nome: string; hpMax: number; energiaMax: number } | null;
+      npc: { id: string; nome: string; hpMax: number; energiaMax: number } | null;
+    }[];
+  } | null>(null);
 
   function showRoll(label: string, dice: number, modifier: number) {
     rollIdRef.current += 1;
@@ -855,19 +1034,19 @@ export function CharacterSheet({ character }: { character: Character }) {
     const skillId = skillIdMap[skillNome];
     const skill   = ALL_SKILLS.find(s => s.nome === skillNome);
     const attrVal = skill ? (attrs[skill.atributoBase as keyof Attrs] ?? 0) : 0;
-    const maestria = (skillPoints[skillNome] ?? 0) > 0 ? character.maestriaBonus : 0;
+    const treinamento = skillPoints[skillNome] ?? 0;
 
     if (backendToken && skillId && character.campaignId) {
       try {
-        const res = await apiCall<{ dice: number; total: number; attrVal: number; maestria: number }>(
+        const res = await apiCall<{ dice: number; total: number; attrVal: number; treinamento: number }>(
           "/roll/skill", backendToken, { method: "POST", body: { skillId, characterId: character.id, campaignId: character.campaignId } }
         );
-        showRoll(skillNome, res.dice, res.attrVal + res.maestria);
+        showRoll(skillNome, res.dice, res.attrVal + res.treinamento);
         return;
       } catch { /* fallback below */ }
     }
     const dice = Math.floor(Math.random() * 20) + 1;
-    showRoll(skillNome, dice, attrVal + maestria);
+    showRoll(skillNome, dice, attrVal + treinamento);
   }
 
   async function handleRollAttr(attr: keyof Attrs) {
@@ -904,11 +1083,11 @@ export function CharacterSheet({ character }: { character: Character }) {
   async function handleRollWeapon(w: Weapon) {
     if (backendToken && character.campaignId) {
       try {
-        const res = await apiCall<{ dice: number; attackTotal: number; modifier?: number }>(
+        const res = await apiCall<{ naturalRoll: number; attackTotal: number }>(
           "/roll/weapon-attack", backendToken, { method: "POST", body: { characterId: character.id, weaponId: w.id, campaignId: character.campaignId } }
         );
-        const mod = res.modifier ?? (res.attackTotal - res.dice);
-        showRoll(w.nome, res.dice, mod);
+        const mod = res.attackTotal - res.naturalRoll;
+        showRoll(w.nome, res.naturalRoll, mod);
         return;
       } catch { /* fallback */ }
     }
@@ -947,17 +1126,36 @@ export function CharacterSheet({ character }: { character: Character }) {
     }).catch(() => {/* non-critical */});
   }, [backendToken]); // eslint-disable-line
 
-  // Preview of additive attr bonuses from spec + origem
-  const previewAttrs = (): Attrs => {
-    const base: Attrs = { FOR: 0, AGI: 0, VIG: 0, INT: 0, PRE: 0 };
-    if (selectedSpec?.bonusAtributos) {
-      for (const k of Object.keys(base) as (keyof Attrs)[]) base[k] += selectedSpec.bonusAtributos[k] ?? 0;
+  // Fetch spec abilities when on HABILIDADES tab and spec is set
+  useEffect(() => {
+    if (!backendToken || !charSpec?.id || activeTab !== "habilidades") return;
+    apiCall<typeof specAbilities>(`/specializations/${charSpec.id}/abilities`, backendToken)
+      .then(setSpecAbilities)
+      .catch(() => {});
+  }, [backendToken, charSpec?.id, activeTab]); // eslint-disable-line
+
+  // Poll for active combat when on COMBATE tab
+  useEffect(() => {
+    if (!backendToken || !character.campaignId || activeTab !== "combate") return;
+    let cancelled = false;
+    async function fetchCombat() {
+      try {
+        const camp = await apiCall<{ combats?: { id: string; state: string }[] }>(`/campaigns/${character.campaignId}`, backendToken!);
+        const activeCombatMeta = (camp as any).combats?.find((c: { state: string }) =>
+          !["IDLE", "COMBAT_FINISHED"].includes(c.state)
+        );
+        if (activeCombatMeta && !cancelled) {
+          const combat = await apiCall<any>(`/combats/${activeCombatMeta.id}`, backendToken!);
+          if (!cancelled) setActiveCombat(combat);
+        } else if (!activeCombatMeta && !cancelled) {
+          setActiveCombat(null);
+        }
+      } catch { /* ignore */ }
     }
-    if (selectedOrigem?.bonusAtributos) {
-      for (const k of Object.keys(base) as (keyof Attrs)[]) base[k] += selectedOrigem.bonusAtributos[k] ?? 0;
-    }
-    return base;
-  };
+    fetchCombat();
+    const interval = setInterval(fetchCombat, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [backendToken, character.campaignId, activeTab]); // eslint-disable-line
 
   async function handleSalvarClasse() {
     if (!backendToken || !selectedSpec) { setClasseError("Selecione pelo menos uma especialização."); return; }
@@ -1048,9 +1246,22 @@ export function CharacterSheet({ character }: { character: Character }) {
     }
   };
 
+  // ── Skill training limit (maestriaBonus controls how many non-granted skills can be trained) ──
+  const grantedSkillNames = new Set([
+    ...(selectedSpec?.habilidadesTreinadas ?? []),
+    ...(selectedOrigem?.habilidadesTreinadas ?? []),
+  ]);
+  const trainingLimit = character.maestriaBonus;
+  const manuallyTrainedCount = ALL_SKILLS.filter(s => (skillPoints[s.nome] ?? 0) > 0 && !grantedSkillNames.has(s.nome)).length;
+
   const handleSkillPoints = (skillName: string, delta: number) => {
     const current = skillPoints[skillName] ?? 0;
-    const next = Math.max(0, Math.min(20, current + delta));
+    const snapped = Math.round(current / 5) * 5;
+    let next = Math.max(0, Math.min(20, snapped + delta));
+    // Enforce training limit: cannot start training a new skill beyond maestriaBonus (unless granted by spec/origin)
+    if (delta > 0 && current === 0 && !grantedSkillNames.has(skillName) && manuallyTrainedCount >= trainingLimit) {
+      next = 0;
+    }
     const next2 = { ...skillPoints, [skillName]: next };
     setSkillPoints(next2);
     persist(sKey, { skills: ALL_SKILLS.map(s => ({ skill: s, treinada: (next2[s.nome] ?? 0) > 0, pontosInvestidos: next2[s.nome] ?? 0 })) });
@@ -1211,6 +1422,7 @@ export function CharacterSheet({ character }: { character: Character }) {
               <div className="text-center px-3.5 py-2 bg-bg-input border border-border rounded-sm">
                 <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Maestria</div>
                 <div className="text-[22px] font-extrabold text-brand leading-none">+{character.maestriaBonus}</div>
+                <div className="text-[8px] text-text-ghost mt-0.5">{manuallyTrainedCount}/{trainingLimit} perícias</div>
               </div>
             </div>
           </div>
@@ -1220,7 +1432,9 @@ export function CharacterSheet({ character }: { character: Character }) {
         <div className="bg-bg-surface border border-border rounded overflow-hidden flex flex-col">
           <div className="px-[18px] py-3 border-b border-border-subtle flex justify-between items-center shrink-0">
             <span className="text-[11px] font-bold text-text-base tracking-[0.18em] uppercase font-cinzel">Perícias</span>
-            <span className="text-[9px] text-text-ghost">pontos: 0–20 por perícia</span>
+            <span className="text-[9px]" style={{ color: manuallyTrainedCount >= trainingLimit ? "#F59E0B" : "#3F3F46" }}>
+              Treinadas: {manuallyTrainedCount}/{trainingLimit} · passos de 5
+            </span>
           </div>
 
           <div className="grid gap-0.5 px-[18px] py-[7px] border-b border-border-subtle shrink-0" style={{ gridTemplateColumns: "1fr 36px 40px 90px" }}>
@@ -1234,7 +1448,6 @@ export function CharacterSheet({ character }: { character: Character }) {
               const pontos   = skillPoints[skill.nome] ?? 0;
               const treinada = pontos > 0;
               const attrVal  = attrs[skill.atributoBase as keyof Attrs] ?? 0;
-              const maestria = treinada ? character.maestriaBonus : 0;
               return (
                 <div key={skill.nome} className="grid gap-0.5 px-[18px] py-[5px] items-center border-b border-[rgba(26,26,26,0.9)]" style={{ gridTemplateColumns: "1fr 36px 40px 90px", background: i % 2 !== 0 ? "rgba(255,255,255,0.012)" : "transparent" }}>
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -1256,15 +1469,15 @@ export function CharacterSheet({ character }: { character: Character }) {
                     <span className="text-[9px] text-text-ghost shrink-0">({skill.atributoBase})</span>
                   </div>
 
-                  <span className={`text-[13px] font-bold text-center ${(attrVal + maestria) > 0 ? "text-text-light" : "text-text-ghost"}`}>
-                    +{attrVal + maestria}
+                  <span className={`text-[13px] font-bold text-center ${(attrVal + pontos) > 0 ? "text-text-light" : "text-text-ghost"}`}>
+                    +{attrVal + pontos}
                   </span>
 
                   <span className="text-[10px] text-text-ghost text-center">d20</span>
 
                   <div className="flex items-center justify-center gap-0.5">
                     <button
-                      onClick={() => handleSkillPoints(skill.nome, -1)}
+                      onClick={() => handleSkillPoints(skill.nome, -5)}
                       disabled={pontos === 0}
                       style={{
                         width: 16, height: 16, border: "none", borderRadius: 2,
@@ -1283,20 +1496,27 @@ export function CharacterSheet({ character }: { character: Character }) {
                       borderBottom: `1px solid ${pontos > 0 ? "#2A2A2A" : "transparent"}`,
                       paddingBottom: 1,
                     }}>{pontos}</span>
-                    <button
-                      onClick={() => handleSkillPoints(skill.nome, 1)}
-                      disabled={pontos === 20}
-                      style={{
-                        width: 16, height: 16, border: "none", borderRadius: 2,
-                        cursor: pontos === 20 ? "default" : "pointer",
-                        background: pontos === 20 ? "transparent" : "#1A1A1A",
-                        color: pontos === 20 ? "#2A2A2A" : "#9CA3AF",
-                        fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
-                        padding: 0, lineHeight: 1,
-                      }}
-                      onMouseEnter={e => { if (pontos < 20) e.currentTarget.style.background = "#7C3AED"; }}
-                      onMouseLeave={e => { if (pontos < 20) e.currentTarget.style.background = "#1A1A1A"; }}
-                    >+</button>
+                    {(() => {
+                      const atLimit = pontos === 0 && !grantedSkillNames.has(skill.nome) && manuallyTrainedCount >= trainingLimit;
+                      const disabled = pontos === 20 || atLimit;
+                      return (
+                        <button
+                          onClick={() => handleSkillPoints(skill.nome, 5)}
+                          disabled={disabled}
+                          title={atLimit ? `Limite de maestria atingido (${trainingLimit} perícias)` : undefined}
+                          style={{
+                            width: 16, height: 16, border: "none", borderRadius: 2,
+                            cursor: disabled ? "default" : "pointer",
+                            background: disabled ? "transparent" : "#1A1A1A",
+                            color: disabled ? "#2A2A2A" : "#9CA3AF",
+                            fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
+                            padding: 0, lineHeight: 1,
+                          }}
+                          onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = "#7C3AED"; }}
+                          onMouseLeave={e => { if (!disabled) e.currentTarget.style.background = "#1A1A1A"; }}
+                        >+</button>
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -1304,7 +1524,55 @@ export function CharacterSheet({ character }: { character: Character }) {
           </div>
 
           <div className="px-[18px] py-[7px] border-t border-border-subtle shrink-0">
-            <span className="text-[10px] text-text-ghost">● Treinada se pontos &gt; 0 · Bônus = atributo + maestria</span>
+            <span className="text-[10px] text-text-ghost">● Bônus = atributo + treinamento · Passos de 5 · Limite: maestria ({trainingLimit}) perícias base</span>
+          </div>
+
+          {/* Custom Dice Roller */}
+          <div className="px-[18px] py-[10px] border-t border-border-subtle shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-text-faint font-bold uppercase tracking-[0.12em] shrink-0">Dado</span>
+              <input
+                placeholder="XdY (ex: 2d6)"
+                maxLength={12}
+                style={{
+                  flex: 1, background: "#0A0A0A", border: "1px solid #2A2A2A", borderRadius: 2,
+                  color: "#D1D5DB", fontSize: 12, padding: "5px 8px", outline: "none",
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    const expr = (e.currentTarget as HTMLInputElement).value.trim();
+                    const m = expr.match(/^(\d+)d(\d+)$/i);
+                    if (m) {
+                      let total = 0;
+                      for (let i = 0; i < parseInt(m[1]); i++) total += Math.floor(Math.random() * parseInt(m[2])) + 1;
+                      showRoll(expr, total, 0);
+                      (e.currentTarget as HTMLInputElement).value = "";
+                    }
+                  }
+                }}
+              />
+              <button
+                style={{
+                  padding: "5px 10px", background: "transparent", border: "1px solid #2A2A2A",
+                  borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 700,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#7C3AED"; e.currentTarget.style.color = "#A855F7"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A2A2A"; e.currentTarget.style.color = "#6B7280"; }}
+                onClick={e => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  const expr = input?.value?.trim();
+                  const m = expr?.match(/^(\d+)d(\d+)$/i);
+                  if (m) {
+                    let total = 0;
+                    for (let i = 0; i < parseInt(m[1]); i++) total += Math.floor(Math.random() * parseInt(m[2])) + 1;
+                    showRoll(expr, total, 0);
+                    if (input) input.value = "";
+                  }
+                }}
+              ><Dices size={13} /></button>
+            </div>
           </div>
         </div>
 
@@ -1331,115 +1599,112 @@ export function CharacterSheet({ character }: { character: Character }) {
           <div className="flex-1 overflow-y-auto p-4">
 
             {activeTab === "classe" && (
-              <div className="flex flex-col gap-4">
-                <SectionDivider>Especialização</SectionDivider>
-
-                {/* Spec cards */}
-                <div className="flex flex-col gap-1.5">
-                  {specs.length === 0 && <span className="text-xs text-text-faint">Carregando…</span>}
-                  {specs.map(s => {
-                    const active = selectedSpec?.id === s.id;
-                    const bonuses = Object.entries(s.bonusAtributos ?? {}).filter(([, v]) => v > 0);
-                    return (
-                      <button key={s.id} onClick={() => setSelectedSpec(active ? null : s)} style={{
-                        background: active ? "rgba(124,58,237,0.12)" : "#0A0A0A",
-                        border: `1px solid ${active ? "#7C3AED" : "#1F1F1F"}`,
-                        borderRadius: 2, padding: "10px 12px", cursor: "pointer", textAlign: "left",
-                        transition: "all 0.15s", boxShadow: active ? "0 0 12px rgba(124,58,237,0.15)" : "none",
-                      }}>
-                        <div className="flex justify-between items-center">
-                          <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#A855F7" : "#D1D5DB" }}>{s.nome}</span>
-                          <div className="flex gap-2.5 items-center">
-                            <span className="text-[10px] text-red-500">♥{s.hpPorNivel}</span>
-                            <span className="text-[10px] text-brand">⚡{s.energiaPorNivel}</span>
-                          </div>
-                        </div>
-                        {bonuses.length > 0 && (
-                          <div className="flex gap-1.5 mt-1 flex-wrap">
-                            {bonuses.map(([k, v]) => (
-                              <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
-                            ))}
-                            {s.habilidadesTreinadas?.slice(0,3).map(h => (
-                              <span key={h} className="text-[10px] text-blue-400 bg-blue-400/[0.08] border border-blue-400/20 px-1.5 py-px rounded-sm">{h}</span>
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <SectionDivider>Origem</SectionDivider>
-
-                {/* Origem cards */}
-                <div className="flex flex-col gap-1.5">
-                  {origens.length === 0 && <span className="text-xs text-text-faint">Carregando…</span>}
-                  {origens.map(o => {
-                    const active = selectedOrigem?.id === o.id;
-                    const bonuses = Object.entries(o.bonusAtributos ?? {}).filter(([, v]) => v > 0);
-                    return (
-                      <button key={o.id} onClick={() => setSelectedOrigem(active ? null : o)} style={{
-                        background: active ? "rgba(59,130,246,0.1)" : "#0A0A0A",
-                        border: `1px solid ${active ? "#3B82F6" : "#1F1F1F"}`,
-                        borderRadius: 2, padding: "10px 12px", cursor: "pointer", textAlign: "left",
-                        transition: "all 0.15s",
-                      }}>
-                        <div className="flex justify-between items-center">
-                          <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#60A5FA" : "#D1D5DB" }}>{o.nome}</span>
-                        </div>
-                        {bonuses.length > 0 && (
-                          <div className="flex gap-1.5 mt-1 flex-wrap">
-                            {bonuses.map(([k, v]) => (
-                              <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
-                            ))}
-                            {o.habilidadesTreinadas?.slice(0,3).map(h => (
-                              <span key={h} className="text-[10px] text-blue-400 bg-blue-400/[0.08] border border-blue-400/20 px-1.5 py-px rounded-sm">{h}</span>
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Attribute preview */}
-                {(selectedSpec || selectedOrigem) && (() => {
-                  const p = previewAttrs();
-                  const nonZero = Object.entries(p).filter(([, v]) => v > 0);
-                  return nonZero.length > 0 ? (
-                    <div className="bg-bg-input border border-green-500/20 rounded-sm px-3.5 py-2.5">
-                      <div className="text-[9px] text-green-400 uppercase tracking-[0.1em] mb-1.5">Bônus totais de atributos</div>
-                      <div className="flex gap-2 flex-wrap">
-                        {Object.entries(p).map(([k, v]) => (
-                          <span key={k} style={{ fontSize: 13, fontWeight: 700, color: v > 0 ? "#22C55E" : "#3F3F46" }}>{k}: {v > 0 ? `+${v}` : v}</span>
-                        ))}
-                      </div>
+              <div className="flex flex-col gap-5">
+                {charSpec ? (
+                  /* ── Already selected — read-only ── */
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-brand/[0.06] border border-brand/20 rounded-sm px-4 py-3 text-[11px] text-brand-muted">
+                      ✦ Classe e Origem já definidas — não podem ser alteradas.
                     </div>
-                  ) : null;
-                })()}
+                    <div>
+                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Especialização</div>
+                      <div className="bg-bg-input border border-border-md rounded-sm px-3.5 py-2.5 text-[14px] font-semibold text-brand-light">{charSpec.nome}</div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Origem</div>
+                      <div className="bg-bg-input border border-border-md rounded-sm px-3.5 py-2.5 text-[14px] font-semibold text-text-base">{charOrigem?.nome ?? "—"}</div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Selection mode ── */
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Especialização *</div>
+                      <select
+                        value={selectedSpec?.id ?? ""}
+                        onChange={e => {
+                          const s = specs.find(x => x.id === e.target.value) ?? null;
+                          setSelectedSpec(s);
+                        }}
+                        style={{
+                          width: "100%", padding: "9px 12px", background: "#0A0A0A",
+                          border: "1px solid #2A2A2A", borderRadius: 2, color: selectedSpec ? "#A855F7" : "#6B7280",
+                          fontSize: 13, fontWeight: 600, outline: "none", cursor: "pointer",
+                          appearance: "auto",
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      >
+                        <option value="">Selecionar especialização…</option>
+                        {specs.map(s => (
+                          <option key={s.id} value={s.id}>{s.nome}</option>
+                        ))}
+                      </select>
+                      {selectedSpec && (
+                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                          {Object.entries(selectedSpec.bonusAtributos ?? {}).filter(([,v]) => v > 0).map(([k,v]) => (
+                            <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
+                          ))}
+                          <span className="text-[10px] text-red-500">♥{selectedSpec.hpPorNivel}/nv</span>
+                          <span className="text-[10px] text-brand">⚡{selectedSpec.energiaPorNivel}/nv</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">Origem</div>
+                      <select
+                        value={selectedOrigem?.id ?? ""}
+                        onChange={e => {
+                          const o = origens.find(x => x.id === e.target.value) ?? null;
+                          setSelectedOrigem(o);
+                        }}
+                        style={{
+                          width: "100%", padding: "9px 12px", background: "#0A0A0A",
+                          border: "1px solid #2A2A2A", borderRadius: 2, color: selectedOrigem ? "#60A5FA" : "#6B7280",
+                          fontSize: 13, fontWeight: 600, outline: "none", cursor: "pointer",
+                          appearance: "auto",
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = "#3B82F6")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      >
+                        <option value="">Selecionar origem…</option>
+                        {origens.map(o => (
+                          <option key={o.id} value={o.id}>{o.nome}</option>
+                        ))}
+                      </select>
+                      {selectedOrigem && (
+                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                          {Object.entries(selectedOrigem.bonusAtributos ?? {}).filter(([,v]) => v > 0).map(([k,v]) => (
+                            <span key={k} className="text-[10px] text-green-400 bg-green-400/[0.08] border border-green-400/20 px-1.5 py-px rounded-sm">+{v} {k}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                {classeError && (
-                  <div className="bg-red-500/[0.08] border border-red-500/25 rounded-sm px-3.5 py-2.5 text-xs text-red-500">
-                    {classeError}
+                    {classeError && (
+                      <div className="bg-red-500/[0.08] border border-red-500/25 rounded-sm px-3.5 py-2.5 text-xs text-red-500">
+                        {classeError}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => { if (!selectedSpec) { setClasseError("Selecione uma especialização."); return; } setClasseError(""); setShowClasseConfirm(true); }}
+                      disabled={!selectedSpec}
+                      style={{
+                        padding: "12px", background: !selectedSpec ? "#1A1A1A" : "#7C3AED",
+                        border: "none", borderRadius: 2, cursor: !selectedSpec ? "not-allowed" : "pointer",
+                        color: !selectedSpec ? "#52525B" : "#FFF",
+                        fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                        fontFamily: "Cinzel, serif", transition: "background 0.2s",
+                        boxShadow: selectedSpec ? "0 0 16px rgba(124,58,237,0.3)" : "none",
+                      }}
+                    >
+                      ✦ Confirmar Seleção
+                    </button>
                   </div>
                 )}
 
-                <button
-                  onClick={handleSalvarClasse}
-                  disabled={classeSaving || !selectedSpec}
-                  style={{
-                    padding: "12px", background: classeSaving || !selectedSpec ? "#1A1A1A" : "#7C3AED",
-                    border: "none", borderRadius: 2, cursor: classeSaving || !selectedSpec ? "not-allowed" : "pointer",
-                    color: classeSaving || !selectedSpec ? "#52525B" : "#FFF",
-                    fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                    fontFamily: "Cinzel, serif", transition: "background 0.2s",
-                    boxShadow: !classeSaving && selectedSpec ? "0 0 16px rgba(124,58,237,0.3)" : "none",
-                  }}
-                >
-                  {classeSaving ? "Salvando…" : "✦ Salvar Classe & Origem"}
-                </button>
-
-                <div className="border-t border-border-subtle pt-3.5 mt-1">
+                <div className="border-t border-border-subtle pt-3.5">
                   {!confirmDelete ? (
                     <button
                       onClick={() => setConfirmDelete(true)}
@@ -1470,6 +1735,21 @@ export function CharacterSheet({ character }: { character: Character }) {
 
             {activeTab === "tecnicas" && (
               <div className="flex flex-col gap-2">
+                {/* Técnica info — canto superior esquerdo */}
+                <div className="bg-bg-input border border-brand/20 rounded-sm px-3 py-2 flex gap-4 text-[10px]">
+                  <div>
+                    <div className="text-text-faint uppercase tracking-[0.1em] mb-0.5">Rolagem</div>
+                    <div className="text-brand-light font-bold">1d20 + atrib + maestria</div>
+                  </div>
+                  <div>
+                    <div className="text-text-faint uppercase tracking-[0.1em] mb-0.5">CD base</div>
+                    <div className="text-text-dim font-bold">10 + nível + maestria</div>
+                  </div>
+                  <div>
+                    <div className="text-text-faint uppercase tracking-[0.1em] mb-0.5">Maestria</div>
+                    <div className="text-text-base font-bold">+{character.maestriaBonus}</div>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1"><SectionDivider>Técnicas ({localTechniques.length})</SectionDivider></div>
                   <button
@@ -1504,6 +1784,98 @@ export function CharacterSheet({ character }: { character: Character }) {
               </div>
             )}
 
+            {activeTab === "habilidades" && (
+              <div className="flex flex-col gap-2">
+                {/* Habilidades da Classe */}
+                <SectionDivider>Habilidades da Classe ({specAbilities.filter(a => a.nivelRequerido <= character.nivel).length})</SectionDivider>
+                {!charSpec ? (
+                  <EmptyState icon={<Star size={26} />} message="Nenhuma classe definida" sub="Defina sua especialização na aba CLASSE" />
+                ) : specAbilities.filter(a => a.nivelRequerido <= character.nivel).length === 0 ? (
+                  <EmptyState icon={<Star size={26} />} message="Nenhuma habilidade disponível" sub="Habilidades aparecem conforme você sobe de nível" />
+                ) : (
+                  specAbilities
+                    .filter(a => a.nivelRequerido <= character.nivel)
+                    .map(a => (
+                      <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-[#F59E0B] rounded-[0_2px_2px_0] px-3.5 py-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] text-amber-400 border border-amber-400/30 px-1.5 py-px rounded-sm">{a.tipo}</span>
+                            <span className="text-[9px] text-text-faint">Nv.{a.nivelRequerido}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-text-dim m-0 mb-1.5 leading-relaxed">{a.descricao}</p>
+                        <div className="flex gap-3 text-[10px] text-text-faint">
+                          {a.custo !== "nenhum" && <span>Custo: {a.custo}</span>}
+                          {a.alcance !== "pessoal" && <span>Alcance: {a.alcance}</span>}
+                          {a.duracao !== "imediato" && <span>Duração: {a.duracao}</span>}
+                        </div>
+                      </div>
+                    ))
+                )}
+                {charSpec && specAbilities.filter(a => a.nivelRequerido > character.nivel).length > 0 && (
+                  <div className="mt-2">
+                    <SectionDivider>Futuras (Nível insuficiente)</SectionDivider>
+                    {specAbilities
+                      .filter(a => a.nivelRequerido > character.nivel)
+                      .map(a => (
+                        <div key={a.id} className="bg-bg-input border border-[#1A1A1A] border-l-[3px] border-l-[#3F3F46] rounded-[0_2px_2px_0] px-3.5 py-2.5 mb-1.5 opacity-50">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[12px] font-medium text-text-muted">{a.nome}</span>
+                            <span className="text-[9px] text-text-ghost">Nv.{a.nivelRequerido}</span>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+
+                {/* Habilidades Personalizadas */}
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="flex-1"><SectionDivider>Personalizadas ({localAbilities.length})</SectionDivider></div>
+                  <button
+                    onClick={() => setShowAddAbility(true)}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-[#F59E0B] rounded-sm cursor-pointer text-amber-400 text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,158,11,0.1)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >+ Criar</button>
+                </div>
+                {localAbilities.length === 0 ? (
+                  <p className="text-[11px] text-text-ghost text-center py-2">Nenhuma habilidade personalizada criada.</p>
+                ) : (
+                  localAbilities.map(a => (
+                    <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-amber-600 rounded-[0_2px_2px_0] px-3.5 py-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-amber-500 border border-amber-600/30 px-1.5 py-px rounded-sm">{a.tipo}</span>
+                          <button
+                            onClick={async () => {
+                              if (!backendToken) return;
+                              try {
+                                await apiCall(`/characters/${character.id}/abilities/${a.id}`, backendToken, { method: "DELETE" });
+                                setLocalAbilities(prev => prev.filter(x => x.id !== a.id));
+                              } catch { /* ignore */ }
+                            }}
+                            className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150"
+                            onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+                            title="Remover habilidade"
+                          ><Trash2 size={11} /></button>
+                        </div>
+                      </div>
+                      {a.descricao && <p className="text-xs text-text-dim m-0 mb-1.5 leading-relaxed">{a.descricao}</p>}
+                      <div className="flex gap-3 text-[10px] text-text-faint">
+                        {a.custo !== "nenhum" && <span>Custo: {a.custo}</span>}
+                        {a.alcance !== "pessoal" && <span>Alcance: {a.alcance}</span>}
+                        {a.duracao !== "imediato" && <span>Duração: {a.duracao}</span>}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
             {activeTab === "aptidoes" && (
               <div className="flex flex-col gap-2">
                 <SectionDivider>Aptidões ({character.aptitudes.length})</SectionDivider>
@@ -1525,7 +1897,53 @@ export function CharacterSheet({ character }: { character: Character }) {
             {activeTab === "combate" && (
               <div className="flex flex-col gap-2">
                 <SectionDivider>Estado de Combate</SectionDivider>
-                <EmptyState icon={<Shield size={26} />} message="Sem combate ativo" sub="Entre em uma campanha e aguarde o Mestre iniciar o combate" />
+                {!activeCombat ? (
+                  <EmptyState icon={<Shield size={26} />} message="Sem combate ativo" sub="Aguarde o Mestre iniciar o combate" />
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="bg-bg-input border border-red-900/40 rounded-sm px-3.5 py-2.5 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" style={{ boxShadow: "0 0 6px #EF4444" }} />
+                      <div>
+                        <div className="text-[10px] text-red-500 font-bold tracking-[0.1em]">COMBATE ATIVO</div>
+                        <div className="text-xs text-text-muted">Rodada {activeCombat.roundNumber} · {activeCombat.state.replace(/_/g, " ")}</div>
+                      </div>
+                    </div>
+                    {activeCombat.participants
+                      .slice().sort((a, b) => a.ordem - b.ordem)
+                      .map((p, i) => {
+                        const name = p.character?.nome ?? p.npc?.nome ?? "?";
+                        const hpMax = p.character?.hpMax ?? p.npc?.hpMax ?? 1;
+                        const enMax = p.character?.energiaMax ?? p.npc?.energiaMax ?? 1;
+                        const isMe = p.character?.id === character.id;
+                        const isCurrent = i === activeCombat.currentTurnIndex;
+                        const hpPct = hpMax > 0 ? Math.min(100, (p.hpAtual / hpMax) * 100) : 0;
+                        return (
+                          <div key={p.id} style={{
+                            background: isMe ? "rgba(124,58,237,0.1)" : isCurrent ? "rgba(239,68,68,0.06)" : "transparent",
+                            border: `1px solid ${isMe ? "#4C1D95" : isCurrent ? "rgba(239,68,68,0.3)" : "#1F1F1F"}`,
+                            borderRadius: 2, padding: "10px 12px",
+                          }}>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <div className="flex items-center gap-2">
+                                {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-red-500" style={{ boxShadow: "0 0 4px #EF4444" }} />}
+                                <span style={{ fontSize: 12, fontWeight: 600, color: isMe ? "#A855F7" : "#D1D5DB" }}>{name}</span>
+                                {isMe && <span className="text-[9px] text-brand bg-brand/[0.12] px-1.5 py-px rounded-sm">VOCÊ</span>}
+                              </div>
+                              <span className="text-[11px] text-text-faint">INI: {p.initiative}</span>
+                            </div>
+                            <div className="h-1.5 bg-bg-input rounded-sm overflow-hidden">
+                              <div style={{ height: "100%", width: `${hpPct}%`, background: hpPct > 50 ? "#EF4444" : hpPct > 25 ? "#F97316" : "#7F1D1D", transition: "width 0.3s" }} />
+                            </div>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-[10px] text-red-400">HP: {p.hpAtual}/{hpMax}</span>
+                              <span className="text-[10px] text-brand">EN: {p.energiaAtual}/{enMax}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                )}
               </div>
             )}
 
@@ -1537,7 +1955,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                   { label: "Status", value: character.isApproved ? "✓ Aprovada pelo Mestre" : "⏳ Aguardando aprovação" },
                   { label: "XP Acumulado", value: `${character.xpAtual.toLocaleString("pt-BR")} pontos` },
                   { label: "Próximo nível em", value: `${Math.max(0, xpNext - character.xpAtual).toLocaleString("pt-BR")} XP` },
-                  { label: "Bônus de Maestria", value: `+${character.maestriaBonus} em perícias treinadas` },
+                  { label: "Maestria", value: `${character.maestriaBonus} perícias base treinadas (bônus de técnicas: +${character.maestriaBonus})` },
                 ] as { label: string; value: string }[]).map(item => (
                   <div key={item.label}>
                     <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">{item.label}</div>
@@ -1570,6 +1988,69 @@ export function CharacterSheet({ character }: { character: Character }) {
           onAdded={(w) => { setLocalWeapons(prev => [...prev, w]); setShowAddWeapon(false); }}
           onClose={() => setShowAddWeapon(false)}
         />
+      )}
+
+      {showAddAbility && backendToken && (
+        <AddAbilityModal
+          characterId={character.id}
+          backendToken={backendToken}
+          onAdded={(a) => { setLocalAbilities(prev => [...prev, a]); setShowAddAbility(false); }}
+          onClose={() => setShowAddAbility(false)}
+        />
+      )}
+
+      {/* ── Classe Confirmation Modal ── */}
+      {showClasseConfirm && selectedSpec && (
+        <div
+          className="fixed inset-0 z-[400] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowClasseConfirm(false); }}
+        >
+          <div className="bg-[#111] border border-border rounded-md w-full max-w-[420px] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.2)" }}>
+            <div className="px-6 pt-5 pb-4 border-b border-border-subtle">
+              <div className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel mb-1">Confirmar Classe & Origem</div>
+              <p className="text-[11px] text-text-faint m-0">Esta escolha é permanente e não poderá ser alterada depois.</p>
+            </div>
+            <div className="px-6 py-5 flex flex-col gap-3">
+              <div className="flex gap-3">
+                <div className="flex-1 bg-bg-input border border-brand/30 rounded-sm px-3 py-2.5">
+                  <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Especialização</div>
+                  <div className="text-[14px] font-bold text-brand-light">{selectedSpec.nome}</div>
+                  <div className="text-[10px] text-text-muted mt-1">♥{selectedSpec.hpPorNivel}/nv · ⚡{selectedSpec.energiaPorNivel}/nv</div>
+                </div>
+                {selectedOrigem && (
+                  <div className="flex-1 bg-bg-input border border-blue-500/30 rounded-sm px-3 py-2.5">
+                    <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Origem</div>
+                    <div className="text-[14px] font-bold text-blue-400">{selectedOrigem.nome}</div>
+                  </div>
+                )}
+              </div>
+              {classeError && <p className="text-xs text-red-500 m-0">{classeError}</p>}
+              <div className="flex gap-2 mt-1">
+                <button
+                  onClick={async () => {
+                    await handleSalvarClasse();
+                    setShowClasseConfirm(false);
+                  }}
+                  disabled={classeSaving}
+                  style={{
+                    flex: 1, padding: "11px", background: classeSaving ? "#3B0764" : "#7C3AED",
+                    border: "none", borderRadius: 2, cursor: classeSaving ? "not-allowed" : "pointer",
+                    color: "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", fontFamily: "Cinzel, serif",
+                  }}
+                >{classeSaving ? "Salvando…" : "✦ Confirmar"}</button>
+                <button
+                  onClick={() => setShowClasseConfirm(false)}
+                  style={{
+                    padding: "11px 18px", background: "transparent",
+                    border: "1px solid #2A2A2A", borderRadius: 2, cursor: "pointer",
+                    color: "#6B7280", fontSize: 12, fontWeight: 600,
+                  }}
+                >Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

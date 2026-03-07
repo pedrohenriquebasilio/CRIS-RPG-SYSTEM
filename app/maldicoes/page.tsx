@@ -27,7 +27,7 @@ interface MobCharacter {
 interface Campaign {
   id: string;
   name: string;
-  characters: MobCharacter[];
+  characters?: MobCharacter[];
 }
 
 function hpColor(cur: number, max: number) {

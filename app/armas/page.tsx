@@ -18,6 +18,7 @@ interface WeaponTemplate {
   regraEspecial: string | null;
   threatRange: number;
   criticalMultiplier: number;
+  descricao?: string;
 }
 
 const DANO_COLORS: Record<string, string> = {
@@ -112,6 +113,9 @@ function WeaponRow({ w }: { w: WeaponTemplate }) {
               </div>
             )}
           </div>
+          {w.descricao && (
+            <p className="text-[12px] text-text-dim m-0 leading-relaxed">{w.descricao}</p>
+          )}
           {w.regraEspecial && (
             <div className="flex gap-2 items-start px-3 py-2.5 bg-bg-input border border-border rounded-sm">
               <AlertTriangle size={13} color="#D97706" className="shrink-0 mt-px" />
