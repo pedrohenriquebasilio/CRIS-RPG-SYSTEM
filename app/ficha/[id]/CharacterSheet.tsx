@@ -722,6 +722,114 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
   );
 }
 
+// ─── Edit Technique Modal ─────────────────────────────────────────────────────
+function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: {
+  t: Technique; characterId: string; backendToken: string;
+  onSaved: (updated: Technique) => void; onClose: () => void;
+}) {
+  const [nome, setNome]           = useState(t.nome);
+  const [nivel, setNivel]         = useState(t.nivel);
+  const [atrib, setAtrib]         = useState(t.atributoBase);
+  const [custo, setCusto]         = useState(String(t.custoEnergia));
+  const [tipoDano, setTipoDano]   = useState(t.tipoDano ?? "");
+  const [damageDice, setDamageDice] = useState(t.damageDice ?? "");
+  const [desc, setDesc]           = useState(t.descricaoLivre);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState("");
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim()) { setError("Nome é obrigatório."); return; }
+    setSaving(true); setError("");
+    try {
+      const res = await apiCall<Technique>(`/characters/${characterId}/techniques/${t.id}`, backendToken, {
+        method: "PATCH",
+        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: atrib, descricaoLivre: desc.trim(), tipoDano: tipoDano || null, damageDice: damageDice.trim() || null },
+      });
+      onSaved(res);
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Erro."); setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] max-h-[80vh] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.12)" }}>
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Editar Técnica</span>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+        </div>
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-[22px] py-4 flex flex-col gap-3.5">
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+            <input autoFocus value={nome} onChange={e => setNome(e.target.value)} className="ficha-input"
+              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível</label>
+              <div className="flex gap-0.5">
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} type="button" onClick={() => setNivel(n)} style={{ flex: 1, padding: "7px 0", background: nivel === n ? "#7C3AED" : "#0A0A0A", border: `1px solid ${nivel === n ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: nivel === n ? "#FFF" : "#6B7280", fontSize: 12, fontWeight: 700 }}>{n}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo</label>
+              <div className="flex gap-0.5">
+                {["FOR","AGI","VIG","INT","PRE"].map(a => (
+                  <button key={a} type="button" onClick={() => setAtrib(a)} style={{ flex: 1, padding: "7px 0", background: atrib === a ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${atrib === a ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: atrib === a ? "#A855F7" : "#6B7280", fontSize: 9, fontWeight: 700 }}>{a}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo ⚡</label>
+              <input type="number" min={0} value={custo} onChange={e => setCusto(e.target.value)} className="ficha-input text-center"
+                onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
+            <div className="flex gap-1">
+              {["FISICO","ENERGETICO","MENTAL","ESPIRITUAL"].map(d => (
+                <button key={d} type="button" onClick={() => setTipoDano(tipoDano === d ? "" : d)} style={{ flex: 1, padding: "6px 0", background: tipoDano === d ? `${DANO_COLORS_T[d]}22` : "#0A0A0A", border: `1px solid ${tipoDano === d ? DANO_COLORS_T[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: tipoDano === d ? DANO_COLORS_T[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>{d.charAt(0)+d.slice(1).toLowerCase()}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano <span className="text-text-ghost">(ex: 2d6)</span></label>
+            <input value={damageDice} onChange={e => setDamageDice(e.target.value)} placeholder="ex: 2d6, 1d8+2" className="ficha-input"
+              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="ficha-input resize-none"
+              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+          {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+          <button type="submit" disabled={saving || !nome.trim()} style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
+            {saving ? "Salvando…" : "✦ Salvar"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Add Weapon Modal ─────────────────────────────────────────────────────────
 function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClose }: {
   characterId: string; backendToken: string;
@@ -1478,6 +1586,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddWeapon, setShowAddWeapon]     = useState(false);
   const [editingWeapon, setEditingWeapon]     = useState<Weapon | null>(null);
+  const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showAddAbility, setShowAddAbility]   = useState(false);
   const [showAddAptidao, setShowAddAptidao]   = useState(false);
 
@@ -2292,7 +2401,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                 </div>
                 {localTechniques.length === 0
                   ? <EmptyState icon={<Zap size={26} />} message="Nenhuma técnica cadastrada" sub="Clique em + Adicionar para começar" />
-                  : localTechniques.map((t, i) => <TechniqueCard key={t.id ?? i} t={t} attrs={attrs} maestriaBonus={maestriaBonus} onRoll={() => handleRollTechnique(t)} />)
+                  : localTechniques.map((t, i) => <TechniqueCard key={t.id ?? i} t={t} attrs={attrs} maestriaBonus={maestriaBonus} onRoll={() => handleRollTechnique(t)} onEdit={() => setEditingTechnique(t)} />)
                 }
               </div>
             )}
@@ -2603,6 +2712,16 @@ export function CharacterSheet({ character }: { character: Character }) {
           skillIdMap={skillIdMap}
           onSaved={(w) => { setLocalWeapons(prev => prev.map(x => x.id === w.id ? w : x)); setEditingWeapon(null); }}
           onClose={() => setEditingWeapon(null)}
+        />
+      )}
+
+      {editingTechnique && backendToken && (
+        <EditTechniqueModal
+          t={editingTechnique}
+          characterId={character.id}
+          backendToken={backendToken}
+          onSaved={(updated) => { setLocalTechniques(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingTechnique(null); }}
+          onClose={() => setEditingTechnique(null)}
         />
       )}
 
