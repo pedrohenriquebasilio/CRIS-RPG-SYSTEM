@@ -19,6 +19,7 @@ export interface Technique {
   id?: string;
   nome: string; nivel: number; custoEnergia: number;
   atributoBase: string; descricaoLivre: string; tipoDano: string | null;
+  damageDice?: string | null;
 }
 export interface WeaponTemplate {
   id: string; nome: string; categoria: string;
@@ -320,7 +321,7 @@ const DANO_COLORS: Record<string, string> = {
   FISICO: "#EF4444", ENERGETICO: "#8B5CF6", MENTAL: "#3B82F6", ESPIRITUAL: "#10B981",
 };
 
-function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attrs: Attrs; maestriaBonus: number; onRoll: () => void }) {
+function TechniqueCard({ t, attrs, maestriaBonus, onRoll, onEdit }: { t: Technique; attrs: Attrs; maestriaBonus: number; onRoll: () => void; onEdit: () => void }) {
   const attrVal = attrs[t.atributoBase as keyof Attrs] ?? 0;
   const [expanded, setExpanded] = useState(false);
   return (
@@ -338,16 +339,23 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll }: { t: Technique; attr
           <span className="text-[9px] bg-brand/[0.12] text-[#9B75F0] px-1.5 py-0.5 rounded-sm border border-brand/25 font-semibold">NV.{t.nivel}</span>
         </div>
         <div className="flex items-center gap-2.5">
+          {t.damageDice && <span className="text-[11px] font-bold text-red-400">{t.damageDice}</span>}
           <span className="text-[10px] text-text-faint">CD:{10 + t.nivel + maestriaBonus}</span>
           <span className="text-[11px] text-brand">{t.custoEnergia}⚡</span>
           <span className="text-sm font-extrabold text-brand-light">+{attrVal + maestriaBonus}</span>
+          <button onClick={e => { e.stopPropagation(); onEdit(); }} title="Editar técnica"
+            className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150"
+            onMouseEnter={e => (e.currentTarget.style.color = "#F59E0B")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+          ><Pencil size={11} /></button>
         </div>
       </div>
       {expanded && (
         <div className="px-3.5 pb-3">
           {t.descricaoLivre && <p className="text-xs text-text-dim m-0 mb-2 leading-relaxed">{t.descricaoLivre}</p>}
-          <div className="flex gap-3.5">
+          <div className="flex gap-3.5 flex-wrap">
             <span className="text-[10px] text-text-faint">Base: {t.atributoBase} ({attrVal})</span>
+            {t.damageDice && <span className="text-[10px] text-red-400">Dano: {t.damageDice}</span>}
             {t.tipoDano && <span style={{ fontSize: 10, color: DANO_COLORS[t.tipoDano] ?? "#6B7280" }}>● {t.tipoDano.toLowerCase()}</span>}
           </div>
         </div>
@@ -539,6 +547,7 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
   const [atrib, setAtrib]         = useState("INT");
   const [custo, setCusto]         = useState("0");
   const [tipoDano, setTipoDano]   = useState("");
+  const [damageDice, setDamageDice] = useState("");
   const [desc, setDesc]           = useState("");
 
   useEffect(() => {
@@ -572,7 +581,7 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
     try {
       const res = await apiCall<Technique>(`/characters/${characterId}/techniques`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: atrib, descricaoLivre: desc.trim(), tipoDano: tipoDano || undefined },
+        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: atrib, descricaoLivre: desc.trim(), tipoDano: tipoDano || undefined, damageDice: damageDice.trim() || undefined },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
@@ -680,6 +689,13 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
                     <button key={d} type="button" onClick={() => setTipoDano(tipoDano === d ? "" : d)} style={{ flex: 1, padding: "6px 0", background: tipoDano === d ? `${DANO_COLORS_T[d]}22` : "#0A0A0A", border: `1px solid ${tipoDano === d ? DANO_COLORS_T[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: tipoDano === d ? DANO_COLORS_T[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>{d.charAt(0)+d.slice(1).toLowerCase()}</button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano <span className="text-text-ghost">(ex: 2d6)</span></label>
+                <input value={damageDice} onChange={e => setDamageDice(e.target.value)} placeholder="ex: 2d6, 1d8+2" className="ficha-input"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                />
               </div>
               <div>
                 <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
