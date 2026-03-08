@@ -100,7 +100,7 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
   const [hp, setHp] = useState(participant.hpAtual);
   const [en, setEn] = useState(participant.energiaAtual);
   const [diceInput, setDiceInput] = useState("");
-  const [lastRoll, setLastRoll] = useState<{ label: string; value: number; crit?: boolean } | null>(null);
+  const [lastRoll, setLastRoll] = useState<{ label: string; acerto: number; dano?: number; crit?: boolean } | null>(null);
   const [rolling, setRolling] = useState(false);
   const [weaponFilter, setWeaponFilter] = useState("");
 
@@ -143,8 +143,8 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
         method: "POST",
         body: { characterId: char.id, weaponId: w.id, combatId, campaignId },
       });
-      const isCrit = res.naturalRoll >= w.threatRange;
-      setLastRoll({ label: w.nome, value: res.total ?? res.roll ?? res.naturalRoll, crit: isCrit });
+      const isCrit = res.isCritical ?? (res.naturalRoll >= w.threatRange);
+      setLastRoll({ label: w.nome, acerto: res.attackTotal, dano: res.finalDamage, crit: isCrit });
     } catch { /* ignore */ } finally { setRolling(false); }
   }
 
@@ -156,7 +156,7 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
         method: "POST",
         body: { techniqueId: t.id, actorId: char.id, combatId, campaignId },
       });
-      setLastRoll({ label: t.nome, value: res.total ?? res.roll });
+      setLastRoll({ label: t.nome, acerto: res.total ?? res.roll });
     } catch { /* ignore */ } finally { setRolling(false); }
   }
 
@@ -168,14 +168,14 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
         method: "POST",
         body: { characterId: char.id, attribute: attr, combatId, campaignId },
       });
-      setLastRoll({ label: attr, value: res.total ?? res.roll });
+      setLastRoll({ label: attr, acerto: res.total ?? res.roll });
     } catch { /* ignore */ } finally { setRolling(false); }
   }
 
   function rollFree() {
     if (!diceInput.trim()) return;
     const result = rollDiceLocally(diceInput.trim());
-    if (!isNaN(result)) setLastRoll({ label: diceInput.trim(), value: result });
+    if (!isNaN(result)) setLastRoll({ label: diceInput.trim(), acerto: result });
     setDiceInput("");
   }
 
@@ -191,20 +191,6 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden border-l border-border-subtle">
-
-      {/* ── Roll result banner ── */}
-      {lastRoll && (
-        <div className={`shrink-0 px-5 py-3 flex items-center gap-3 border-b border-border-subtle transition-all ${lastRoll.crit ? "bg-amber-950/60" : "bg-brand/10"}`}>
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] text-text-muted tracking-[0.08em] uppercase font-cinzel">{char.nome} — {lastRoll.label}</div>
-            <div className={`text-[28px] font-black font-cinzel leading-none mt-0.5 ${lastRoll.crit ? "text-amber-400" : "text-brand-light"}`}>
-              {lastRoll.value}
-              {lastRoll.crit && <span className="ml-2 text-[13px] text-amber-300 tracking-widest">CRÍTICO!</span>}
-            </div>
-          </div>
-          <button onClick={() => setLastRoll(null)} className="text-text-faint hover:text-text-dim text-[16px] leading-none shrink-0">×</button>
-        </div>
-      )}
 
       {/* ── Header: name + class ── */}
       <div className="px-5 pt-4 pb-[14px] border-b border-border-subtle shrink-0">
@@ -387,6 +373,39 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
             )}
           </div>
         )}
+
+        {/* ── Resultado ── */}
+        <div className="mt-4 pt-3 border-t border-border-subtle">
+          <div className="text-[9px] text-text-faint tracking-[0.14em] uppercase font-cinzel mb-2">Resultado</div>
+          <div className={`rounded-[3px] px-4 py-[10px] h-[72px] flex items-center border ${lastRoll?.crit ? "bg-amber-950/40 border-amber-900/40" : lastRoll ? "bg-brand/10 border-brand/20" : "bg-bg-dark border-border-subtle"}`}>
+            {lastRoll ? (
+              <div className="flex-1 min-w-0">
+                <div className="text-[9px] text-text-muted font-cinzel tracking-[0.06em] mb-1">
+                  {char.nome} — {lastRoll.label}
+                  {lastRoll.crit && <span className="ml-2 text-amber-300">CRÍTICO!</span>}
+                </div>
+                <div className="flex items-baseline gap-4">
+                  <div>
+                    <span className="text-[8px] text-text-faint tracking-widest uppercase mr-1">Acerto</span>
+                    <span className={`text-[28px] font-black font-cinzel leading-none ${lastRoll.crit ? "text-amber-400" : "text-brand-light"}`}>{lastRoll.acerto}</span>
+                  </div>
+                  {lastRoll.dano !== undefined && (
+                    <>
+                      <span className="text-text-faint text-[16px]">|</span>
+                      <div>
+                        <span className="text-[8px] text-text-faint tracking-widest uppercase mr-1">Dano</span>
+                        <span className={`text-[28px] font-black font-cinzel leading-none ${lastRoll.crit ? "text-amber-400" : "text-red-400"}`}>{lastRoll.dano}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <span className="text-[13px] text-text-faint font-cinzel mx-auto">—</span>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
