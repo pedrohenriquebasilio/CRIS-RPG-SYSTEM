@@ -1657,19 +1657,71 @@ export function CharacterSheet({ character }: { character: Character }) {
   }
 
   async function handleRollTechnique(t: Technique) {
-    const attrVal   = attrs[t.atributoBase as keyof Attrs] ?? 0;
-    const modifier  = attrVal + maestriaBonus;
-    if (backendToken && (t as any).id && character.campaignId) {
+    const attrVal  = attrs[t.atributoBase as keyof Attrs] ?? 0;
+    const modifier = attrVal + maestriaBonus;
+    const damage   = t.damageDice ? rollDiceStr(t.damageDice) : undefined;
+
+    rollIdRef.current += 1;
+    if (rollTimer.current) clearTimeout(rollTimer.current);
+
+    if (backendToken && t.id && character.campaignId) {
       try {
         const res = await apiCall<{ dice: number; total: number }>(
-          "/roll/technique", backendToken, { method: "POST", body: { techniqueId: (t as any).id, actorId: character.id, campaignId: character.campaignId } }
+          "/roll/technique", backendToken, { method: "POST", body: { techniqueId: t.id, actorId: character.id, campaignId: character.campaignId } }
         );
-        showRoll(t.nome, res.dice, modifier);
+        setCurrentRoll({
+          rollId: rollIdRef.current, label: t.nome,
+          dice: res.dice, modifier, total: res.total,
+          ...(damage !== undefined ? { damage, damageDice: t.damageDice!, isCritical: false } : {}),
+        });
+        setRollVisible(true);
+        rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
         return;
       } catch { /* fallback */ }
     }
     const dice = Math.floor(Math.random() * 20) + 1;
-    showRoll(t.nome, dice, modifier);
+    setCurrentRoll({
+      rollId: rollIdRef.current, label: t.nome,
+      dice, modifier, total: dice + modifier,
+      ...(damage !== undefined ? { damage, damageDice: t.damageDice!, isCritical: false } : {}),
+    });
+    setRollVisible(true);
+    rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
+  }
+
+  async function handleRollSkillWithDamage(skillNome: string, damageDice?: string | null) {
+    const skillId     = skillIdMap[skillNome];
+    const skill       = ALL_SKILLS.find(s => s.nome === skillNome);
+    const attrVal     = skill ? (attrs[skill.atributoBase as keyof Attrs] ?? 0) : 0;
+    const treinamento = skillPoints[skillNome] ?? 0;
+    const damage      = damageDice ? rollDiceStr(damageDice) : undefined;
+
+    rollIdRef.current += 1;
+    if (rollTimer.current) clearTimeout(rollTimer.current);
+
+    if (backendToken && skillId && character.campaignId) {
+      try {
+        const res = await apiCall<{ dice: number; total: number; attrVal: number; treinamento: number }>(
+          "/roll/skill", backendToken, { method: "POST", body: { skillId, characterId: character.id, campaignId: character.campaignId } }
+        );
+        setCurrentRoll({
+          rollId: rollIdRef.current, label: skillNome,
+          dice: res.dice, modifier: res.attrVal + res.treinamento, total: res.total,
+          ...(damage !== undefined ? { damage, damageDice: damageDice!, isCritical: false } : {}),
+        });
+        setRollVisible(true);
+        rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
+        return;
+      } catch { /* fallback */ }
+    }
+    const dice = Math.floor(Math.random() * 20) + 1;
+    setCurrentRoll({
+      rollId: rollIdRef.current, label: skillNome,
+      dice, modifier: attrVal + treinamento, total: dice + attrVal + treinamento,
+      ...(damage !== undefined ? { damage, damageDice: damageDice!, isCritical: false } : {}),
+    });
+    setRollVisible(true);
+    rollTimer.current = setTimeout(() => setRollVisible(false), 120_000);
   }
 
   async function handleRollWeapon(w: Weapon) {
@@ -2504,7 +2556,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                     <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-amber-600 rounded-[0_2px_2px_0] px-3.5 py-3">
                       <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
-                          <AbilityRoller onRoll={handleRollSkill} />
+                          <AbilityRoller onRoll={skillNome => handleRollSkillWithDamage(skillNome, a.damageDice)} />
                           <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
                         </div>
                         <div className="flex items-center gap-2">
