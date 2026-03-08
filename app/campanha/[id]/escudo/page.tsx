@@ -119,6 +119,12 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
       .catch(() => {});
   }, [char?.id, token]);
 
+  useEffect(() => {
+    if (!lastRoll) return;
+    const t = setTimeout(() => setLastRoll(null), 4000);
+    return () => clearTimeout(t);
+  }, [lastRoll]);
+
   async function adjustStat(field: "hpAtual" | "energiaAtual", delta: number) {
     if (!char?.id) return;
     const maxVal = field === "hpAtual" ? hpMax : enMax;
@@ -185,6 +191,20 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden border-l border-border-subtle">
+
+      {/* ── Roll result banner ── */}
+      {lastRoll && (
+        <div className={`shrink-0 px-5 py-3 flex items-center gap-3 border-b border-border-subtle transition-all ${lastRoll.crit ? "bg-amber-950/60" : "bg-brand/10"}`}>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] text-text-muted tracking-[0.08em] uppercase font-cinzel">{char.nome} — {lastRoll.label}</div>
+            <div className={`text-[28px] font-black font-cinzel leading-none mt-0.5 ${lastRoll.crit ? "text-amber-400" : "text-brand-light"}`}>
+              {lastRoll.value}
+              {lastRoll.crit && <span className="ml-2 text-[13px] text-amber-300 tracking-widest">CRÍTICO!</span>}
+            </div>
+          </div>
+          <button onClick={() => setLastRoll(null)} className="text-text-faint hover:text-text-dim text-[16px] leading-none shrink-0">×</button>
+        </div>
+      )}
 
       {/* ── Header: name + class ── */}
       <div className="px-5 pt-4 pb-[14px] border-b border-border-subtle shrink-0">
