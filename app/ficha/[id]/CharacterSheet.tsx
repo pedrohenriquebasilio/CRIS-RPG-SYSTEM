@@ -18,7 +18,8 @@ export interface CharSkill {
 export interface Technique {
   id?: string;
   nome: string; nivel: number; custoEnergia: number;
-  atributoBase: string; descricaoLivre: string; tipoDano: string | null;
+  atributoBase: string; skillNome?: string | null;
+  descricaoLivre: string; tipoDano: string | null;
   damageDice?: string | null;
 }
 export interface WeaponTemplate {
@@ -354,7 +355,7 @@ function TechniqueCard({ t, attrs, maestriaBonus, onRoll, onEdit }: { t: Techniq
         <div className="px-3.5 pb-3">
           {t.descricaoLivre && <p className="text-xs text-text-dim m-0 mb-2 leading-relaxed">{t.descricaoLivre}</p>}
           <div className="flex gap-3.5 flex-wrap">
-            <span className="text-[10px] text-text-faint">Base: {t.atributoBase} ({attrVal})</span>
+            <span className="text-[10px] text-text-faint">Perícia: {t.skillNome ?? t.atributoBase} ({attrVal})</span>
             {t.damageDice && <span className="text-[10px] text-red-400">Dano: {t.damageDice}</span>}
             {t.tipoDano && <span style={{ fontSize: 10, color: DANO_COLORS[t.tipoDano] ?? "#6B7280" }}>● {t.tipoDano.toLowerCase()}</span>}
           </div>
@@ -544,7 +545,7 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
   // custom form
   const [nome, setNome]           = useState("");
   const [nivel, setNivel]         = useState(1);
-  const [atrib, setAtrib]         = useState("INT");
+  const [pericia, setPericia]     = useState(ALL_SKILLS[0].nome);
   const [custo, setCusto]         = useState("0");
   const [tipoDano, setTipoDano]   = useState("");
   const [damageDice, setDamageDice] = useState("");
@@ -581,7 +582,7 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
     try {
       const res = await apiCall<Technique>(`/characters/${characterId}/techniques`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: atrib, descricaoLivre: desc.trim(), tipoDano: tipoDano || undefined, damageDice: damageDice.trim() || undefined },
+        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: ALL_SKILLS.find(s => s.nome === pericia)?.atributoBase ?? "INT", skillNome: pericia, descricaoLivre: desc.trim(), tipoDano: tipoDano || undefined, damageDice: damageDice.trim() || undefined },
       });
       onAdded(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
@@ -657,20 +658,12 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-              <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+              <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr" }}>
                 <div>
                   <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível</label>
                   <div className="flex gap-0.5">
                     {[1,2,3,4,5].map(n => (
                       <button key={n} type="button" onClick={() => setNivel(n)} style={{ flex: 1, padding: "7px 0", background: nivel === n ? "#7C3AED" : "#0A0A0A", border: `1px solid ${nivel === n ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: nivel === n ? "#FFF" : "#6B7280", fontSize: 12, fontWeight: 700 }}>{n}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo</label>
-                  <div className="flex gap-0.5">
-                    {["FOR","AGI","VIG","INT","PRE"].map(a => (
-                      <button key={a} type="button" onClick={() => setAtrib(a)} style={{ flex: 1, padding: "7px 0", background: atrib === a ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${atrib === a ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: atrib === a ? "#A855F7" : "#6B7280", fontSize: 9, fontWeight: 700 }}>{a}</button>
                     ))}
                   </div>
                 </div>
@@ -681,6 +674,15 @@ function AddTechniqueModal({ characterId, backendToken, onAdded, onClose }: {
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
                 </div>
+              </div>
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia Base</label>
+                <select value={pericia} onChange={e => setPericia(e.target.value)} className="ficha-input cursor-pointer"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                >
+                  {ALL_SKILLS.map(s => <option key={s.nome} value={s.nome}>{s.nome} ({s.atributoBase})</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
@@ -729,7 +731,7 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
 }) {
   const [nome, setNome]           = useState(t.nome);
   const [nivel, setNivel]         = useState(t.nivel);
-  const [atrib, setAtrib]         = useState(t.atributoBase);
+  const [pericia, setPericia]     = useState(t.skillNome ?? ALL_SKILLS.find(s => s.atributoBase === t.atributoBase)?.nome ?? ALL_SKILLS[0].nome);
   const [custo, setCusto]         = useState(String(t.custoEnergia));
   const [tipoDano, setTipoDano]   = useState(t.tipoDano ?? "");
   const [damageDice, setDamageDice] = useState(t.damageDice ?? "");
@@ -750,7 +752,7 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
     try {
       const res = await apiCall<Technique>(`/characters/${characterId}/techniques/${t.id}`, backendToken, {
         method: "PATCH",
-        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: atrib, descricaoLivre: desc.trim(), tipoDano: tipoDano || null, damageDice: damageDice.trim() || null },
+        body: { nome: nome.trim(), nivel, custoEnergia: parseInt(custo) || 0, atributoBase: ALL_SKILLS.find(s => s.nome === pericia)?.atributoBase ?? "INT", skillNome: pericia, descricaoLivre: desc.trim(), tipoDano: tipoDano || null, damageDice: damageDice.trim() || null },
       });
       onSaved(res);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : "Erro."); setSaving(false); }
@@ -773,20 +775,12 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
               onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
             />
           </div>
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <div>
               <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível</label>
               <div className="flex gap-0.5">
                 {[1,2,3,4,5].map(n => (
                   <button key={n} type="button" onClick={() => setNivel(n)} style={{ flex: 1, padding: "7px 0", background: nivel === n ? "#7C3AED" : "#0A0A0A", border: `1px solid ${nivel === n ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: nivel === n ? "#FFF" : "#6B7280", fontSize: 12, fontWeight: 700 }}>{n}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo</label>
-              <div className="flex gap-0.5">
-                {["FOR","AGI","VIG","INT","PRE"].map(a => (
-                  <button key={a} type="button" onClick={() => setAtrib(a)} style={{ flex: 1, padding: "7px 0", background: atrib === a ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${atrib === a ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: atrib === a ? "#A855F7" : "#6B7280", fontSize: 9, fontWeight: 700 }}>{a}</button>
                 ))}
               </div>
             </div>
@@ -797,6 +791,15 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
                 onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
               />
             </div>
+          </div>
+          <div>
+            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia Base</label>
+            <select value={pericia} onChange={e => setPericia(e.target.value)} className="ficha-input cursor-pointer"
+              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            >
+              {ALL_SKILLS.map(s => <option key={s.nome} value={s.nome}>{s.nome} ({s.atributoBase})</option>)}
+            </select>
           </div>
           <div>
             <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
@@ -1204,7 +1207,6 @@ function EditWeaponModal({ characterId, backendToken, weapon, skillIdMap, onSave
 }
 
 // ─── Add Ability Modal ────────────────────────────────────────────────────────
-const ATRIBUTOS_LIST = ["FOR", "AGI", "VIG", "INT", "PRE"];
 
 function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
   characterId: string; backendToken: string;
@@ -1311,10 +1313,10 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
                 placeholder="ex: 2d6, 1d8+2" style={inp} onFocus={focus} onBlur={blur} />
             </div>
             <div>
-              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo Base</label>
+              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia Base</label>
               <select value={atributoBase} onChange={e => setAtributoBase(e.target.value)} style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
-                <option value="">— Nenhum —</option>
-                {ATRIBUTOS_LIST.map(a => <option key={a} value={a}>{a}</option>)}
+                <option value="">— Nenhuma —</option>
+                {ALL_SKILLS.map(s => <option key={s.nome} value={s.nome}>{s.nome} ({s.atributoBase})</option>)}
               </select>
             </div>
           </div>
