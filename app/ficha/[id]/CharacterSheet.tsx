@@ -88,6 +88,22 @@ export interface CharacterAbility {
   damageDice?: string | null;
   atributoBase?: string | null;
 }
+export interface TalentoData {
+  id: string;
+  nome: string;
+  tipo: string;
+  custo: string;
+  alcance: string;
+  duracao: string;
+  descricao: string;
+  damageDice?: string | null;
+  atributoBase?: string | null;
+}
+export interface CharacterTalentoLink {
+  id: string;
+  talentoId: string;
+  talento: TalentoData;
+}
 export interface Character {
   id: string; nome: string; origem?: string;
   campaignId?: string;
@@ -106,6 +122,7 @@ export interface Character {
   weapons: Weapon[]; aptitudes: Aptitude[];
   inventory?: InventoryItemData[];
   abilities?: CharacterAbility[];
+  talentos?: CharacterTalentoLink[];
 }
 
 export interface SpecSeed {
@@ -914,6 +931,268 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
             {saving ? "Salvando…" : "✦ Salvar"}
           </button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Talento Card ─────────────────────────────────────────────────────────────
+function TalentoCard({ link, onDelete }: { link: CharacterTalentoLink; onDelete: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const t = link.talento;
+  const hasMeta = t.custo !== "nenhum" || t.alcance !== "pessoal" || t.duracao !== "imediato" || t.damageDice || t.atributoBase;
+  return (
+    <div className="bg-bg-input border border-border border-l-[3px] border-l-[#7C3AED] rounded-[0_2px_2px_0] overflow-hidden">
+      <div className="flex items-center gap-3 px-3.5 py-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{t.nome}</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[9px] text-brand-light border border-brand/30 px-1.5 py-px rounded-sm">{t.tipo}</span>
+            {t.atributoBase && <span className="text-[9px] text-text-faint">{t.atributoBase}</span>}
+            {t.damageDice && <span className="text-[9px] text-red-400 font-bold">{t.damageDice}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {(t.descricao || hasMeta) && (
+            <button onClick={() => setExpanded(e => !e)}
+              className="w-6 h-6 flex items-center justify-center text-text-faint text-xs cursor-pointer bg-transparent border-none hover:text-text-base transition-colors">
+              {expanded ? "▲" : "▼"}
+            </button>
+          )}
+          <button onClick={onDelete}
+            className="w-6 h-6 flex items-center justify-center text-red-700 text-xs cursor-pointer bg-transparent border-none hover:text-red-500 transition-colors">✕</button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="px-3.5 pb-3 border-t border-border-subtle pt-2 flex flex-col gap-1.5">
+          {t.descricao && <p className="text-[11px] text-text-dim m-0 leading-relaxed">{t.descricao}</p>}
+          {hasMeta && (
+            <div className="flex flex-wrap gap-3 text-[10px] text-text-faint">
+              {t.custo    !== "nenhum"   && <span>Custo: {t.custo}</span>}
+              {t.alcance  !== "pessoal"  && <span>Alcance: {t.alcance}</span>}
+              {t.duracao  !== "imediato" && <span>Duração: {t.duracao}</span>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Add Talento Modal ────────────────────────────────────────────────────────
+function AddTalentoModal({ characterId, backendToken, existing, onAdded, onClose }: {
+  characterId: string;
+  backendToken: string;
+  existing: string[];
+  onAdded: (link: CharacterTalentoLink) => void;
+  onClose: () => void;
+}) {
+  type Mode = "catalogo" | "novo";
+  const [mode, setMode]       = useState<Mode>("catalogo");
+  const [catalog, setCatalog] = useState<TalentoData[] | null>(null);
+  const [search, setSearch]   = useState("");
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState("");
+
+  // form "novo"
+  const [nome, setNome]         = useState("");
+  const [tipo, setTipo]         = useState("passiva");
+  const [custo, setCusto]       = useState("nenhum");
+  const [alcance, setAlcance]   = useState("pessoal");
+  const [duracao, setDuracao]   = useState("imediato");
+  const [descricao, setDesc]    = useState("");
+  const [damageDice, setDice]   = useState("");
+  const [atributo, setAtributo] = useState("");
+
+  const TIPOS    = ["passiva", "ativa", "reacao"];
+  const ATRIBUTOS = ["", "FOR", "AGI", "VIG", "INT", "PRE"];
+
+  useEffect(() => {
+    if (mode === "catalogo" && catalog === null) {
+      apiCall<TalentoData[]>("/seeds/talentos", backendToken)
+        .then(setCatalog).catch(() => setCatalog([]));
+    }
+  }, [mode, catalog, backendToken]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  async function addFromCatalog(t: TalentoData) {
+    setSaving(true); setError("");
+    try {
+      const res = await apiCall<CharacterTalentoLink>(`/talentos/character/${characterId}/${t.id}`, backendToken, { method: "POST" });
+      onAdded(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
+  }
+
+  async function createAndAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim()) { setError("Nome é obrigatório."); return; }
+    setSaving(true); setError("");
+    try {
+      const created = await apiCall<TalentoData>("/talentos", backendToken, {
+        method: "POST",
+        body: { nome: nome.trim(), tipo, custo, alcance, duracao, descricao: descricao.trim(), damageDice: damageDice.trim() || undefined, atributoBase: atributo || undefined },
+      });
+      const res = await apiCall<CharacterTalentoLink>(`/talentos/character/${characterId}/${created.id}`, backendToken, { method: "POST" });
+      onAdded(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
+  }
+
+  const visible = (catalog ?? []).filter(t =>
+    !existing.includes(t.id) && (!search || t.nome.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[480px] max-h-[80vh] flex flex-col"
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15)" }}
+      >
+        {/* Header */}
+        <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Talento</span>
+          <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
+        </div>
+
+        {/* Mode tabs */}
+        <div className="flex border-b border-border-subtle shrink-0">
+          {(["catalogo", "novo"] as Mode[]).map(m => (
+            <button key={m} onClick={() => { setMode(m); setError(""); }}
+              style={{
+                flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: "Cinzel, serif",
+                color: mode === m ? "#A855F7" : "#52525B",
+                borderBottom: `2px solid ${mode === m ? "#A855F7" : "transparent"}`, marginBottom: -1,
+              }}>
+              {m === "catalogo" ? "CATÁLOGO" : "CRIAR NOVO"}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-[22px] py-4">
+
+          {/* ── Catálogo ── */}
+          {mode === "catalogo" && (
+            <>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar talento…"
+                className="ficha-input mb-3"
+                onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+              />
+              {catalog === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
+              {catalog !== null && visible.length === 0 && (
+                <p className="text-text-ghost text-xs text-center">
+                  {(catalog ?? []).length === 0 ? "Nenhum talento criado ainda." : "Nenhum talento encontrado."}
+                </p>
+              )}
+              <div className="flex flex-col gap-1.5">
+                {visible.map(t => (
+                  <button key={t.id} onClick={() => addFromCatalog(t)} disabled={saving}
+                    style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: "3px solid #7C3AED", borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left" }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
+                      <span className="text-[9px] text-brand-light border border-brand/30 px-1.5 py-px rounded-sm shrink-0">{t.tipo}</span>
+                    </div>
+                    {t.descricao && <p className="text-[10px] text-text-faint mt-1 m-0 text-left line-clamp-2">{t.descricao}</p>}
+                  </button>
+                ))}
+              </div>
+              {error && <p className="text-xs text-red-500 mt-2 m-0">{error}</p>}
+            </>
+          )}
+
+          {/* ── Criar novo ── */}
+          {mode === "novo" && (
+            <form onSubmit={createAndAdd} className="flex flex-col gap-3.5">
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex.: Reflexos Aguçados" className="ficha-input"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo</label>
+                <div className="flex gap-1">
+                  {TIPOS.map(t => (
+                    <button key={t} type="button" onClick={() => setTipo(t)}
+                      style={{ flex: 1, padding: "6px 0", background: tipo === t ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${tipo === t ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: tipo === t ? "#A78BFA" : "#6B7280", fontSize: 10, fontWeight: 700 }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo</label>
+                  <input value={custo} onChange={e => setCusto(e.target.value)} placeholder="nenhum" className="ficha-input"
+                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Alcance</label>
+                  <input value={alcance} onChange={e => setAlcance(e.target.value)} placeholder="pessoal" className="ficha-input"
+                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Duração</label>
+                  <input value={duracao} onChange={e => setDuracao(e.target.value)} placeholder="imediato" className="ficha-input"
+                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo Base</label>
+                  <select value={atributo} onChange={e => setAtributo(e.target.value)} className="ficha-input" style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
+                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                  >
+                    {ATRIBUTOS.map(a => <option key={a} value={a}>{a || "— Nenhum —"}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano</label>
+                <input value={damageDice} onChange={e => setDice(e.target.value)} placeholder="Ex.: 2d6 (opcional)" className="ficha-input"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+                <textarea value={descricao} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Descreva o talento…" className="ficha-input resize-none"
+                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                />
+              </div>
+
+              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+              <button type="submit" disabled={saving || !nome.trim()}
+                style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
+                {saving ? "Criando…" : "✦ Criar e Adicionar"}
+              </button>
+            </form>
+          )}
+
+        </div>
       </div>
     </div>
   );
@@ -1780,14 +2059,14 @@ function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-type Tab = "combate" | "tecnicas" | "inventario" | "aptidoes" | "descricao" | "habilidades";
+type Tab = "combate" | "tecnicas" | "inventario" | "aptidoes" | "talentos" | "habilidades";
 const TABS: { id: Tab; label: string }[] = [
   { id: "tecnicas",    label: "TÉCNICAS"    },
   { id: "inventario",  label: "INVENTÁRIO"  },
   { id: "habilidades", label: "HABILIDADES" },
   { id: "aptidoes",    label: "APTIDÕES"    },
+  { id: "talentos",    label: "TALENTOS"    },
   { id: "combate",     label: "COMBATE"     },
-  { id: "descricao",   label: "DESC."       },
 ];
 
 export function CharacterSheet({ character }: { character: Character }) {
@@ -1836,8 +2115,10 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [localAbilities, setLocalAbilities]   = useState<CharacterAbility[]>(character.abilities ?? []);
   const [localAptitudes, setLocalAptitudes]   = useState<Aptitude[]>(character.aptitudes);
   const [pendingAptidaoSlots, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
+  const [localTalentos, setLocalTalentos]     = useState<CharacterTalentoLink[]>(character.talentos ?? []);
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddInventory, setShowAddInventory] = useState(false);
+  const [showAddTalento, setShowAddTalento]   = useState(false);
   const [editingWeapon, setEditingWeapon]     = useState<Weapon | null>(null);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showAddAbility, setShowAddAbility]   = useState(false);
@@ -3040,21 +3321,33 @@ export function CharacterSheet({ character }: { character: Character }) {
               </div>
             )}
 
-            {activeTab === "descricao" && (
-              <div className="flex flex-col gap-5">
-                <SectionDivider>Ficha</SectionDivider>
-                {([
-                  { label: "Origem", value: character.origemRelacao?.nome || "Não definida." },
-                  { label: "Status", value: character.isApproved ? "✓ Aprovada pelo Mestre" : "⏳ Aguardando aprovação" },
-                  { label: "XP Acumulado", value: `${xpAtual.toLocaleString("pt-BR")} pontos` },
-                  { label: "Próximo nível em", value: `${Math.max(0, xpNext - xpAtual).toLocaleString("pt-BR")} XP` },
-                  { label: "Maestria", value: `${maestriaBonus} perícias base treinadas (bônus de técnicas: +${maestriaBonus})` },
-                ] as { label: string; value: string }[]).map(item => (
-                  <div key={item.label}>
-                    <div className="text-[9px] text-text-faint uppercase tracking-[0.14em] mb-1.5 font-cinzel">{item.label}</div>
-                    <p className="text-[13px] text-text-dim m-0 leading-[1.7]">{item.value}</p>
-                  </div>
-                ))}
+            {activeTab === "talentos" && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1"><SectionDivider>Talentos ({localTalentos.length})</SectionDivider></div>
+                  <button
+                    onClick={() => setShowAddTalento(true)}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-[#7C3AED] rounded-sm cursor-pointer text-[#A855F7] text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,58,237,0.15)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >+ Adicionar</button>
+                </div>
+                {localTalentos.length === 0
+                  ? <EmptyState icon={<Star size={26} />} message="Nenhum talento" sub="Clique em + Adicionar para registrar um talento" />
+                  : localTalentos.map(link => (
+                    <TalentoCard
+                      key={link.id}
+                      link={link}
+                      onDelete={async () => {
+                        if (!backendToken) return;
+                        try {
+                          await apiCall(`/talentos/character/${character.id}/${link.talentoId}`, backendToken, { method: "DELETE" });
+                          setLocalTalentos(prev => prev.filter(x => x.id !== link.id));
+                        } catch { /* ignore */ }
+                      }}
+                    />
+                  ))
+                }
               </div>
             )}
 
@@ -3064,6 +3357,16 @@ export function CharacterSheet({ character }: { character: Character }) {
       </div>
 
       {currentRoll && <DiceToast roll={currentRoll} visible={rollVisible} />}
+
+      {showAddTalento && backendToken && (
+        <AddTalentoModal
+          characterId={character.id}
+          backendToken={backendToken}
+          existing={localTalentos.map(l => l.talentoId)}
+          onAdded={(link) => { setLocalTalentos(prev => [...prev, link]); setShowAddTalento(false); }}
+          onClose={() => setShowAddTalento(false)}
+        />
+      )}
 
       {showAddTech && backendToken && (
         <AddTechniqueModal
