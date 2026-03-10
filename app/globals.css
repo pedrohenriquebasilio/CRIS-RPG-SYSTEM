@@ -104,6 +104,23 @@ body {
   text-shadow: 0 0 30px rgba(139, 92, 246, 0.7), 0 0 60px rgba(139, 92, 246, 0.3);
 }
 
+/* Rainbow gradient text */
+.rainbow-text {
+  background: linear-gradient(90deg, #ff3b3b, #ff8a00, #ffd400, #4ade80, #40c4ff, #7c3aed, #ff3b3b);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+  animation: rainbowShift 6s linear infinite;
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .bg-grid {
   background-image:
     linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),

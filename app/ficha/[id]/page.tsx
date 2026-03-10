@@ -68,7 +68,7 @@ export default function FichaPage() {
         // 404 = ficha excluída ou inativa — limpa localStorage e redireciona
         if (e.message?.includes("404")) {
           const userId = (session?.user as any)?.backendUserId as string | undefined;
-          if (userId) localStorage.removeItem(`assistente-fiel-character-${userId}`);
+          if (userId) localStorage.removeItem(`jrp-character-${userId}`);
           window.location.replace("/ficha");
           return;
         }

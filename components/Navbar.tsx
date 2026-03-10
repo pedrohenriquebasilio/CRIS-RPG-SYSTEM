@@ -38,8 +38,8 @@ export function Navbar() {
           >
             <Shield size={14} color="#A78BFA" />
           </div>
-          <span className="font-cinzel text-[13px] font-bold tracking-[0.12em] text-white uppercase">
-            Fiel
+          <span className="font-cinzel text-[13px] font-bold tracking-[0.12em] uppercase rainbow-text">
+            J.R.P
           </span>
         </Link>
 

@@ -421,7 +421,7 @@ export default function CampaignDetailPage() {
           token={token!}
           onClose={() => setShowLeave(false)}
           onDone={() => {
-            if (userId) localStorage.removeItem(`assistente-fiel-character-${userId}`);
+            if (userId) localStorage.removeItem(`jrp-character-${userId}`);
             router.push("/campanha");
           }}
         />

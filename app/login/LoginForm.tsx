@@ -59,7 +59,7 @@ export function LoginForm() {
 
           <div className="text-center">
             <h1 className="font-cinzel text-glow text-[22px] font-bold tracking-[0.15em] text-white m-0 uppercase">
-              Assistente Fiel
+              J.R.P
             </h1>
             <p className="text-[11px] text-text-faint tracking-[0.12em] uppercase mt-1.5">
               Sistema de RPG

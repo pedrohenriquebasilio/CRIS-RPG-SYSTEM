@@ -149,18 +149,18 @@ export function HomePage({ session }: HomePageProps) {
 
         {/* Title */}
         <h1
-          className="font-cinzel text-glow animate-fade-in delay-200"
+          className="font-cinzel text-glow animate-fade-in delay-200 rainbow-text"
           style={{
             fontSize: "clamp(28px, 5vw, 48px)",
             fontWeight: 900,
             letterSpacing: "0.15em",
-            color: "#FFFFFF",
+            color: "transparent",
             textTransform: "uppercase",
             margin: "0 0 12px",
             lineHeight: 1.1,
           }}
         >
-          Assistente Fiel
+          J.R.P
         </h1>
 
         <p
@@ -408,7 +408,7 @@ export function HomePage({ session }: HomePageProps) {
         }}
       >
         <p style={{ fontSize: "10px", color: "#3F3F46", letterSpacing: "0.1em" }}>
-          ASSISTENTE FIEL — SISTEMA RPG © 2026
+          J.R.P — SISTEMA RPG © 2026
         </p>
       </div>
     </div>

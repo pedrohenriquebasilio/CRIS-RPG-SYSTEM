@@ -175,7 +175,7 @@ const XP_TABLE: Record<number, number> = {
 };
 
 function storageKey(userId?: string) {
-  return userId ? `assistente-fiel-character-${userId}` : "assistente-fiel-character";
+  return userId ? `jrp-character-${userId}` : "jrp-character";
 }
 
 function persist(key: string, updates: Record<string, unknown>) {

@@ -9,7 +9,7 @@ import { apiCall } from "@/lib/api";
 import { mapCharacter } from "@/lib/mapCharacter";
 
 function storageKey(userId: string) {
-  return `assistente-fiel-character-${userId}`;
+  return `jrp-character-${userId}`;
 }
 
 type CampaignInfo = { id: string; name: string; master: { email: string }; playerCount: number; inviteCode: string };

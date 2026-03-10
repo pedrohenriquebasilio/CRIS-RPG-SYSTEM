@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { auth } from "@/auth";
 
 export const metadata: Metadata = {
-  title: "Assistente Fiel — Sistema RPG",
+  title: "J.R.P — Sistema RPG",
   description: "Sistema de gerenciamento de campanhas de RPG.",
 };
 

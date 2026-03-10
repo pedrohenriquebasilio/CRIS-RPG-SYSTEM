@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { CharacterCreate } from "./CharacterCreate";
 
 function storageKey(userId: string) {
-  return `assistente-fiel-character-${userId}`;
+  return `jrp-character-${userId}`;
 }
 
 export default function FichaIndexPage() {
