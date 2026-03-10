@@ -2880,7 +2880,7 @@ export function CharacterSheet({ character }: { character: Character }) {
               <div className="text-center px-3.5 py-2 bg-bg-input border border-border rounded-sm">
                 <div className="text-[9px] text-text-faint uppercase tracking-[0.12em] mb-0.5">Maestria</div>
                 <div className="text-[22px] font-extrabold text-brand leading-none">+{maestriaBonus}</div>
-                <div className="text-[8px] text-text-ghost mt-0.5">{manuallyTrainedCount}/{trainingLimit} perícias</div>
+                <div className="text-[8px] text-text-ghost mt-0.5">{maestrySpent}/{maestryPool} pts</div>
               </div>
             </div>
           </div>
