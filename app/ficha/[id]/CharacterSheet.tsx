@@ -2908,8 +2908,8 @@ export function CharacterSheet({ character }: { character: Character }) {
         <div className="bg-bg-surface border border-border rounded overflow-hidden flex flex-col">
           <div className="px-[18px] py-3 border-b border-border-subtle flex justify-between items-center shrink-0">
             <span className="text-[11px] font-bold text-text-base tracking-[0.18em] uppercase font-cinzel">Perícias</span>
-            <span className="text-[9px]" style={{ color: manuallyTrainedCount >= trainingLimit ? "#F59E0B" : "#3F3F46" }}>
-              Treinadas: {manuallyTrainedCount}/{trainingLimit} · passos de 5
+            <span className="text-[9px]" style={{ color: maestryFree === 0 ? "#F59E0B" : "#3F3F46" }}>
+              Maestria: {maestrySpent}/{maestryPool} pts · passos de 5
             </span>
           </div>
 
