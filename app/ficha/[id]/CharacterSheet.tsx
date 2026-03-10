@@ -72,6 +72,7 @@ export interface Character {
   hpAtual: number; hpMax: number;
   energiaAtual: number; energiaMax: number;
   maestriaBonus: number; isApproved: boolean;
+  grau: string;
   pendingAptidaoSlots: number;
   specialization: { id?: string; nome: string; bonusAtributos?: Record<string, number>; habilidadesTreinadas?: string[] } | null;
   origemRelacao?: { id?: string; nome: string; bonusAtributos?: Record<string, number>; habilidadesTreinadas?: string[] } | null;
@@ -1563,6 +1564,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [energiaMax, setEnergiaMax] = useState(character.energiaMax);
   const [xpAtual, setXpAtual]     = useState(character.xpAtual);
   const [nivel, setNivel]         = useState(character.nivel);
+  const [grau, setGrau]           = useState(character.grau ?? "4");
   const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
   const [charSpec, setCharSpec]         = useState(character.specialization);
   const [charOrigem, setCharOrigem]     = useState(character.origemRelacao ?? null);
@@ -1826,6 +1828,7 @@ export function CharacterSheet({ character }: { character: Character }) {
       if (data.nivel            !== undefined) setNivel(data.nivel);
       if (data.maestriaBonus    !== undefined) setMaestriaBonus(data.maestriaBonus);
       if (data.pendingAptidaoSlots !== undefined) setPendingAptidaoSlots(data.pendingAptidaoSlots);
+      if (data.grau             !== undefined) setGrau(data.grau);
     }
 
     function onCombatCreated(data: any) {
@@ -2097,6 +2100,14 @@ export function CharacterSheet({ character }: { character: Character }) {
                   <div>
                     <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Nível</div>
                     <div className="text-[13px] font-semibold text-text-base">{nivel}</div>
+                  </div>
+
+                  {/* Grau — sempre visível, read-only */}
+                  <div>
+                    <div className="text-[9px] text-text-faint uppercase tracking-[0.1em] mb-0.5">Grau</div>
+                    <div className="text-[13px] font-semibold" style={{
+                      color: grau === "ESPECIAL" ? "#F59E0B" : grau === "SEMI-ESPECIAL" ? "#A855F7" : "#E5E7EB"
+                    }}>{grau}</div>
                   </div>
 
                   {charSpec ? (

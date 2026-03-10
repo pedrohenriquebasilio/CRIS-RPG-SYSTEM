@@ -20,6 +20,7 @@ interface Character {
   hpAtual: number; hpMax: number;
   energiaAtual: number; energiaMax: number;
   maestriaBonus: number;
+  grau: string;
   isMob: boolean; isApproved: boolean;
   specialization: { nome: string } | null;
   origemRelacao: { nome: string } | null;
@@ -974,6 +975,99 @@ function AjustesPanel({ agents, token, campaignId, onRefresh }: { agents: Charac
             </div>
           )}
         </>
+      )}
+
+      {/* ─── UP de Grau ─── */}
+      <GrauUpPanel agents={agents} token={token} onRefresh={onRefresh} />
+    </div>
+  );
+}
+
+// ─── Grau Up Panel ────────────────────────────────────────────────────────────
+const GRAU_SEQUENCE = ['4', '3', '2', '1', 'SEMI-ESPECIAL', 'ESPECIAL'];
+
+function grauColor(grau: string) {
+  if (grau === 'ESPECIAL')      return '#F59E0B';
+  if (grau === 'SEMI-ESPECIAL') return '#A855F7';
+  if (grau === '1')             return '#7C3AED';
+  return '#9CA3AF';
+}
+
+function GrauUpPanel({ agents, token, onRefresh }: { agents: Character[]; token: string; onRefresh?: () => void }) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [result,  setResult]  = useState<{ id: string; ok: boolean; msg: string } | null>(null);
+
+  async function handleUp(char: Character) {
+    const idx = GRAU_SEQUENCE.indexOf(char.grau ?? '4');
+    if (idx === GRAU_SEQUENCE.length - 1) return;
+    setLoading(char.id); setResult(null);
+    try {
+      await apiCall(`/characters/${char.id}/grau/up`, token, { method: 'PATCH' });
+      setResult({ id: char.id, ok: true, msg: `Grau de ${char.nome} elevado para ${GRAU_SEQUENCE[idx + 1]}.` });
+      onRefresh?.();
+    } catch (e) {
+      setResult({ id: char.id, ok: false, msg: e instanceof Error ? e.message : 'Erro ao elevar grau.' });
+    } finally { setLoading(null); }
+  }
+
+  const upgradeable = agents.filter(a => GRAU_SEQUENCE.indexOf(a.grau ?? '4') < GRAU_SEQUENCE.length - 1);
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3 pt-1 border-t border-border-subtle">
+        <span className="text-[10px] text-text-faint tracking-[0.18em] font-cinzel">UP DE GRAU</span>
+        <span className="text-[9px] text-text-faint bg-[#1A1A1A] border border-border px-1.5 py-px rounded-sm">4 → 3 → 2 → 1 → SEMI → ESPECIAL</span>
+      </div>
+      {upgradeable.length === 0 ? (
+        <p className="text-[11px] text-text-faint italic">Todos os agentes já estão no grau ESPECIAL.</p>
+      ) : (
+        <div className="flex flex-col gap-[6px]">
+          {agents.map(char => {
+            const idx      = GRAU_SEQUENCE.indexOf(char.grau ?? '4');
+            const isMax    = idx === GRAU_SEQUENCE.length - 1;
+            const nextGrau = isMax ? null : GRAU_SEQUENCE[idx + 1];
+            return (
+              <div key={char.id}
+                className="flex items-center gap-3 rounded-[3px] px-[14px] py-[10px]"
+                style={{ background: '#0F0F0F', border: '1px solid #1F1F1F' }}
+              >
+                <div className="w-7 h-7 rounded-[2px] bg-[#1A1A1A] border border-border flex items-center justify-center shrink-0">
+                  <span className="text-[12px] font-extrabold text-text-faint">{char.nome[0].toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] font-bold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{char.nome}</div>
+                  <div className="text-[10px]">
+                    <span style={{ color: grauColor(char.grau ?? '4') }}>Grau {char.grau ?? '4'}</span>
+                    {nextGrau && <span className="text-text-ghost"> → {nextGrau}</span>}
+                    {isMax && <span className="text-[#F59E0B]"> (máximo)</span>}
+                  </div>
+                </div>
+                {!isMax && (
+                  <button
+                    onClick={() => handleUp(char)}
+                    disabled={loading === char.id}
+                    className="shrink-0 rounded-[3px] px-3 py-1.5 text-[11px] font-bold tracking-[0.1em] font-cinzel transition-all"
+                    style={{
+                      background: loading === char.id ? '#1A1A1A' : 'rgba(124,58,237,0.15)',
+                      border: `1px solid ${loading === char.id ? '#2A2A2A' : '#7C3AED'}`,
+                      color:   loading === char.id ? '#52525B' : '#A78BFA',
+                      cursor:  loading === char.id ? 'not-allowed' : 'pointer',
+                    }}
+                  >{loading === char.id ? '…' : '▲ UP'}</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {result && (
+        <div className="mt-3 rounded-[3px] px-4 py-3 text-[12px] font-semibold flex items-center gap-2"
+          style={{
+            background: result.ok ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+            border: `1px solid ${result.ok ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+            color: result.ok ? '#22C55E' : '#EF4444',
+          }}
+        >{result.ok ? '✓' : '✗'} {result.msg}</div>
       )}
     </div>
   );
