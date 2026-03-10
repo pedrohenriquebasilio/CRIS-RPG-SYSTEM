@@ -65,8 +65,13 @@ export interface ItemCatalog {
   valor: number;
 }
 export interface AptitudeSeed {
-  id: string; nome: string; descricao: string;
-  prerequisitos: any[]; modificadores: any[];
+  id: string;
+  nome: string;
+  descricao: string;
+  prerequisitoNivel: number;
+  tipo: string;
+  cooldown: number;
+  prerequisitoAptidao: { id: string; nome: string } | null;
 }
 export interface Aptitude {
   id: string;
@@ -1847,25 +1852,49 @@ function AbilityRoller({ onRoll }: { onRoll: (skillNome: string) => void }) {
   );
 }
 
-// ─── Add Aptidão Modal ────────────────────────────────────────────────────────
-const APTIDAO_TIPOS = [
-  { value: "buff", label: "Buff",  color: "#3B82F6" },
-  { value: "dano", label: "Dano",  color: "#EF4444" },
-  { value: "cura", label: "Cura",  color: "#22C55E" },
-];
+// ─── Select Aptidão Modal ─────────────────────────────────────────────────────
+const TIPO_COLOR: Record<string, string> = {
+  buff: "#3B82F6",
+  dano: "#EF4444",
+  cura: "#22C55E",
+};
 
-function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose }: {
+function getCategoria(nome: string, descricao: string): string {
+  const dominioNomes = [
+    "Domínio Simples", "Anular Técnica", "Espaço em Batalha", "Dominância Absoluta",
+    "Expansão de Domínio Incompleta", "Expansão de Domínio Completa", "Expansão de Domínio Sem Barreiras",
+    "Acerto Garantido", "Amplificação de Domínio",
+  ];
+  const controleLeitNomes = [
+    "Rastreio Avançado", "Leitura Rápida de Energia", "Canalizar em Golpe", "Canalização Avançada",
+    "Canalização Máxima", "Cobrir-se", "Cobertura Avançada", "Projetar Energia", "Projeção Avançada",
+    "Projeção Máxima", "Projeção Dividida", "Expandir Aura", "Identificação de Itens", "Leitura de Aura",
+    "Punho Divergente", "Estímulo Muscular", "Estímulo Muscular Avançado",
+  ];
+  if (dominioNomes.includes(nome) || descricao.includes("Aptidão em Domínio")) return "Domínio";
+  if (controleLeitNomes.includes(nome) || descricao.includes("Aptidão em Controle e Leitura")) return "Controle e Leitura";
+  return "Aura";
+}
+
+function SelectAptidaoModal({ characterId, backendToken, level, alreadyHas, onAdded, onClose }: {
   characterId: string; backendToken: string;
   level: number;
+  alreadyHas: Set<string>;
   onAdded: (a: Aptitude) => void; onClose: () => void;
 }) {
-  const [nome, setNome]                     = useState("");
-  const [descricao, setDescricao]           = useState("");
-  const [prerequisitoNivel, setPrereq]      = useState(1);
-  const [tipo, setTipo]                     = useState<"dano" | "buff" | "cura">("buff");
-  const [cooldown, setCooldown]             = useState(0);
-  const [saving, setSaving]                 = useState(false);
-  const [error, setError]                   = useState("");
+  const [aptidoes, setAptidoes] = useState<AptitudeSeed[]>([]);
+  const [busca, setBusca]       = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [adding, setAdding]     = useState<string | null>(null);
+  const [error, setError]       = useState("");
+
+  useEffect(() => {
+    apiCall<AptitudeSeed[]>("/seeds/aptitudes", backendToken)
+      .then(data => setAptidoes(data))
+      .catch(() => setError("Erro ao carregar aptidões."))
+      .finally(() => setLoading(false));
+  }, [backendToken]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -1873,121 +1902,139 @@ function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nome.trim()) { setError("Nome é obrigatório."); return; }
-    if (!descricao.trim()) { setError("Descrição é obrigatória."); return; }
-    setSaving(true); setError("");
+  async function handleSelect(apt: AptitudeSeed) {
+    if (adding) return;
+    setAdding(apt.id); setError("");
     try {
-      const res = await apiCall<any>(`/characters/${characterId}/aptitudes`, backendToken, {
-        method: "POST",
-        body: { nome: nome.trim(), descricao: descricao.trim(), prerequisitoNivel, tipo, cooldown },
-      });
+      const res = await apiCall<Aptitude>(`/characters/${characterId}/aptitudes/${apt.id}`, backendToken, { method: "POST" });
       onAdded(res);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro ao criar aptidão.");
-      setSaving(false);
+      setError(e instanceof Error ? e.message : "Erro ao adicionar aptidão.");
+      setAdding(null);
     }
   }
 
-  const inp = {
-    width: "100%", padding: "7px 9px", background: "#0A0A0A",
-    border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB",
-    fontSize: 12, outline: "none",
-  } as React.CSSProperties;
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#7C3AED");
-  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => (e.currentTarget.style.borderColor = "#2A2A2A");
+  const termo = busca.toLowerCase().trim();
+  const filtradas = aptidoes.filter(a =>
+    !termo || a.nome.toLowerCase().includes(termo) || a.descricao.toLowerCase().includes(termo)
+  );
 
-  const tipoAtual = APTIDAO_TIPOS.find(t => t.value === tipo)!;
+  const categorias = ["Aura", "Controle e Leitura", "Domínio"];
+  const porCategoria = Object.fromEntries(
+    categorias.map(cat => [cat, filtradas.filter(a => getCategoria(a.nome, a.descricao) === cat)])
+  );
 
   return (
     <div className="fixed inset-0 z-300 bg-black/78 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-[#111] border border-border rounded-md w-full max-w-120 flex flex-col"
-        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.14)" }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-lg flex flex-col"
+        style={{ maxHeight: "85vh", boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.14)" }}>
 
         {/* Header */}
-        <div className="px-5.5 pt-4.5 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
-          <span className="text-[13px] font-bold text-text-near tracking-widest font-cinzel">Nova Aptidão</span>
+        <div className="px-5 pt-4 pb-3.5 border-b border-border-subtle flex items-center justify-between shrink-0">
+          <span className="text-[13px] font-bold text-text-near tracking-widest font-cinzel">Adicionar Aptidão</span>
           <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-text-faint text-xl leading-none hover:text-text-base transition-colors">×</button>
         </div>
 
-        <form onSubmit={handleCreate} className="flex flex-col gap-4 px-5.5 py-4 overflow-y-auto">
-          {/* Nome */}
-          <div>
-            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
-            <input autoFocus value={nome} onChange={e => setNome(e.target.value)}
-              placeholder="Ex: Golpe Devastador" style={inp} onFocus={focus} onBlur={blur} />
-          </div>
-
-          {/* Tipo (toggle buttons) */}
-          <div>
-            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1.5 font-cinzel">Tipo</label>
-            <div className="flex gap-1.5">
-              {APTIDAO_TIPOS.map(t => (
-                <button key={t.value} type="button" onClick={() => setTipo(t.value as any)} style={{
-                  flex: 1, padding: "8px 0", borderRadius: 2, cursor: "pointer", fontSize: 11, fontWeight: 700,
-                  background: tipo === t.value ? `${t.color}22` : "#0A0A0A",
-                  border: `1px solid ${tipo === t.value ? t.color : "#2A2A2A"}`,
-                  color: tipo === t.value ? t.color : "#6B7280",
-                  letterSpacing: "0.06em",
-                }}>{t.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Nível req + Cooldown */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div>
-              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nível requerido</label>
-              <select value={prerequisitoNivel} onChange={e => setPrereq(parseInt(e.target.value))}
-                style={{ ...inp, cursor: "pointer" }} onFocus={focus} onBlur={blur}>
-                {Array.from({ length: level }, (_, i) => i + 1).map(n => (
-                  <option key={n} value={n}>Nível {n}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Cooldown (rodadas)</label>
-              <input type="number" value={cooldown} min={0} max={20}
-                onChange={e => setCooldown(Math.max(0, parseInt(e.target.value) || 0))}
-                style={inp} onFocus={focus} onBlur={blur} />
-            </div>
-          </div>
-
-          {/* Descrição */}
-          <div>
-            <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição *</label>
-            <textarea value={descricao} onChange={e => setDescricao(e.target.value)}
-              rows={3} placeholder="Descreva o efeito da aptidão…"
-              style={{ ...inp, resize: "none", fontFamily: "Inter, sans-serif" }} onFocus={focus} onBlur={blur} />
-          </div>
-
-          {error && <p className="text-xs text-red-500 m-0">{error}</p>}
-
-          {/* Ações */}
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} style={{
-              flex: 1, padding: "9px", background: "transparent", border: "1px solid #2A2A2A",
-              borderRadius: 2, cursor: "pointer", color: "#6B7280", fontSize: 11, fontWeight: 700,
+        {/* Busca */}
+        <div className="px-5 py-3 border-b border-border-subtle shrink-0">
+          <input
+            autoFocus
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar aptidão…"
+            style={{
+              width: "100%", padding: "7px 9px", background: "#0A0A0A",
+              border: "1px solid #2A2A2A", borderRadius: 2, color: "#E5E7EB",
+              fontSize: 12, outline: "none", boxSizing: "border-box",
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#E5E7EB")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#6B7280")}>
-              Cancelar
-            </button>
-            <button type="submit" disabled={saving || !nome.trim()} style={{
-              flex: 2, padding: "9px", borderRadius: 2, fontSize: 12, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif",
-              background: saving || !nome.trim() ? "#1A1A1A" : tipoAtual.color,
-              border: `1px solid ${saving || !nome.trim() ? "#2A2A2A" : tipoAtual.color}`,
-              cursor: saving || !nome.trim() ? "not-allowed" : "pointer",
-              color: saving || !nome.trim() ? "#52525B" : "#fff",
-              opacity: saving ? 0.7 : 1,
-            }}>
-              {saving ? "Criando…" : "✦ Criar Aptidão"}
-            </button>
-          </div>
-        </form>
+            onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+            onBlur={e  => (e.currentTarget.style.borderColor = "#2A2A2A")}
+          />
+        </div>
+
+        {/* Lista */}
+        <div className="overflow-y-auto flex-1 px-3 py-3 flex flex-col gap-4">
+          {loading && <p className="text-xs text-text-muted text-center py-4">Carregando…</p>}
+          {error   && <p className="text-xs text-red-500 text-center py-2">{error}</p>}
+          {!loading && categorias.map(cat => {
+            const lista = porCategoria[cat];
+            if (!lista || lista.length === 0) return null;
+            return (
+              <div key={cat}>
+                <div className="text-[9px] text-brand-muted tracking-[0.14em] uppercase font-cinzel font-bold mb-2 px-1">
+                  {cat}
+                </div>
+                <div className="flex flex-col gap-1">
+                  {lista.map(apt => {
+                    const owned    = alreadyHas.has(apt.id);
+                    const locked   = apt.prerequisitoNivel > level;
+                    const isOpen   = expanded === apt.id;
+                    const isAdding = adding === apt.id;
+                    const color    = TIPO_COLOR[apt.tipo] ?? "#A855F7";
+                    const disabled = owned || locked || !!adding;
+
+                    return (
+                      <div key={apt.id} className="rounded-[2px] border overflow-hidden"
+                        style={{ borderColor: owned ? "#2A2A2A" : isOpen ? `${color}55` : "#1F1F1F", background: "#0D0D0D" }}>
+                        {/* Row */}
+                        <div
+                          className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer select-none"
+                          style={{ opacity: locked ? 0.45 : 1 }}
+                          onClick={() => !disabled && setExpanded(isOpen ? null : apt.id)}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[12px] font-semibold" style={{ color: owned ? "#52525B" : "#E5E7EB" }}>{apt.nome}</span>
+                              <span className="text-[8px] px-1 py-px rounded-sm font-bold" style={{ background: `${color}20`, color, border: `1px solid ${color}44` }}>{apt.tipo}</span>
+                              {apt.prerequisitoNivel > 1 && (
+                                <span className="text-[8px] text-text-faint">Nv {apt.prerequisitoNivel}</span>
+                              )}
+                              {apt.prerequisitoAptidao && (
+                                <span className="text-[8px] text-text-faint">· Req: {apt.prerequisitoAptidao.nome}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="shrink-0 flex items-center gap-1.5">
+                            {owned ? (
+                              <span className="text-[9px] text-text-faint font-cinzel">Obtida</span>
+                            ) : locked ? (
+                              <span className="text-[9px] text-text-faint font-cinzel">Nv {apt.prerequisitoNivel}</span>
+                            ) : (
+                              <button
+                                onClick={e => { e.stopPropagation(); handleSelect(apt); }}
+                                disabled={!!adding}
+                                style={{
+                                  padding: "4px 10px", borderRadius: 2, fontSize: 10, fontWeight: 700,
+                                  fontFamily: "Cinzel, serif", letterSpacing: "0.06em", cursor: adding ? "not-allowed" : "pointer",
+                                  background: isAdding ? "#1A1A1A" : `${color}22`,
+                                  border: `1px solid ${isAdding ? "#2A2A2A" : color}`,
+                                  color: isAdding ? "#52525B" : color,
+                                }}
+                              >
+                                {isAdding ? "…" : "+ Obter"}
+                              </button>
+                            )}
+                            <span className="text-text-faint text-[10px]">{isOpen ? "▲" : "▼"}</span>
+                          </div>
+                        </div>
+                        {/* Descrição expandida */}
+                        {isOpen && (
+                          <div className="px-3 pb-3 text-[11px] text-text-dim leading-relaxed border-t border-border-subtle pt-2">
+                            {apt.descricao}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {!loading && filtradas.length === 0 && (
+            <p className="text-xs text-text-muted text-center py-4">Nenhuma aptidão encontrada.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -3140,11 +3187,11 @@ export function CharacterSheet({ character }: { character: Character }) {
                     className="shrink-0 px-3 py-1 bg-transparent border border-brand rounded-sm cursor-pointer text-brand-muted text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,58,237,0.12)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    title="Criar nova aptidão"
-                  >+ Criar</button>
+                    title="Adicionar aptidão"
+                  >+ Adicionar</button>
                 </div>
                 {localAptitudes.length === 0
-                  ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão criada" sub="Crie uma nova aptidão clicando em '+ Criar'" />
+                  ? <EmptyState icon={<Star size={26} />} message="Nenhuma aptidão obtida" sub="Adicione uma aptidão clicando em '+ Adicionar'" />
                   : localAptitudes.map((a, i) => {
                     const isActive = (a as any).ativo === true;
                     const colorByType = {
@@ -3353,10 +3400,11 @@ export function CharacterSheet({ character }: { character: Character }) {
       )}
 
       {showAddAptidao && backendToken && (
-        <CreateAptidaoModal
+        <SelectAptidaoModal
           characterId={character.id}
           backendToken={backendToken}
           level={nivel}
+          alreadyHas={new Set(localAptitudes.map(a => a.aptitude.id ?? ""))}
           onAdded={(a) => {
             setLocalAptitudes(prev => [...prev, a]);
             setShowAddAptidao(false);
