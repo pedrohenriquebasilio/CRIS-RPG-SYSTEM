@@ -940,20 +940,15 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
 function TalentoCard({ link, onDelete }: { link: CharacterTalentoLink; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const t = link.talento;
-  const hasMeta = t.custo !== "nenhum" || t.alcance !== "pessoal" || t.duracao !== "imediato" || t.damageDice || t.atributoBase;
   return (
     <div className="bg-bg-input border border-border border-l-[3px] border-l-[#7C3AED] rounded-[0_2px_2px_0] overflow-hidden">
       <div className="flex items-center gap-3 px-3.5 py-2.5">
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-semibold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{t.nome}</div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[9px] text-brand-light border border-brand/30 px-1.5 py-px rounded-sm">{t.tipo}</span>
-            {t.atributoBase && <span className="text-[9px] text-text-faint">{t.atributoBase}</span>}
-            {t.damageDice && <span className="text-[9px] text-red-400 font-bold">{t.damageDice}</span>}
-          </div>
+          <span className="text-[9px] text-brand-light border border-brand/30 px-1.5 py-px rounded-sm">{t.tipo}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {(t.descricao || hasMeta) && (
+          {t.descricao && (
             <button onClick={() => setExpanded(e => !e)}
               className="w-6 h-6 flex items-center justify-center text-text-faint text-xs cursor-pointer bg-transparent border-none hover:text-text-base transition-colors">
               {expanded ? "▲" : "▼"}
@@ -963,16 +958,9 @@ function TalentoCard({ link, onDelete }: { link: CharacterTalentoLink; onDelete:
             className="w-6 h-6 flex items-center justify-center text-red-700 text-xs cursor-pointer bg-transparent border-none hover:text-red-500 transition-colors">✕</button>
         </div>
       </div>
-      {expanded && (
-        <div className="px-3.5 pb-3 border-t border-border-subtle pt-2 flex flex-col gap-1.5">
-          {t.descricao && <p className="text-[11px] text-text-dim m-0 leading-relaxed">{t.descricao}</p>}
-          {hasMeta && (
-            <div className="flex flex-wrap gap-3 text-[10px] text-text-faint">
-              {t.custo    !== "nenhum"   && <span>Custo: {t.custo}</span>}
-              {t.alcance  !== "pessoal"  && <span>Alcance: {t.alcance}</span>}
-              {t.duracao  !== "imediato" && <span>Duração: {t.duracao}</span>}
-            </div>
-          )}
+      {expanded && t.descricao && (
+        <div className="px-3.5 pb-3 border-t border-border-subtle pt-2">
+          <p className="text-[11px] text-text-dim m-0 leading-relaxed">{t.descricao}</p>
         </div>
       )}
     </div>
@@ -995,17 +983,11 @@ function AddTalentoModal({ characterId, backendToken, existing, onAdded, onClose
   const [error, setError]     = useState("");
 
   // form "novo"
-  const [nome, setNome]         = useState("");
-  const [tipo, setTipo]         = useState("passiva");
-  const [custo, setCusto]       = useState("nenhum");
-  const [alcance, setAlcance]   = useState("pessoal");
-  const [duracao, setDuracao]   = useState("imediato");
-  const [descricao, setDesc]    = useState("");
-  const [damageDice, setDice]   = useState("");
-  const [atributo, setAtributo] = useState("");
+  const [nome, setNome]      = useState("");
+  const [tipo, setTipo]      = useState("passiva");
+  const [descricao, setDesc] = useState("");
 
-  const TIPOS    = ["passiva", "ativa", "reacao"];
-  const ATRIBUTOS = ["", "FOR", "AGI", "VIG", "INT", "PRE"];
+  const TIPOS = ["passiva", "ativa", "reacao"];
 
   useEffect(() => {
     if (mode === "catalogo" && catalog === null) {
@@ -1035,7 +1017,7 @@ function AddTalentoModal({ characterId, backendToken, existing, onAdded, onClose
     try {
       const created = await apiCall<TalentoData>("/talentos", backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), tipo, custo, alcance, duracao, descricao: descricao.trim(), damageDice: damageDice.trim() || undefined, atributoBase: atributo || undefined },
+        body: { nome: nome.trim(), tipo, descricao: descricao.trim() },
       });
       const res = await apiCall<CharacterTalentoLink>(`/talentos/character/${characterId}/${created.id}`, backendToken, { method: "POST" });
       onAdded(res);
@@ -1119,7 +1101,6 @@ function AddTalentoModal({ characterId, backendToken, existing, onAdded, onClose
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-
               <div>
                 <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo</label>
                 <div className="flex gap-1">
@@ -1131,59 +1112,13 @@ function AddTalentoModal({ characterId, backendToken, existing, onAdded, onClose
                   ))}
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Custo</label>
-                  <input value={custo} onChange={e => setCusto(e.target.value)} placeholder="nenhum" className="ficha-input"
-                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Alcance</label>
-                  <input value={alcance} onChange={e => setAlcance(e.target.value)} placeholder="pessoal" className="ficha-input"
-                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Duração</label>
-                  <input value={duracao} onChange={e => setDuracao(e.target.value)} placeholder="imediato" className="ficha-input"
-                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Atributo Base</label>
-                  <select value={atributo} onChange={e => setAtributo(e.target.value)} className="ficha-input" style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
-                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  >
-                    {ATRIBUTOS.map(a => <option key={a} value={a}>{a || "— Nenhum —"}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano</label>
-                <input value={damageDice} onChange={e => setDice(e.target.value)} placeholder="Ex.: 2d6 (opcional)" className="ficha-input"
-                  onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                />
-              </div>
-
               <div>
                 <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
-                <textarea value={descricao} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Descreva o talento…" className="ficha-input resize-none"
+                <textarea value={descricao} onChange={e => setDesc(e.target.value)} rows={4} placeholder="Descreva o talento…" className="ficha-input resize-none"
                   onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                 />
               </div>
-
               {error && <p className="text-xs text-red-500 m-0">{error}</p>}
               <button type="submit" disabled={saving || !nome.trim()}
                 style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#7C3AED", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
