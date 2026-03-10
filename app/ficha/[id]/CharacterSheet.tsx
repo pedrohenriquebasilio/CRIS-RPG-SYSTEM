@@ -40,6 +40,30 @@ export interface Weapon {
   skill?: { id: string; nome: string; atributoBase: string } | null;
   skillId?: string | null;
 }
+export interface InventoryItemData {
+  id: string;
+  itemId: string;
+  quantidade: number;
+  equipado: boolean;
+  notas: string;
+  item: {
+    id: string;
+    nome: string;
+    descricao: string;
+    tipo: string;
+    peso: number;
+    valor: number;
+  };
+}
+
+export interface ItemCatalog {
+  id: string;
+  nome: string;
+  descricao: string;
+  tipo: string;
+  peso: number;
+  valor: number;
+}
 export interface AptitudeSeed {
   id: string; nome: string; descricao: string;
   prerequisitos: any[]; modificadores: any[];
@@ -80,6 +104,7 @@ export interface Character {
   attributes: Attrs | null;
   skills: CharSkill[]; techniques: Technique[];
   weapons: Weapon[]; aptitudes: Aptitude[];
+  inventory?: InventoryItemData[];
   abilities?: CharacterAbility[];
 }
 
@@ -405,6 +430,66 @@ function WeaponCard({ w, onRoll, onEdit, onDelete }: { w: Weapon; onRoll: () => 
       {expanded && w.descricao && (
         <div className="px-3.5 pb-3 border-t border-border-subtle">
           <p className="text-xs text-text-dim m-0 pt-2 leading-relaxed">{w.descricao}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Inventory Item Card ───────────────────────────────────────────────────────
+const TIPO_ICONS: Record<string, string> = {
+  misc: "📦", consumivel: "🧪", equipamento: "🛡", quest: "⭐", material: "🪨"
+};
+
+function InventoryItemCard({ inv, onDelete, onUpdate }: {
+  inv: InventoryItemData;
+  onDelete: () => void;
+  onUpdate: (data: { quantidade?: number; equipado?: boolean; notas?: string }) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [qtd, setQtd] = useState(inv.quantidade);
+
+  return (
+    <div className="bg-bg-input border border-border rounded-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-3.5 py-2.5">
+        <span className="text-[16px] shrink-0">{TIPO_ICONS[inv.item.tipo] ?? "📦"}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{inv.item.nome}</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[9px] text-text-faint bg-[#1A1A1A] border border-border px-1.5 py-px rounded-sm">{inv.item.tipo}</span>
+            {inv.equipado && <span className="text-[9px] text-green-400 border border-green-900 px-1.5 py-px rounded-sm">equipado</span>}
+          </div>
+        </div>
+        {/* Quantidade */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={() => { const n = Math.max(1, qtd - 1); setQtd(n); onUpdate({ quantidade: n }); }}
+            className="w-5 h-5 flex items-center justify-center rounded-sm bg-[#1A1A1A] border border-border text-text-faint text-xs cursor-pointer hover:border-brand transition-colors">−</button>
+          <span className="text-[12px] font-bold text-text-base w-5 text-center">{qtd}</span>
+          <button onClick={() => { const n = qtd + 1; setQtd(n); onUpdate({ quantidade: n }); }}
+            className="w-5 h-5 flex items-center justify-center rounded-sm bg-[#1A1A1A] border border-border text-text-faint text-xs cursor-pointer hover:border-brand transition-colors">+</button>
+        </div>
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={() => setExpanded(e => !e)}
+            className="w-6 h-6 flex items-center justify-center rounded-sm bg-transparent border border-transparent text-text-faint text-xs cursor-pointer hover:border-border transition-colors">
+            {expanded ? "▲" : "▼"}
+          </button>
+          <button onClick={onDelete}
+            className="w-6 h-6 flex items-center justify-center rounded-sm bg-transparent border border-transparent text-red-700 text-xs cursor-pointer hover:border-red-900 hover:text-red-500 transition-colors">✕</button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="px-3.5 pb-3 border-t border-border-subtle pt-2 flex flex-col gap-2">
+          {inv.item.descricao && <p className="text-[11px] text-text-dim m-0 leading-relaxed">{inv.item.descricao}</p>}
+          <div className="flex gap-3 text-[10px] text-text-faint">
+            {inv.item.peso > 0 && <span>Peso: {inv.item.peso}kg</span>}
+            {inv.item.valor > 0 && <span>Valor: {inv.item.valor} moedas</span>}
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={inv.equipado} onChange={e => onUpdate({ equipado: e.target.checked })}
+              className="accent-[#7C3AED]" />
+            <span className="text-[11px] text-text-dim">Equipado</span>
+          </label>
         </div>
       )}
     </div>
@@ -834,37 +919,60 @@ function EditTechniqueModal({ t, characterId, backendToken, onSaved, onClose }: 
   );
 }
 
-// ─── Add Weapon Modal ─────────────────────────────────────────────────────────
-function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClose }: {
+// ─── Add Inventory Modal ───────────────────────────────────────────────────────
+function AddInventoryModal({ characterId, backendToken, skillIdMap, onAddedWeapon, onAddedItem, onClose }: {
   characterId: string; backendToken: string;
   skillIdMap: Record<string, string>;
-  onAdded: (w: Weapon) => void; onClose: () => void;
+  onAddedWeapon: (w: Weapon) => void;
+  onAddedItem: (inv: InventoryItemData) => void;
+  onClose: () => void;
 }) {
-  type Mode = "catalogo" | "custom";
-  const [mode, setMode]           = useState<Mode>("catalogo");
-  const [templates, setTemplates] = useState<WeaponTemplate[] | null>(null);
-  const [wSearch, setWSearch]     = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState("");
-  // skill picker (shared between modes)
-  const [skillNome, setSkillNome] = useState("");
-  // catalog: pending template awaiting skill confirm
+  type Section = "arma" | "item";
+  type WeaponMode = "catalogo" | "custom";
+  type ItemMode = "catalogo" | "novo";
+
+  const [section, setSection] = useState<Section>("arma");
+
+  // ── Arma state ──
+  const [weaponMode, setWeaponMode]   = useState<WeaponMode>("catalogo");
+  const [templates, setTemplates]     = useState<WeaponTemplate[] | null>(null);
+  const [wSearch, setWSearch]         = useState("");
   const [pendingTemplate, setPendingTemplate] = useState<WeaponTemplate | null>(null);
-  // custom form
-  const [nome, setNome]           = useState("");
-  const [dice, setDice]           = useState("1d6");
-  const [damType, setDamType]     = useState("FISICO");
-  const [threat, setThreat]       = useState("20");
-  const [crit, setCrit]           = useState("2");
-  const [descricao, setDescricao] = useState("");
+  const [skillNome, setSkillNome]     = useState("");
+  const [wNome, setWNome]             = useState("");
+  const [wDice, setWDice]             = useState("1d6");
+  const [wDamType, setWDamType]       = useState("FISICO");
+  const [wThreat, setWThreat]         = useState("20");
+  const [wCrit, setWCrit]             = useState("2");
+  const [wDesc, setWDesc]             = useState("");
+
+  // ── Item state ──
+  const [itemMode, setItemMode]       = useState<ItemMode>("catalogo");
+  const [itemCatalog, setItemCatalog] = useState<ItemCatalog[] | null>(null);
+  const [iSearch, setISearch]         = useState("");
+  const [iNome, setINome]             = useState("");
+  const [iDesc, setIDesc]             = useState("");
+  const [iTipo, setITipo]             = useState("misc");
+  const [iPeso, setIPeso]             = useState("0");
+  const [iValor, setIValor]           = useState("0");
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState("");
+
   const skillNames = Object.keys(skillIdMap).sort();
+  const TIPO_COLORS: Record<string, string> = { FISICO: "#EF4444", ENERGETICO: "#8B5CF6", MENTAL: "#3B82F6", ESPIRITUAL: "#10B981" };
+  const ITEM_TIPOS = ["misc", "consumivel", "equipamento", "quest", "material"] as const;
 
   useEffect(() => {
-    if (mode === "catalogo" && templates === null) {
+    if (section === "arma" && weaponMode === "catalogo" && templates === null) {
       apiCall<WeaponTemplate[]>("/seeds/weapon-templates", backendToken)
         .then(setTemplates).catch(() => setTemplates([]));
     }
-  }, [mode, templates, backendToken]);
+    if (section === "item" && itemMode === "catalogo" && itemCatalog === null) {
+      apiCall<ItemCatalog[]>("/items", backendToken)
+        .then(setItemCatalog).catch(() => setItemCatalog([]));
+    }
+  }, [section, weaponMode, itemMode, templates, itemCatalog, backendToken]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -872,6 +980,7 @@ function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClos
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
+  // ── Weapon actions ──
   async function confirmTemplate(t: WeaponTemplate) {
     setSaving(true); setError("");
     const skillId = skillNome ? skillIdMap[skillNome] : undefined;
@@ -880,194 +989,333 @@ function AddWeaponModal({ characterId, backendToken, skillIdMap, onAdded, onClos
         method: "POST",
         body: { nome: t.nome, damageDice: t.damageDice, damageType: t.tipoDano, threatRange: t.threatRange, criticalMultiplier: t.criticalMultiplier, ...(skillId ? { skillId } : {}) },
       });
-      onAdded(res);
+      onAddedWeapon(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
   }
 
-  async function addCustom(e: React.FormEvent) {
+  async function addCustomWeapon(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim() || !dice.trim()) { setError("Nome e dado de dano são obrigatórios."); return; }
+    if (!wNome.trim() || !wDice.trim()) { setError("Nome e dado de dano são obrigatórios."); return; }
     setSaving(true); setError("");
     const skillId = skillNome ? skillIdMap[skillNome] : undefined;
     try {
       const res = await apiCall<Weapon>(`/characters/${characterId}/weapons`, backendToken, {
         method: "POST",
-        body: { nome: nome.trim(), damageDice: dice.trim(), damageType: damType, threatRange: parseInt(threat) || 20, criticalMultiplier: parseInt(crit) || 2, descricao: descricao.trim(), ...(skillId ? { skillId } : {}) },
+        body: { nome: wNome.trim(), damageDice: wDice.trim(), damageType: wDamType, threatRange: parseInt(wThreat) || 20, criticalMultiplier: parseInt(wCrit) || 2, descricao: wDesc.trim(), ...(skillId ? { skillId } : {}) },
       });
-      onAdded(res);
+      onAddedWeapon(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
   }
 
-  const TIPO_COLORS: Record<string, string> = { FISICO: "#EF4444", ENERGETICO: "#8B5CF6", MENTAL: "#3B82F6", ESPIRITUAL: "#10B981" };
+  // ── Item actions ──
+  async function addItemFromCatalog(item: ItemCatalog) {
+    setSaving(true); setError("");
+    try {
+      const res = await apiCall<InventoryItemData>(`/characters/${characterId}/inventory`, backendToken, {
+        method: "POST",
+        body: { itemId: item.id, quantidade: 1 },
+      });
+      onAddedItem(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
+  }
+
+  async function createAndAddItem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!iNome.trim()) { setError("Nome é obrigatório."); return; }
+    setSaving(true); setError("");
+    try {
+      const newItem = await apiCall<ItemCatalog>("/items", backendToken, {
+        method: "POST",
+        body: { nome: iNome.trim(), descricao: iDesc.trim(), tipo: iTipo, peso: parseFloat(iPeso) || 0, valor: parseInt(iValor) || 0 },
+      });
+      const res = await apiCall<InventoryItemData>(`/characters/${characterId}/inventory`, backendToken, {
+        method: "POST",
+        body: { itemId: newItem.id, quantidade: 1 },
+      });
+      onAddedItem(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Erro."); setSaving(false); }
+  }
+
+  const accentColor = section === "arma" ? "#EF4444" : "#7C3AED";
   const visibleTemplates = (templates ?? []).filter(t => !wSearch || t.nome.toLowerCase().includes(wSearch.toLowerCase()));
+  const visibleItems = (itemCatalog ?? []).filter(i => !iSearch || i.nome.toLowerCase().includes(iSearch.toLowerCase()));
 
   return (
     <div
       className="fixed inset-0 z-[300] bg-black/[0.78] backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(153,27,27,0.15)" }}>
+      <div className="bg-[#111] border border-border rounded-md w-full max-w-[520px] max-h-[80vh] flex flex-col" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.8)" }}>
+
+        {/* Header */}
         <div className="px-[22px] pt-[18px] pb-[14px] border-b border-border-subtle flex items-center justify-between shrink-0">
-          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar Arma</span>
+          <span className="text-[13px] font-bold text-text-near tracking-[0.06em] font-cinzel">Adicionar ao Inventário</span>
           <button onClick={onClose} className="bg-none border-none cursor-pointer text-text-faint text-lg leading-none">×</button>
         </div>
+
+        {/* Section toggle: Arma vs Item */}
         <div className="flex border-b border-border-subtle shrink-0">
-          {(["catalogo", "custom"] as Mode[]).map(m => (
-            <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
-              flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
-              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif",
-              color: mode === m ? "#EF4444" : "#52525B",
-              borderBottom: `2px solid ${mode === m ? "#EF4444" : "transparent"}`, marginBottom: -1,
-            }}>
-              {m === "catalogo" ? "CATÁLOGO" : "PERSONALIZADA"}
+          {(["arma", "item"] as Section[]).map(s => (
+            <button key={s} onClick={() => { setSection(s); setError(""); setPendingTemplate(null); }}
+              style={{
+                flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", fontFamily: "Cinzel, serif",
+                color: section === s ? accentColor : "#52525B",
+                borderBottom: `2px solid ${section === s ? accentColor : "transparent"}`, marginBottom: -1,
+              }}>
+              {s === "arma" ? "⚔ ARMA" : "📦 ITEM"}
             </button>
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-[22px] py-4">
-          {mode === "catalogo" && !pendingTemplate && (
-            <>
-              <input value={wSearch} onChange={e => setWSearch(e.target.value)} placeholder="Buscar…"
-                className="ficha-input mb-3"
-                onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-              />
-              {templates === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
-              {visibleTemplates.length === 0 && templates !== null && <p className="text-text-ghost text-xs text-center">Nenhuma arma encontrada.</p>}
-              <div className="flex flex-col gap-1.5">
-                {visibleTemplates.map(t => (
-                  <button key={t.id} onClick={() => { setPendingTemplate(t); setSkillNome(""); setError(""); }} disabled={saving}
-                    style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: `3px solid ${TIPO_COLORS[t.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left", transition: "border-color 0.15s" }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-sm font-extrabold text-red-500">{t.damageDice}</span>
-                        <span className="text-[9px] text-text-faint">{t.categoria}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2.5 mt-1">
-                      <span className="text-[10px] text-text-muted">{t.distancia}</span>
-                      {t.duasMaos && <span className="text-[10px] text-amber-400">2 mãos</span>}
-                      {t.requiresMarcial && <span className="text-[10px] text-red-500">Marcial</span>}
-                      {t.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{t.threatRange}</span>}
-                      {t.regraEspecial && <span className="text-[10px] text-violet-400">{t.regraEspecial}</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {mode === "catalogo" && pendingTemplate && (
-            <div className="flex flex-col gap-4">
-              <div style={{ background: "#0A0A0A", border: `1px solid #1F1F1F`, borderLeft: `3px solid ${TIPO_COLORS[pendingTemplate.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "12px 16px" }}>
-                <div className="flex justify-between items-center">
-                  <span className="text-[13px] font-semibold text-text-base">{pendingTemplate.nome}</span>
-                  <span className="text-sm font-extrabold text-red-500">{pendingTemplate.damageDice}</span>
-                </div>
-                <div className="flex gap-2.5 mt-1">
-                  <span className="text-[10px] text-text-muted">{pendingTemplate.distancia}</span>
-                  {pendingTemplate.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{pendingTemplate.threatRange}</span>}
-                </div>
-              </div>
-              <div>
-                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1.5 font-cinzel">Perícia utilizada</label>
-                <select
-                  value={skillNome}
-                  onChange={e => setSkillNome(e.target.value)}
-                  className="ficha-input"
-                  style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
-                >
-                  <option value="">— Sem perícia (usa FOR) —</option>
-                  {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
-              <div className="flex gap-2">
-                <button type="button" onClick={() => { setPendingTemplate(null); setError(""); }} style={{ flex: 1, padding: "9px", background: "transparent", border: "1px solid #3F3F46", borderRadius: 3, cursor: "pointer", color: "#9CA3AF", fontSize: 11, fontWeight: 600 }}>← Voltar</button>
-                <button type="button" onClick={() => confirmTemplate(pendingTemplate)} disabled={saving} style={{ flex: 2, padding: "9px", background: saving ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving ? "not-allowed" : "pointer", color: saving ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif" }}>
-                  {saving ? "Adicionando…" : "✦ Adicionar"}
+        {/* ── ARMA ── */}
+        {section === "arma" && (
+          <>
+            <div className="flex border-b border-border-subtle shrink-0">
+              {(["catalogo", "custom"] as WeaponMode[]).map(m => (
+                <button key={m} onClick={() => { setWeaponMode(m); setError(""); setPendingTemplate(null); }}
+                  style={{
+                    flex: 1, padding: "8px 0", background: "none", border: "none", cursor: "pointer",
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif",
+                    color: weaponMode === m ? "#EF4444" : "#52525B",
+                    borderBottom: `2px solid ${weaponMode === m ? "#EF4444" : "transparent"}`, marginBottom: -1,
+                  }}>
+                  {m === "catalogo" ? "CATÁLOGO" : "PERSONALIZADA"}
                 </button>
-              </div>
+              ))}
             </div>
-          )}
-
-          {mode === "custom" && (
-            <form onSubmit={addCustom} className="flex flex-col gap-3.5">
-              <div>
-                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
-                <input autoFocus value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex.: Espada Longa" className="ficha-input"
-                  onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia utilizada</label>
-                <select
-                  value={skillNome}
-                  onChange={e => setSkillNome(e.target.value)}
-                  className="ficha-input"
-                  style={{ borderColor: "#2A2A2A", cursor: "pointer" }}
-                >
-                  <option value="">— Sem perícia (usa FOR) —</option>
-                  {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano *</label>
-                  <input value={dice} onChange={e => setDice(e.target.value)} placeholder="Ex.: 1d8" className="ficha-input"
+            <div className="flex-1 overflow-y-auto px-[22px] py-4">
+              {weaponMode === "catalogo" && !pendingTemplate && (
+                <>
+                  <input value={wSearch} onChange={e => setWSearch(e.target.value)} placeholder="Buscar…"
+                    className="ficha-input mb-3"
                     onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
                     onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
                   />
-                </div>
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
-                  <div className="flex gap-0.5">
-                    {["FISICO","ENERGETICO","MENTAL","ESPIRITUAL"].map(d => (
-                      <button key={d} type="button" onClick={() => setDamType(d)} style={{ flex: 1, padding: "7px 0", background: damType === d ? `${TIPO_COLORS[d]}22` : "#0A0A0A", border: `1px solid ${damType === d ? TIPO_COLORS[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: damType === d ? TIPO_COLORS[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>{d.charAt(0)+d.slice(1).toLowerCase()}</button>
+                  {templates === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
+                  {visibleTemplates.length === 0 && templates !== null && <p className="text-text-ghost text-xs text-center">Nenhuma arma encontrada.</p>}
+                  <div className="flex flex-col gap-1.5">
+                    {visibleTemplates.map(t => (
+                      <button key={t.id} onClick={() => { setPendingTemplate(t); setSkillNome(""); setError(""); }} disabled={saving}
+                        style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: `3px solid ${TIPO_COLORS[t.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left" }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-[13px] font-semibold text-text-base">{t.nome}</span>
+                          <div className="flex gap-2 items-center">
+                            <span className="text-sm font-extrabold text-red-500">{t.damageDice}</span>
+                            <span className="text-[9px] text-text-faint">{t.categoria}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2.5 mt-1">
+                          <span className="text-[10px] text-text-muted">{t.distancia}</span>
+                          {t.duasMaos && <span className="text-[10px] text-amber-400">2 mãos</span>}
+                          {t.requiresMarcial && <span className="text-[10px] text-red-500">Marcial</span>}
+                          {t.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{t.threatRange}</span>}
+                          {t.regraEspecial && <span className="text-[10px] text-violet-400">{t.regraEspecial}</span>}
+                        </div>
+                      </button>
                     ))}
                   </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Ameaça (crítico ≥)</label>
-                  <input type="number" min={1} max={20} value={threat} onChange={e => setThreat(e.target.value)} className="ficha-input text-center"
-                    onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Multiplicador Crítico</label>
-                  <input type="number" min={1} value={crit} onChange={e => setCrit(e.target.value)} className="ficha-input text-center"
-                    onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
-                <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={2} placeholder="Detalhes da arma (opcional)" className="ficha-input resize-none"
-                  onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
-                />
-              </div>
-              {error && <p className="text-xs text-red-500 m-0">{error}</p>}
-              <button type="submit" disabled={saving || !nome.trim()} style={{ padding: "10px", background: saving || !nome.trim() ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving || !nome.trim() ? "not-allowed" : "pointer", color: saving || !nome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
-                {saving ? "Adicionando…" : "✦ Adicionar Arma"}
-              </button>
-            </form>
-          )}
-        </div>
+                </>
+              )}
 
-        {mode === "catalogo" && error && (
-          <div className="px-[22px] py-2 border-t border-border-subtle shrink-0">
-            <p className="text-xs text-red-500 m-0">{error}</p>
-          </div>
+              {weaponMode === "catalogo" && pendingTemplate && (
+                <div className="flex flex-col gap-4">
+                  <div style={{ background: "#0A0A0A", border: `1px solid #1F1F1F`, borderLeft: `3px solid ${TIPO_COLORS[pendingTemplate.tipoDano] ?? "#991B1B"}`, borderRadius: "0 3px 3px 0", padding: "12px 16px" }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] font-semibold text-text-base">{pendingTemplate.nome}</span>
+                      <span className="text-sm font-extrabold text-red-500">{pendingTemplate.damageDice}</span>
+                    </div>
+                    <div className="flex gap-2.5 mt-1">
+                      <span className="text-[10px] text-text-muted">{pendingTemplate.distancia}</span>
+                      {pendingTemplate.threatRange < 20 && <span className="text-[10px] text-amber-400">Crit ≥{pendingTemplate.threatRange}</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1.5 font-cinzel">Perícia utilizada</label>
+                    <select value={skillNome} onChange={e => setSkillNome(e.target.value)} className="ficha-input" style={{ borderColor: "#2A2A2A", cursor: "pointer" }}>
+                      <option value="">— Sem perícia (usa FOR) —</option>
+                      {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setPendingTemplate(null); setError(""); }} style={{ flex: 1, padding: "9px", background: "transparent", border: "1px solid #3F3F46", borderRadius: 3, cursor: "pointer", color: "#9CA3AF", fontSize: 11, fontWeight: 600 }}>← Voltar</button>
+                    <button type="button" onClick={() => confirmTemplate(pendingTemplate)} disabled={saving} style={{ flex: 2, padding: "9px", background: saving ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving ? "not-allowed" : "pointer", color: saving ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif" }}>
+                      {saving ? "Adicionando…" : "✦ Adicionar"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {weaponMode === "custom" && (
+                <form onSubmit={addCustomWeapon} className="flex flex-col gap-3.5">
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+                    <input autoFocus value={wNome} onChange={e => setWNome(e.target.value)} placeholder="Ex.: Espada Longa" className="ficha-input"
+                      onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                      onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Perícia utilizada</label>
+                    <select value={skillNome} onChange={e => setSkillNome(e.target.value)} className="ficha-input" style={{ borderColor: "#2A2A2A", cursor: "pointer" }}>
+                      <option value="">— Sem perícia (usa FOR) —</option>
+                      {skillNames.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Dado de Dano *</label>
+                      <input value={wDice} onChange={e => setWDice(e.target.value)} placeholder="Ex.: 1d8" className="ficha-input"
+                        onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo de Dano</label>
+                      <div className="flex gap-0.5">
+                        {["FISICO","ENERGETICO","MENTAL","ESPIRITUAL"].map(d => (
+                          <button key={d} type="button" onClick={() => setWDamType(d)} style={{ flex: 1, padding: "7px 0", background: wDamType === d ? `${TIPO_COLORS[d]}22` : "#0A0A0A", border: `1px solid ${wDamType === d ? TIPO_COLORS[d] : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: wDamType === d ? TIPO_COLORS[d] : "#6B7280", fontSize: 8, fontWeight: 700 }}>
+                            {d.charAt(0)+d.slice(1).toLowerCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Ameaça (crítico ≥)</label>
+                      <input type="number" min={1} max={20} value={wThreat} onChange={e => setWThreat(e.target.value)} className="ficha-input text-center"
+                        onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Multiplicador Crítico</label>
+                      <input type="number" min={1} value={wCrit} onChange={e => setWCrit(e.target.value)} className="ficha-input text-center"
+                        onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+                    <textarea value={wDesc} onChange={e => setWDesc(e.target.value)} rows={2} placeholder="Detalhes da arma (opcional)" className="ficha-input resize-none"
+                      onFocus={e => (e.currentTarget.style.borderColor = "#EF4444")}
+                      onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                    />
+                  </div>
+                  {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+                  <button type="submit" disabled={saving || !wNome.trim()} style={{ padding: "10px", background: saving || !wNome.trim() ? "#1A1A1A" : "#991B1B", border: "none", borderRadius: 3, cursor: saving || !wNome.trim() ? "not-allowed" : "pointer", color: saving || !wNome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
+                    {saving ? "Adicionando…" : "✦ Adicionar Arma"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── ITEM ── */}
+        {section === "item" && (
+          <>
+            <div className="flex border-b border-border-subtle shrink-0">
+              {(["catalogo", "novo"] as ItemMode[]).map(m => (
+                <button key={m} onClick={() => { setItemMode(m); setError(""); }}
+                  style={{
+                    flex: 1, padding: "8px 0", background: "none", border: "none", cursor: "pointer",
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Cinzel, serif",
+                    color: itemMode === m ? "#7C3AED" : "#52525B",
+                    borderBottom: `2px solid ${itemMode === m ? "#7C3AED" : "transparent"}`, marginBottom: -1,
+                  }}>
+                  {m === "catalogo" ? "CATÁLOGO" : "CRIAR NOVO"}
+                </button>
+              ))}
+            </div>
+            <div className="flex-1 overflow-y-auto px-[22px] py-4">
+              {itemMode === "catalogo" && (
+                <>
+                  <input value={iSearch} onChange={e => setISearch(e.target.value)} placeholder="Buscar item…"
+                    className="ficha-input mb-3"
+                    onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                  />
+                  {itemCatalog === null && <p className="text-text-faint text-xs text-center">Carregando…</p>}
+                  {visibleItems.length === 0 && itemCatalog !== null && (
+                    <p className="text-text-ghost text-xs text-center">Nenhum item encontrado. Crie um novo!</p>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    {visibleItems.map(item => (
+                      <button key={item.id} onClick={() => addItemFromCatalog(item)} disabled={saving}
+                        style={{ background: "#0A0A0A", border: "1px solid #1F1F1F", borderLeft: "3px solid #7C3AED", borderRadius: "0 3px 3px 0", padding: "10px 14px", cursor: saving ? "not-allowed" : "pointer", textAlign: "left" }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = "#1F1F1F")}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-[13px] font-semibold text-text-base">{item.nome}</span>
+                          <span className="text-[9px] text-text-faint bg-[#1A1A1A] border border-border px-1.5 py-px rounded-sm">{item.tipo}</span>
+                        </div>
+                        {item.descricao && <p className="text-[10px] text-text-faint mt-1 m-0 text-left line-clamp-1">{item.descricao}</p>}
+                      </button>
+                    ))}
+                  </div>
+                  {error && <p className="text-xs text-red-500 mt-2 m-0">{error}</p>}
+                </>
+              )}
+
+              {itemMode === "novo" && (
+                <form onSubmit={createAndAddItem} className="flex flex-col gap-3.5">
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Nome *</label>
+                    <input autoFocus value={iNome} onChange={e => setINome(e.target.value)} placeholder="Ex.: Poção de cura" className="ficha-input"
+                      onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                      onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Tipo</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {ITEM_TIPOS.map(t => (
+                        <button key={t} type="button" onClick={() => setITipo(t)}
+                          style={{ padding: "5px 10px", background: iTipo === t ? "rgba(124,58,237,0.2)" : "#0A0A0A", border: `1px solid ${iTipo === t ? "#7C3AED" : "#2A2A2A"}`, borderRadius: 2, cursor: "pointer", color: iTipo === t ? "#A78BFA" : "#6B7280", fontSize: 10, fontWeight: 700 }}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Descrição</label>
+                    <textarea value={iDesc} onChange={e => setIDesc(e.target.value)} rows={2} placeholder="Descrição do item (opcional)" className="ficha-input resize-none"
+                      onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                      onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Peso (kg)</label>
+                      <input type="number" min={0} step={0.1} value={iPeso} onChange={e => setIPeso(e.target.value)} className="ficha-input text-center"
+                        onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-text-faint tracking-[0.12em] uppercase block mb-1 font-cinzel">Valor (moedas)</label>
+                      <input type="number" min={0} value={iValor} onChange={e => setIValor(e.target.value)} className="ficha-input text-center"
+                        onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+                        onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+                      />
+                    </div>
+                  </div>
+                  {error && <p className="text-xs text-red-500 m-0">{error}</p>}
+                  <button type="submit" disabled={saving || !iNome.trim()} style={{ padding: "10px", background: saving || !iNome.trim() ? "#1A1A1A" : "#7C3AED", border: "none", borderRadius: 3, cursor: saving || !iNome.trim() ? "not-allowed" : "pointer", color: saving || !iNome.trim() ? "#52525B" : "#FFF", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Cinzel, serif" }}>
+                    {saving ? "Criando…" : "✦ Criar e Adicionar"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -1532,10 +1780,10 @@ function CreateAptidaoModal({ characterId, backendToken, level, onAdded, onClose
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-type Tab = "combate" | "tecnicas" | "armas" | "aptidoes" | "descricao" | "habilidades";
+type Tab = "combate" | "tecnicas" | "inventario" | "aptidoes" | "descricao" | "habilidades";
 const TABS: { id: Tab; label: string }[] = [
   { id: "tecnicas",    label: "TÉCNICAS"    },
-  { id: "armas",       label: "ARMAS"       },
+  { id: "inventario",  label: "INVENTÁRIO"  },
   { id: "habilidades", label: "HABILIDADES" },
   { id: "aptidoes",    label: "APTIDÕES"    },
   { id: "combate",     label: "COMBATE"     },
@@ -1581,14 +1829,15 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [classeError, setClasseError]     = useState("");
   const [showClasseConfirm, setShowClasseConfirm] = useState(false);
 
-  // ── Local lists (techniques, weapons & abilities) ──
+  // ── Local lists (techniques, weapons, inventory & abilities) ──
   const [localTechniques, setLocalTechniques] = useState<Technique[]>(character.techniques);
   const [localWeapons, setLocalWeapons]       = useState<Weapon[]>(character.weapons);
+  const [localInventory, setLocalInventory]   = useState<InventoryItemData[]>(character.inventory ?? []);
   const [localAbilities, setLocalAbilities]   = useState<CharacterAbility[]>(character.abilities ?? []);
   const [localAptitudes, setLocalAptitudes]   = useState<Aptitude[]>(character.aptitudes);
   const [pendingAptidaoSlots, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
   const [showAddTech, setShowAddTech]         = useState(false);
-  const [showAddWeapon, setShowAddWeapon]     = useState(false);
+  const [showAddInventory, setShowAddInventory] = useState(false);
   const [editingWeapon, setEditingWeapon]     = useState<Weapon | null>(null);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showAddAbility, setShowAddAbility]   = useState(false);
@@ -1797,6 +2046,11 @@ export function CharacterSheet({ character }: { character: Character }) {
         if (cur) setSelectedOrigem(cur);
       }
     }).catch(() => {/* non-critical */});
+    // fetch inventory
+    if (backendToken) {
+      apiCall<InventoryItemData[]>(`/characters/${character.id}/inventory`, backendToken)
+        .then(setLocalInventory).catch(() => {});
+    }
   }, [backendToken]); // eslint-disable-line
 
   // Fetch spec abilities when on HABILIDADES tab and spec is set
@@ -2015,6 +2269,11 @@ export function CharacterSheet({ character }: { character: Character }) {
   const handleHpMaxChange   = (v: number) => { setHpMax(v);    persist(sKey, { hpMax: v });        debouncedStatPatch("hpMax", v); };
   const handleEnChange      = (v: number) => { setEnergia(v);  persist(sKey, { energiaAtual: v }); debouncedStatPatch("energiaAtual", v); };
   const handleEnMaxChange   = (v: number) => { setEnergiaMax(v); persist(sKey, { energiaMax: v }); debouncedStatPatch("energiaMax", v); };
+
+  // ── Carga ──
+  const forValue = attrs?.FOR ?? 0;
+  const capacidadeInventario = Math.max(5, Math.ceil(forValue / 2) * 5);
+  const totalCarregando = localWeapons.length + localInventory.reduce((sum, i) => sum + i.quantidade, 0);
 
   // ── Defesa ──
   const [defesaOutros, setDefesaOutros] = useState<number>(() => {
@@ -2471,33 +2730,88 @@ export function CharacterSheet({ character }: { character: Character }) {
               </div>
             )}
 
-            {activeTab === "armas" && (
+            {activeTab === "inventario" && (
               <div className="flex flex-col gap-2">
+                {/* Header com capacidade */}
                 <div className="flex items-center gap-2">
-                  <div className="flex-1"><SectionDivider>Arsenal ({localWeapons.length})</SectionDivider></div>
+                  <div className="flex-1">
+                    <SectionDivider>Inventário</SectionDivider>
+                  </div>
                   <button
-                    onClick={() => setShowAddWeapon(true)}
-                    className="shrink-0 px-3 py-1 bg-transparent border border-[#991B1B] rounded-sm cursor-pointer text-red-500 text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(153,27,27,0.15)")}
+                    onClick={() => setShowAddInventory(true)}
+                    className="shrink-0 px-3 py-1 bg-transparent border border-[#7C3AED] rounded-sm cursor-pointer text-[#A855F7] text-[10px] font-bold tracking-[0.08em] font-cinzel whitespace-nowrap transition-colors duration-150"
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,58,237,0.15)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >+ Adicionar</button>
                 </div>
-                {localWeapons.length === 0
-                  ? <EmptyState icon={<Swords size={26} />} message="Nenhuma arma equipada" sub="Clique em + Adicionar para equipar" />
-                  : localWeapons.map((w, i) => (
-                    <WeaponCard key={w.id ?? i} w={w}
-                      onRoll={() => handleRollWeapon(w)}
-                      onEdit={() => setEditingWeapon(w)}
-                      onDelete={async () => {
-                        if (!backendToken) return;
-                        try {
-                          await apiCall(`/characters/${character.id}/weapons/${w.id}`, backendToken, { method: "DELETE" });
-                          setLocalWeapons(prev => prev.filter(x => x.id !== w.id));
-                        } catch { /* ignore */ }
+
+                {/* Barra de capacidade */}
+                <div className="bg-[#0F0F0F] border border-border rounded-sm px-3 py-2 flex items-center gap-3">
+                  <span className="text-[9px] text-text-faint font-cinzel tracking-[0.12em] uppercase shrink-0">Carga</span>
+                  <div className="flex-1 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, (totalCarregando / capacidadeInventario) * 100)}%`,
+                        background: totalCarregando >= capacidadeInventario ? "#EF4444" : totalCarregando >= capacidadeInventario * 0.75 ? "#F59E0B" : "#7C3AED",
                       }}
                     />
-                  ))
-                }
+                  </div>
+                  <span className="text-[11px] font-bold font-cinzel shrink-0" style={{
+                    color: totalCarregando >= capacidadeInventario ? "#EF4444" : "#9CA3AF"
+                  }}>{totalCarregando}/{capacidadeInventario}</span>
+                </div>
+
+                {/* Armas */}
+                {localWeapons.length > 0 && (
+                  <>
+                    <div className="text-[9px] text-text-faint tracking-[0.16em] font-cinzel pt-1">ARMAS</div>
+                    {localWeapons.map((w, i) => (
+                      <WeaponCard key={w.id ?? i} w={w}
+                        onRoll={() => handleRollWeapon(w)}
+                        onEdit={() => setEditingWeapon(w)}
+                        onDelete={async () => {
+                          if (!backendToken) return;
+                          try {
+                            await apiCall(`/characters/${character.id}/weapons/${w.id}`, backendToken, { method: "DELETE" });
+                            setLocalWeapons(prev => prev.filter(x => x.id !== w.id));
+                          } catch { /* ignore */ }
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {/* Itens */}
+                {localInventory.length > 0 && (
+                  <>
+                    <div className="text-[9px] text-text-faint tracking-[0.16em] font-cinzel pt-1">ITENS</div>
+                    {localInventory.map(inv => (
+                      <InventoryItemCard
+                        key={inv.id}
+                        inv={inv}
+                        onDelete={async () => {
+                          if (!backendToken) return;
+                          try {
+                            await apiCall(`/characters/${character.id}/inventory/${inv.id}`, backendToken, { method: "DELETE" });
+                            setLocalInventory(prev => prev.filter(x => x.id !== inv.id));
+                          } catch { /* ignore */ }
+                        }}
+                        onUpdate={async (data) => {
+                          if (!backendToken) return;
+                          try {
+                            const updated = await apiCall<InventoryItemData>(`/characters/${character.id}/inventory/${inv.id}`, backendToken, { method: "PATCH", body: data });
+                            setLocalInventory(prev => prev.map(x => x.id === inv.id ? updated : x));
+                          } catch { /* ignore */ }
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {localWeapons.length === 0 && localInventory.length === 0 && (
+                  <EmptyState icon={<Swords size={26} />} message="Inventário vazio" sub="Clique em + Adicionar para incluir armas ou itens" />
+                )}
               </div>
             )}
 
@@ -2760,13 +3074,14 @@ export function CharacterSheet({ character }: { character: Character }) {
         />
       )}
 
-      {showAddWeapon && backendToken && (
-        <AddWeaponModal
+      {showAddInventory && backendToken && (
+        <AddInventoryModal
           characterId={character.id}
           backendToken={backendToken}
           skillIdMap={skillIdMap}
-          onAdded={(w) => { setLocalWeapons(prev => [...prev, w]); setShowAddWeapon(false); }}
-          onClose={() => setShowAddWeapon(false)}
+          onAddedWeapon={(w) => { setLocalWeapons(prev => [...prev, w]); setShowAddInventory(false); }}
+          onAddedItem={(inv) => { setLocalInventory(prev => [...prev, inv]); setShowAddInventory(false); }}
+          onClose={() => setShowAddInventory(false)}
         />
       )}
       {editingWeapon && backendToken && (
