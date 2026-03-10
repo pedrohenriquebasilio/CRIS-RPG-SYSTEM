@@ -188,7 +188,7 @@ function persist(key: string, updates: Record<string, unknown>) {
 }
 
 // ─── Attribute Ring ───────────────────────────────────────────────────────────
-function AttributeRing({ attrs, maestriaBonus, onChangeAttr, onRollAttr }: {
+function AttributeRing({ attrs, maestriaBonus: _maestriaBonus, onChangeAttr, onRollAttr }: {
   attrs: Attrs;
   maestriaBonus: number;
   onChangeAttr: (attr: keyof Attrs, delta: number) => void;
@@ -631,6 +631,103 @@ function DiceToast({ roll, visible }: { roll: DiceRoll; visible: boolean }) {
       {isWeapon && !hovered && (
         <div className="text-[8px] text-text-faint text-center mt-1">passe o mouse para ver o breakdown</div>
       )}
+    </div>
+  );
+}
+
+// ─── Notification Toast ───────────────────────────────────────────────────────
+interface Notif { id: number; type: "error" | "success" | "warning"; title: string; message?: string; }
+
+function friendlyError(raw: string): { title: string; message?: string } {
+  const s = raw.toLowerCase();
+  if (s.includes("no available aptitude slot") || s.includes("aptitude slot"))
+    return { title: "Sem slots de aptidão", message: "Você não possui slots disponíveis. Ganhe um nível para obter mais." };
+  if (s.includes("aptitude already acquired"))
+    return { title: "Aptidão já obtida", message: "Você já possui essa aptidão." };
+  if (s.includes("missing required previous aptitude"))
+    return { title: "Pré-requisito não cumprido", message: "Você precisa obter a aptidão anterior primeiro." };
+  if (s.includes("character level must be at least")) {
+    const m = raw.match(/(\d+)/); return { title: "Nível insuficiente", message: m ? `Esta aptidão requer nível ${m[1]}.` : "Seu nível não é suficiente." };
+  }
+  if (s.includes("combat") || s.includes("active combat"))
+    return { title: "Combate ativo", message: "Não é possível editar a ficha durante um combate." };
+  if (s.includes("not found"))
+    return { title: "Não encontrado", message: "O recurso solicitado não existe." };
+  if (s.includes("forbidden") || s.includes("unauthorized") || s.includes("401") || s.includes("403"))
+    return { title: "Sem permissão", message: "Você não tem permissão para esta ação." };
+  if (s.includes("conflict") || s.includes("already"))
+    return { title: "Conflito", message: "Este item já existe ou já foi adicionado." };
+  return { title: "Erro", message: raw.length < 120 ? raw : "Ocorreu um erro inesperado." };
+}
+
+let _notifId = 0;
+
+function NotifToast({ notif, onRemove }: { notif: Notif; onRemove: (id: number) => void }) {
+  const [visible, setVisible] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      setVisible(true);
+      requestAnimationFrame(() => {
+        if (barRef.current) {
+          barRef.current.style.transition = "width 4.5s linear";
+          barRef.current.style.width = "0%";
+        }
+      });
+    }, 10);
+    const t2 = setTimeout(() => { setVisible(false); setTimeout(() => onRemove(notif.id), 350); }, 4500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [notif.id, onRemove]);
+
+  const cfg = {
+    error:   { accent: "#EF4444", icon: "✕" },
+    success: { accent: "#22C55E", icon: "✓" },
+    warning: { accent: "#F59E0B", icon: "⚠" },
+  }[notif.type];
+
+  return (
+    <div style={{
+      background: "#111111", border: `1px solid ${cfg.accent}40`, borderRadius: 4,
+      padding: "10px 12px", minWidth: 240, maxWidth: 300,
+      boxShadow: `0 8px 24px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.03), 0 0 18px ${cfg.accent}18`,
+      transition: "opacity 0.3s ease, transform 0.3s ease",
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateX(0)" : "translateX(18px)",
+      position: "relative", overflow: "hidden", pointerEvents: "auto",
+    }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: cfg.accent }} />
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <div style={{
+          width: 18, height: 18, borderRadius: "50%", flexShrink: 0, marginTop: 1,
+          background: `${cfg.accent}20`, border: `1px solid ${cfg.accent}60`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 9, fontWeight: 900, color: cfg.accent,
+        }}>{cfg.icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#E5E7EB", fontFamily: "Cinzel, serif", letterSpacing: "0.04em", marginBottom: notif.message ? 2 : 0 }}>
+            {notif.title}
+          </div>
+          {notif.message && <div style={{ fontSize: 11, color: "#9CA3AF", lineHeight: 1.4 }}>{notif.message}</div>}
+        </div>
+        <button
+          onClick={() => { setVisible(false); setTimeout(() => onRemove(notif.id), 350); }}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#52525B", fontSize: 15, lineHeight: 1, padding: "0 0 0 4px", flexShrink: 0, marginTop: -1 }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#9CA3AF")}
+          onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+        >×</button>
+      </div>
+      <div style={{ marginTop: 8, height: 2, background: "#1F1F1F", borderRadius: 1, overflow: "hidden" }}>
+        <div ref={barRef} style={{ height: "100%", width: "100%", background: cfg.accent, opacity: 0.5 }} />
+      </div>
+    </div>
+  );
+}
+
+function NotifToastContainer({ notifs, onRemove }: { notifs: Notif[]; onRemove: (id: number) => void }) {
+  return (
+    <div style={{ position: "fixed", top: 20, right: 24, zIndex: 1100, display: "flex", flexDirection: "column", gap: 8, pointerEvents: "none" }}>
+      {notifs.map(n => <NotifToast key={n.id} notif={n} onRemove={onRemove} />)}
     </div>
   );
 }
@@ -1876,11 +1973,12 @@ function getCategoria(nome: string, descricao: string): string {
   return "Aura";
 }
 
-function SelectAptidaoModal({ characterId, backendToken, level, alreadyHas, onAdded, onClose }: {
+function SelectAptidaoModal({ characterId, backendToken, level, alreadyHas, onAdded, onClose, onError }: {
   characterId: string; backendToken: string;
   level: number;
   alreadyHas: Set<string>;
   onAdded: (a: Aptitude) => void; onClose: () => void;
+  onError?: (msg: string) => void;
 }) {
   const [aptidoes, setAptidoes] = useState<AptitudeSeed[]>([]);
   const [busca, setBusca]       = useState("");
@@ -1909,7 +2007,8 @@ function SelectAptidaoModal({ characterId, backendToken, level, alreadyHas, onAd
       const res = await apiCall<Aptitude>(`/characters/${characterId}/aptitudes/${apt.id}`, backendToken, { method: "POST" });
       onAdded(res);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro ao adicionar aptidão.");
+      const msg = e instanceof Error ? e.message : "Erro ao adicionar aptidão.";
+      onError?.(msg);
       setAdding(null);
     }
   }
@@ -2096,7 +2195,7 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [localInventory, setLocalInventory]   = useState<InventoryItemData[]>(character.inventory ?? []);
   const [localAbilities, setLocalAbilities]   = useState<CharacterAbility[]>(character.abilities ?? []);
   const [localAptitudes, setLocalAptitudes]   = useState<Aptitude[]>(character.aptitudes);
-  const [pendingAptidaoSlots, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
+  const [, setPendingAptidaoSlots] = useState(character.pendingAptidaoSlots ?? 0);
   const [localTalentos, setLocalTalentos]     = useState<CharacterTalentoLink[]>(character.talentos ?? []);
   const [showAddTech, setShowAddTech]         = useState(false);
   const [showAddInventory, setShowAddInventory] = useState(false);
@@ -2105,6 +2204,12 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showAddAbility, setShowAddAbility]   = useState(false);
   const [showAddAptidao, setShowAddAptidao]   = useState(false);
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+  const addToast = useCallback((type: Notif["type"], raw: string) => {
+    const parsed = type === "error" ? friendlyError(raw) : { title: raw, message: undefined };
+    setNotifs(prev => [...prev, { id: ++_notifId, type, title: parsed.title, message: parsed.message }]);
+  }, []);
+  const removeNotif = useCallback((id: number) => setNotifs(prev => prev.filter(n => n.id !== id)), []);
 
   // ── Dice rolls ──
   const [skillIdMap, setSkillIdMap]   = useState<Record<string, string>>({});
@@ -3038,7 +3143,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                           try {
                             await apiCall(`/characters/${character.id}/weapons/${w.id}`, backendToken, { method: "DELETE" });
                             setLocalWeapons(prev => prev.filter(x => x.id !== w.id));
-                          } catch { /* ignore */ }
+                          } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao remover arma."); }
                         }}
                       />
                     ))}
@@ -3058,14 +3163,14 @@ export function CharacterSheet({ character }: { character: Character }) {
                           try {
                             await apiCall(`/characters/${character.id}/inventory/${inv.id}`, backendToken, { method: "DELETE" });
                             setLocalInventory(prev => prev.filter(x => x.id !== inv.id));
-                          } catch { /* ignore */ }
+                          } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao remover item."); }
                         }}
                         onUpdate={async (data) => {
                           if (!backendToken) return;
                           try {
                             const updated = await apiCall<InventoryItemData>(`/characters/${character.id}/inventory/${inv.id}`, backendToken, { method: "PATCH", body: data });
                             setLocalInventory(prev => prev.map(x => x.id === inv.id ? updated : x));
-                          } catch { /* ignore */ }
+                          } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao atualizar item."); }
                         }}
                       />
                     ))}
@@ -3155,7 +3260,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                               try {
                                 await apiCall(`/characters/${character.id}/abilities/${a.id}`, backendToken, { method: "DELETE" });
                                 setLocalAbilities(prev => prev.filter(x => x.id !== a.id));
-                              } catch { /* ignore */ }
+                              } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao remover habilidade."); }
                             }}
                             className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150"
                             onMouseEnter={e => (e.currentTarget.style.color = "#EF4444")}
@@ -3212,7 +3317,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                                   try {
                                     await apiCall(`/characters/${character.id}/aptitudes/${a.aptitude.id}/toggle`, backendToken, { method: "PATCH", body: { ativo: e.target.checked } });
                                     setLocalAptitudes(prev => prev.map((apt, idx) => idx === i ? { ...apt, ativo: e.target.checked } : apt));
-                                  } catch { /* ignore */ }
+                                  } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao alternar aptidão."); }
                                 }
                               }}
                               style={{ cursor: "pointer", width: 16, height: 16 }}
@@ -3229,7 +3334,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                                 try {
                                   await apiCall(`/characters/${character.id}/aptitudes/${a.aptitude.id}`, backendToken, { method: "DELETE" });
                                   setLocalAptitudes(prev => prev.filter((_, idx) => idx !== i));
-                                } catch { /* ignore */ }
+                                } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao remover aptidão."); }
                               }
                             }}
                             className="bg-transparent border-none cursor-pointer text-text-ghost p-0.5 flex items-center rounded-sm transition-colors duration-150 shrink-0"
@@ -3325,7 +3430,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                         try {
                           await apiCall(`/talentos/character/${character.id}/${link.talentoId}`, backendToken, { method: "DELETE" });
                           setLocalTalentos(prev => prev.filter(x => x.id !== link.id));
-                        } catch { /* ignore */ }
+                        } catch (e) { addToast("error", e instanceof Error ? e.message : "Erro ao remover talento."); }
                       }}
                     />
                   ))
@@ -3410,8 +3515,11 @@ export function CharacterSheet({ character }: { character: Character }) {
             setShowAddAptidao(false);
           }}
           onClose={() => setShowAddAptidao(false)}
+          onError={msg => addToast("error", msg)}
         />
       )}
+
+      <NotifToastContainer notifs={notifs} onRemove={removeNotif} />
 
       {/* ── Classe Confirmation Modal ── */}
       {showClasseConfirm && selectedSpec && (
