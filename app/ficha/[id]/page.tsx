@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CharacterSheet, Character } from "./CharacterSheet";
 import { apiCall } from "@/lib/api";
+import { mapCharacter } from "@/lib/mapCharacter";
 
 function LoadingScreen() {
   return (
@@ -60,30 +61,7 @@ export default function FichaPage() {
 
     apiCall<any>(`/characters/${id}`, token)
       .then((full) => {
-        const character: Character = {
-          id:             full.id,
-          nome:           full.nome,
-          campaignId:     full.campaignId ?? full.campaign?.id,
-          nivel:          full.nivel,
-          xpAtual:        full.xpAtual,
-          hpAtual:        full.hpAtual,
-          hpMax:          full.hpMax,
-          energiaAtual:   full.energiaAtual,
-          energiaMax:     full.energiaMax,
-          maestriaBonus:  full.maestriaBonus,
-          isApproved:     full.isApproved,
-          pendingAptidaoSlots: full.pendingAptidaoSlots ?? 0,
-          specialization: full.specialization
-            ? { id: full.specialization.id, nome: full.specialization.nome, bonusAtributos: full.specialization.bonusAtributos, habilidadesTreinadas: full.specialization.habilidadesTreinadas }
-            : null,
-          origemRelacao:  full.origemRelacao ?? null,
-          campaign:       full.campaign ? { name: full.campaign.name } : { name: "" },
-          attributes:     full.attributes ?? { FOR: 0, AGI: 0, VIG: 0, INT: 0, PRE: 0 },
-          skills:         full.skills ?? [],
-          techniques:     full.techniques ?? [],
-          weapons:        full.weapons ?? [],
-          aptitudes:      full.aptitudes ?? [],
-        };
+        const character: Character = mapCharacter(full);
         setCharacter(character);
       })
       .catch((e: Error) => {

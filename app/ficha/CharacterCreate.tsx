@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Shield, ChevronRight, Search, CheckCircle, Users } from "lucide-react";
 import type { Character } from "./[id]/CharacterSheet";
 import { apiCall } from "@/lib/api";
+import { mapCharacter } from "@/lib/mapCharacter";
 
 function storageKey(userId: string) {
   return `assistente-fiel-character-${userId}`;
@@ -76,28 +77,7 @@ export function CharacterCreate() {
 
     try {
       const full = await apiCall<any>(`/characters/${existingChar.id}`, token);
-      const character: Character = {
-        id:             full.id,
-        nome:           full.nome,
-        campaignId:     campaign.id,
-        nivel:          full.nivel,
-        xpAtual:        full.xpAtual,
-        hpAtual:        full.hpAtual,
-        hpMax:          full.hpMax,
-        energiaAtual:   full.energiaAtual,
-        energiaMax:     full.energiaMax,
-        maestriaBonus:  full.maestriaBonus,
-        isApproved:     full.isApproved,
-        pendingAptidaoSlots: full.pendingAptidaoSlots ?? 0,
-        specialization: full.specialization ? { id: full.specialization.id, nome: full.specialization.nome, bonusAtributos: full.specialization.bonusAtributos, habilidadesTreinadas: full.specialization.habilidadesTreinadas } : null,
-        origemRelacao:  full.origemRelacao ?? null,
-        campaign:       { name: campaign.name },
-        attributes:     full.attributes ? { FOR: full.attributes.FOR, AGI: full.attributes.AGI, VIG: full.attributes.VIG, INT: full.attributes.INT, PRE: full.attributes.PRE } : null,
-        skills:         full.skills ?? [],
-        techniques:     full.techniques ?? [],
-        weapons:        full.weapons ?? [],
-        aptitudes:      full.aptitudes ?? [],
-      };
+      const character: Character = mapCharacter(full, { campaignId: campaign.id, campaign: { name: campaign.name } });
       if (userId) localStorage.setItem(storageKey(userId), JSON.stringify(character));
       router.push(`/ficha/${full.id}`);
     } catch {
@@ -120,29 +100,7 @@ export function CharacterCreate() {
         },
       );
 
-      const character: Character = {
-        id:             char.id,
-        nome:           "Novo Feiticeiro",
-        campaignId:     campaign.id,
-        origemId:       null,
-        nivel:          1,
-        xpAtual:        0,
-        hpAtual:        char.hpAtual,
-        hpMax:          char.hpMax,
-        energiaAtual:   char.energiaAtual,
-        energiaMax:     char.energiaMax,
-        maestriaBonus:  2,
-        isApproved:     false,
-        pendingAptidaoSlots: 0,
-        specialization: null,
-        origemRelacao:  null,
-        campaign:       { name: campaign.name },
-        attributes:     { FOR: 0, AGI: 0, VIG: 0, INT: 0, PRE: 0 },
-        skills:         [],
-        techniques:     [],
-        weapons:        [],
-        aptitudes:      [],
-      };
+      const character: Character = mapCharacter(char, { nome: "Novo Feiticeiro", campaignId: campaign.id, campaign: { name: campaign.name } });
 
       if (userId) localStorage.setItem(storageKey(userId), JSON.stringify(character));
       router.push(`/ficha/${char.id}`);
