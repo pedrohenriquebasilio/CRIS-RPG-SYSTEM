@@ -2606,21 +2606,30 @@ export function CharacterSheet({ character }: { character: Character }) {
     }
   };
 
-  // ── Skill training limit (maestriaBonus controls how many non-granted skills can be trained) ──
+  // ── Skill training cost system ──
+  // Custo incremental por step: 0→5=1pt, 5→10=2pt, 10→15=3pt, 15→20=4pt
+  // Custo acumulado de uma perícia: skillCost(n) = sum(1..n/5) = (n/5)(n/5+1)/2
+  const skillCost = (pontos: number) => { const s = pontos / 5; return s * (s + 1) / 2; };
+  const stepCostUp = (current: number) => (current + 5) / 5; // custo do próximo step
+
   const grantedSkillNames = new Set([
     ...((charSpec as any)?.habilidadesTreinadas ?? []),
     ...(charOrigem?.habilidadesTreinadas ?? []),
   ]);
-  const trainingLimit = maestriaBonus;
-  const manuallyTrainedCount = ALL_SKILLS.filter(s => (skillPoints[s.nome] ?? 0) > 0 && !grantedSkillNames.has(s.nome)).length;
+  const maestryPool    = maestriaBonus;
+  const maestrySpent   = ALL_SKILLS.reduce((sum, s) => sum + skillCost(skillPoints[s.nome] ?? 0), 0);
+  const maestryFree    = maestryPool - maestrySpent;
 
   const handleSkillPoints = (skillName: string, delta: number) => {
     const current = skillPoints[skillName] ?? 0;
     const snapped = Math.round(current / 5) * 5;
-    let next = Math.max(0, Math.min(20, snapped + delta));
-    // Enforce training limit: cannot start training a new skill beyond maestriaBonus (unless granted by spec/origin)
-    if (delta > 0 && current === 0 && !grantedSkillNames.has(skillName) && manuallyTrainedCount >= trainingLimit) {
-      next = 0;
+    const next = Math.max(0, Math.min(20, snapped + delta));
+    if (delta > 0) {
+      const cost = stepCostUp(snapped);
+      if (cost > maestryFree) {
+        addToast("warning", `Pontos de maestria insuficientes — necessário: ${cost}, disponível: ${maestryFree}`);
+        return;
+      }
     }
     const next2 = { ...skillPoints, [skillName]: next };
     setSkillPoints(next2);
@@ -2964,13 +2973,14 @@ export function CharacterSheet({ character }: { character: Character }) {
                       paddingBottom: 1,
                     }}>{pontos}</span>
                     {(() => {
-                      const atLimit = pontos === 0 && !grantedSkillNames.has(skill.nome) && manuallyTrainedCount >= trainingLimit;
-                      const disabled = pontos === 20 || atLimit;
+                      const nextCost = stepCostUp(pontos);
+                      const cantAfford = nextCost > maestryFree;
+                      const disabled = pontos === 20 || cantAfford;
                       return (
                         <button
                           onClick={() => handleSkillPoints(skill.nome, 5)}
                           disabled={disabled}
-                          title={atLimit ? `Limite de maestria atingido (${trainingLimit} perícias)` : undefined}
+                          title={cantAfford ? `Sem pontos de maestria (custo: ${nextCost}, disponível: ${maestryFree})` : `+5 (custo: ${nextCost} pt)`}
                           style={{
                             width: 16, height: 16, border: "none", borderRadius: 2,
                             cursor: disabled ? "default" : "pointer",
@@ -2991,7 +3001,12 @@ export function CharacterSheet({ character }: { character: Character }) {
           </div>
 
           <div className="px-[18px] py-[7px] border-t border-border-subtle shrink-0">
-            <span className="text-[10px] text-text-ghost">● Bônus = atributo + treinamento · Passos de 5 · Limite: maestria ({trainingLimit}) perícias base</span>
+            <span className="text-[10px] text-text-ghost">
+              ● Bônus = atributo + treinamento · Custo por passo: +5=1pt, +10=2pt, +15=3pt, +20=4pt ·{" "}
+              <span style={{ color: maestryFree === 0 ? "#EF4444" : maestryFree <= 1 ? "#F59E0B" : "#9CA3AF" }}>
+                Maestria: {maestrySpent}/{maestryPool} pts gastos ({maestryFree} livre{maestryFree !== 1 ? "s" : ""})
+              </span>
+            </span>
           </div>
 
           {/* Custom Dice Roller */}
