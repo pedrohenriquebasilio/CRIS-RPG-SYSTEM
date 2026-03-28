@@ -2677,7 +2677,7 @@ export function CharacterSheet({ character }: { character: Character }) {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setAvatarUrl(data.avatarUrl ?? null);
-      addToast("info", "Avatar atualizado com sucesso");
+      addToast("success", "Avatar atualizado com sucesso");
     } catch (e) {
       addToast("error", String(e));
     } finally {
