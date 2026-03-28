@@ -113,6 +113,7 @@ export interface Character {
   id: string; nome: string; origem?: string;
   campaignId?: string;
   origemId?: string | null;
+  avatarUrl?: string | null;
   nivel: number; xpAtual: number;
   hpAtual: number; hpMax: number;
   energiaAtual: number; energiaMax: number;
@@ -1918,9 +1919,22 @@ function AddAbilityModal({ characterId, backendToken, onAdded, onClose }: {
 }
 
 // ─── Ability Roll Inline ──────────────────────────────────────────────────────
-function AbilityRoller({ onRoll }: { onRoll: (skillNome: string) => void }) {
+function AbilityRoller({ onRoll, defaultSkill }: { onRoll: (skillNome: string) => void; defaultSkill?: string | null }) {
   const [open, setOpen] = useState(false);
   const [skill, setSkill] = useState(ALL_SKILLS[0].nome);
+
+  if (defaultSkill) {
+    return (
+      <button
+        onClick={e => { e.stopPropagation(); onRoll(defaultSkill); }}
+        className="bg-transparent border-none cursor-pointer text-text-faint p-0.5 flex items-center rounded-sm transition-colors duration-150"
+        title={`Rolar ${defaultSkill}`}
+        onMouseEnter={e => (e.currentTarget.style.color = "#F59E0B")}
+        onMouseLeave={e => (e.currentTarget.style.color = "#52525B")}
+      ><Dices size={13} /></button>
+    );
+  }
+
   return open ? (
     <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
       <select
@@ -2173,6 +2187,9 @@ export function CharacterSheet({ character }: { character: Character }) {
   const [xpAtual, setXpAtual]     = useState(character.xpAtual);
   const [nivel, setNivel]         = useState(character.nivel);
   const [grau, setGrau]           = useState(character.grau ?? "4");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(character.avatarUrl ?? null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<Tab>("tecnicas");
   const [charSpec, setCharSpec]         = useState(character.specialization);
   const [charOrigem, setCharOrigem]     = useState(character.origemRelacao ?? null);
@@ -2647,6 +2664,27 @@ export function CharacterSheet({ character }: { character: Character }) {
   const handleEnChange      = (v: number) => { setEnergia(v);  persist(sKey, { energiaAtual: v }); debouncedStatPatch("energiaAtual", v); };
   const handleEnMaxChange   = (v: number) => { setEnergiaMax(v); persist(sKey, { energiaMax: v }); debouncedStatPatch("energiaMax", v); };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!backendToken) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/characters/${character.id}/avatar`,
+        { method: "PATCH", headers: { Authorization: `Bearer ${backendToken}` }, body: formData },
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setAvatarUrl(data.avatarUrl ?? null);
+      addToast("info", "Avatar atualizado com sucesso");
+    } catch (e) {
+      addToast("error", String(e));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   // ── Carga ──
   const forValue = attrs?.FOR ?? 0;
   const capacidadeInventario = Math.max(5, Math.ceil(forValue / 2) * 5);
@@ -2676,11 +2714,39 @@ export function CharacterSheet({ character }: { character: Character }) {
           {/* Header */}
           <div className="bg-bg-surface border border-border rounded overflow-hidden p-4 shrink-0">
             <div className="flex gap-3.5 items-start">
-              <div className="w-14 h-14 bg-bg-input border border-border-md rounded-sm shrink-0 flex items-center justify-center relative">
-                <User size={22} color="#2A2A2A" />
+              <div
+                className="w-14 h-14 bg-bg-input border border-border-md rounded-sm shrink-0 flex items-center justify-center relative overflow-hidden cursor-pointer group"
+                onClick={() => avatarInputRef.current?.click()}
+                title="Clique para alterar o avatar"
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${avatarUrl}`}
+                    alt={nome}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : avatarUploading ? (
+                  <div style={{ width: 18, height: 18, border: "2px solid #7C3AED", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                ) : (
+                  <User size={22} color="#2A2A2A" />
+                )}
+                {/* hover overlay */}
+                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", opacity: 0, transition: "opacity 0.15s", display: "flex", alignItems: "center", justifyContent: "center" }} className="group-hover:opacity-100">
+                  <span style={{ fontSize: 8, color: "#fff", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", textAlign: "center", lineHeight: 1.3 }}>
+                    {avatarUploading ? "..." : "Alterar"}
+                  </span>
+                </div>
                 {(["tl","tr","bl","br"] as const).map(p => (
-                  <div key={p} style={{ position: "absolute", top: p.startsWith("t") ? -3 : undefined, bottom: p.startsWith("b") ? -3 : undefined, left: p.endsWith("l") ? -3 : undefined, right: p.endsWith("r") ? -3 : undefined, width: 5, height: 5, background: "#2A2A2A" }} />
+                  <div key={p} style={{ position: "absolute", top: p.startsWith("t") ? -3 : undefined, bottom: p.startsWith("b") ? -3 : undefined, left: p.endsWith("l") ? -3 : undefined, right: p.endsWith("r") ? -3 : undefined, width: 5, height: 5, background: "#2A2A2A", zIndex: 2 }} />
                 ))}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  style={{ display: "none" }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ""; }}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="grid gap-x-3.5 gap-y-2.5" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -3264,7 +3330,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                     <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-amber-600 rounded-[0_2px_2px_0] px-3.5 py-3">
                       <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
-                          <AbilityRoller onRoll={skillNome => handleRollSkillWithDamage(skillNome, a.damageDice)} />
+                          <AbilityRoller onRoll={skillNome => handleRollSkillWithDamage(skillNome, a.damageDice)} defaultSkill={a.atributoBase} />
                           <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
                         </div>
                         <div className="flex items-center gap-2">
