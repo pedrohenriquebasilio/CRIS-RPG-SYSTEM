@@ -40,6 +40,7 @@ export function mapCharacter(full: any, overrides?: Partial<Character>): Charact
     aptitudes:      full.aptitudes ?? [],
     abilities:      full.abilities ?? [],
     talentos:       full.talentos  ?? [],
+    avatarUrl:      full.avatarUrl ?? null,
     ...overrides,
   };
 }

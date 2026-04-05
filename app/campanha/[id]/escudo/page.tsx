@@ -122,6 +122,7 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
 
   useEffect(() => {
     if (!lastRoll) return;
+    import("@/lib/diceSound").then(m => m.playDiceSound());
     const t = setTimeout(() => setLastRoll(null), 4000);
     return () => clearTimeout(t);
   }, [lastRoll]);
@@ -516,8 +517,10 @@ function CombatPanel({
   const [error, setError]         = useState("");
   const [selected, setSelected]   = useState<CombatParticipant | null>(null);
   const [participants, setParticipants] = useState<CombatParticipant[]>([]);
+  const [showMobPicker, setShowMobPicker] = useState(false);
 
   const agents = campaign.characters.filter(c => !c.isMob && c.isApproved);
+  const mobs = campaign.characters.filter(c => c.isMob);
 
   useEffect(() => {
     if (combat) setParticipants(combat.participants);
@@ -547,6 +550,19 @@ function CombatPanel({
       setSelected(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao encerrar.");
+    } finally { setLoading(false); }
+  }
+
+  async function handleAddMob(characterId: string) {
+    if (!combat) return;
+    setLoading(true); setError("");
+    try {
+      await apiCall(`/combats/${combat.id}/participants`, token, { method: "POST", body: { characterId } });
+      const state = await apiCall<Combat>(`/combats/${combat.id}`, token);
+      onCombatUpdate(state);
+      setShowMobPicker(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao adicionar maldição.");
     } finally { setLoading(false); }
   }
 
@@ -647,6 +663,53 @@ function CombatPanel({
             );
           })}
         </div>
+
+        {/* Add mob to combat */}
+        {mobs.length > 0 && (
+          <div className="px-[14px] py-2 border-t border-border-subtle shrink-0">
+            {showMobPicker ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[9px] text-text-ghost tracking-[0.12em] uppercase font-cinzel">Adicionar Maldição</span>
+                  <button onClick={() => setShowMobPicker(false)} className="bg-transparent border-none cursor-pointer text-text-ghost text-[12px] leading-none p-0">×</button>
+                </div>
+                {mobs.map(m => {
+                  const alreadyIn = participants.some(p => p.character?.id === m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => !alreadyIn && handleAddMob(m.id)}
+                      disabled={loading || alreadyIn}
+                      className="flex items-center gap-2 px-2 py-[6px] border border-border rounded-[2px] text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: alreadyIn ? "#111" : "transparent", cursor: alreadyIn ? "not-allowed" : "pointer" }}
+                      onMouseEnter={e => { if (!alreadyIn) e.currentTarget.style.background = "rgba(124,58,237,0.1)"; }}
+                      onMouseLeave={e => { if (!alreadyIn) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <div className="w-[28px] h-[28px] bg-bg-dark rounded-[2px] flex items-center justify-center shrink-0 border border-[#1E1E1E]">
+                        <span className="text-[11px] font-black font-cinzel text-red-500">{m.nome[0]?.toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] text-text-mid whitespace-nowrap overflow-hidden text-ellipsis">{m.nome}</div>
+                        <div className="text-[9px] text-text-ghost">
+                          {alreadyIn ? "Já no combate" : `HP ${m.hpAtual}/${m.hpMax} · EN ${m.energiaAtual}/${m.energiaMax}`}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowMobPicker(true)}
+                className="w-full flex items-center justify-center gap-[6px] px-3 py-[7px] bg-transparent border border-dashed border-[#3F1515] rounded-[2px] text-red-500 text-[10px] font-bold tracking-[0.08em] font-cinzel cursor-pointer transition-colors"
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(185,28,28,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <Zap size={11} /> Adicionar Maldição
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: mini sheet or placeholder */}

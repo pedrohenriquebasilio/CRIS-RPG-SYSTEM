@@ -2235,10 +2235,18 @@ export function CharacterSheet({ character }: { character: Character }) {
   const rollIdRef   = useRef(0);
   const rollTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Dice sound effect ──
+  useEffect(() => {
+    if (currentRoll) {
+      import("@/lib/diceSound").then(m => m.playDiceSound());
+    }
+  }, [currentRoll]);
+
   // ── Specialization abilities (for HABILIDADES tab) ──
   const [specAbilities, setSpecAbilities] = useState<{
     id: string; nome: string; nivelRequerido: number; tipo: string;
     custo: string; alcance: string; duracao: string; descricao: string;
+    skillNome?: string | null;
   }[]>([]);
 
   // ── Active combat (for COMBATE tab) ──
@@ -3279,7 +3287,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                       <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-[#F59E0B] rounded-[0_2px_2px_0] px-3.5 py-3">
                         <div className="flex justify-between items-center mb-1">
                           <div className="flex items-center gap-2">
-                            <AbilityRoller onRoll={handleRollSkill} />
+                            {a.tipo !== "passiva" && <AbilityRoller onRoll={handleRollSkill} defaultSkill={a.skillNome} />}
                             <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -3330,7 +3338,7 @@ export function CharacterSheet({ character }: { character: Character }) {
                     <div key={a.id} className="bg-bg-input border border-border border-l-[3px] border-l-amber-600 rounded-[0_2px_2px_0] px-3.5 py-3">
                       <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
-                          <AbilityRoller onRoll={skillNome => handleRollSkillWithDamage(skillNome, a.damageDice)} defaultSkill={a.atributoBase} />
+                          {a.tipo !== "passiva" && <AbilityRoller onRoll={skillNome => handleRollSkillWithDamage(skillNome, a.damageDice)} defaultSkill={a.atributoBase} />}
                           <span className="text-[13px] font-semibold text-text-base">{a.nome}</span>
                         </div>
                         <div className="flex items-center gap-2">
