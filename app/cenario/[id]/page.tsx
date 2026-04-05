@@ -77,9 +77,9 @@ export default function SceneViewPage() {
   // ── Check master + load entities ──
   useEffect(() => {
     if (!backendToken || !scene?.campaignId || !userId) return;
-    apiCall<{ masterId: string }>(`/campaigns/${scene.campaignId}`, backendToken)
+    apiCall<{ master: { id: string } }>(`/campaigns/${scene.campaignId}`, backendToken)
       .then(camp => {
-        const master = camp.masterId === userId;
+        const master = camp.master.id === userId;
         setIsMaster(master);
         if (master) {
           apiCall<CharOption[]>(`/characters/campaign/${scene.campaignId}`, backendToken).then(setCharacters).catch(() => {});
