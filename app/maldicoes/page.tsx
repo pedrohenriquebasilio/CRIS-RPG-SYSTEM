@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api";
-import { Skull, ChevronRight, Heart, Zap, Plus, Search, CheckCircle, X } from "lucide-react";
+import { Skull, ChevronRight, Heart, Zap, Plus, Search, CheckCircle, X, Shield } from "lucide-react";
 import Link from "next/link";
 
 interface Attrs { FOR: number; AGI: number; VIG: number; INT: number; PRE: number }
@@ -139,31 +139,54 @@ function MobCard({ mob, campaignName }: { mob: MobCharacter; campaignName: strin
   );
 }
 
-function CreateMaldicaoModal({ token, onClose, onCreated }: {
+interface MasterCampaign {
+  id: string;
+  name: string;
+  master: { id: string; email: string };
+  inviteCode: string;
+}
+
+function CreateMaldicaoModal({ token, userId, onClose, onCreated }: {
   token: string;
+  userId: string;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<"code" | "name">("code");
+  const [loading, setLoading] = useState(true);
+  const [masterCampaigns, setMasterCampaigns] = useState<MasterCampaign[]>([]);
+  const [campaign, setCampaign] = useState<MasterCampaign | null>(null);
+  // Fallback: code input for multiple campaigns
   const [inviteCode, setInviteCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [codeError, setCodeError] = useState("");
-  const [campaign, setCampaign] = useState<CampaignInfo | null>(null);
   const [nome, setNome] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+
+  useEffect(() => {
+    apiCall<MasterCampaign[]>("/campaigns", token)
+      .then(camps => {
+        const mine = camps.filter(c => c.master.id === userId);
+        setMasterCampaigns(mine);
+        if (mine.length === 1) setCampaign(mine[0]);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token, userId]);
+
+  const needsSelection = !campaign && masterCampaigns.length > 1;
 
   async function handleVerify() {
     const code = inviteCode.trim();
     if (!code) { setCodeError("Informe o código da campanha."); return; }
     setCodeError("");
     setVerifying(true);
-    setCampaign(null);
     try {
       const camp = await apiCall<CampaignInfo>(`/campaigns/invite/${code}`, token);
-      setCampaign(camp);
-      setStep("name");
+      const match = masterCampaigns.find(c => c.id === camp.id);
+      if (!match) { setCodeError("Você não é mestre desta campanha."); return; }
+      setCampaign(match);
     } catch {
       setCodeError("Código inválido ou campanha não encontrada.");
     } finally {
@@ -208,51 +231,96 @@ function CreateMaldicaoModal({ token, onClose, onCreated }: {
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          {/* Step: código */}
-          <div>
-            <div className="text-[10px] text-text-faint uppercase tracking-[0.15em] mb-2 font-cinzel">
-              Código da Campanha
+          {loading && (
+            <div className="flex items-center justify-center py-6">
+              <div className="w-6 h-6 rounded-full border-2 border-border border-t-[#EF4444] animate-spin-fast" />
             </div>
-            <div className="flex gap-2">
-              <input
-                value={inviteCode}
-                onChange={e => { setInviteCode(e.target.value); setCodeError(""); setCampaign(null); if (step === "name") setStep("code"); }}
-                onKeyDown={e => e.key === "Enter" && handleVerify()}
-                placeholder="Cole o código de convite"
-                maxLength={36}
-                disabled={verifying}
-                className="ficha-input flex-1 font-cinzel tracking-[0.14em] text-[13px]"
-              />
-              <button
-                onClick={handleVerify}
-                disabled={verifying || !inviteCode.trim()}
-                className="flex items-center gap-1.5 px-4 border border-[#EF444466] rounded-sm cursor-pointer text-[#FCA5A5] text-[11px] font-bold tracking-[0.08em] whitespace-nowrap transition-colors disabled:cursor-not-allowed"
-                style={{ background: verifying ? "#1A1A1A" : "rgba(239,68,68,0.1)" }}
-              >
-                {verifying
-                  ? <div className="w-3 h-3 rounded-full border-2 border-[#333] border-t-[#EF4444] animate-spin-fast" />
-                  : <Search size={12} />
-                }
-                {verifying ? "" : "Verificar"}
-              </button>
+          )}
+
+          {!loading && masterCampaigns.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-[13px] text-text-faint m-0">Você não é mestre de nenhuma campanha.</p>
+              <p className="text-[11px] text-text-ghost m-0 mt-1">Crie uma campanha primeiro para poder invocar maldições.</p>
             </div>
-            {codeError && <p className="text-xs text-[#EF4444] mt-1.5 mb-0">{codeError}</p>}
-          </div>
+          )}
+
+          {/* Multiple campaigns: select via code or click */}
+          {needsSelection && (
+            <div>
+              <div className="text-[10px] text-text-faint uppercase tracking-[0.15em] mb-2.5 font-cinzel">
+                Selecione a Campanha
+              </div>
+              <div className="flex flex-col gap-2 mb-3">
+                {masterCampaigns.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCampaign(c)}
+                    className="flex items-center gap-3 px-4 py-3 bg-bg-input border border-border rounded-sm cursor-pointer text-left transition-colors hover:border-[#EF4444] hover:bg-[rgba(239,68,68,0.04)]"
+                  >
+                    <Shield size={14} className="text-text-faint shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-text-base truncate">{c.name}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[9px] text-text-ghost tracking-[0.15em] uppercase">ou cole o código</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={inviteCode}
+                  onChange={e => { setInviteCode(e.target.value); setCodeError(""); }}
+                  onKeyDown={e => e.key === "Enter" && handleVerify()}
+                  placeholder="Código de convite"
+                  maxLength={36}
+                  disabled={verifying}
+                  className="ficha-input flex-1 font-cinzel tracking-[0.14em] text-[13px]"
+                />
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying || !inviteCode.trim()}
+                  className="flex items-center gap-1.5 px-4 border border-[#EF444466] rounded-sm cursor-pointer text-[#FCA5A5] text-[11px] font-bold tracking-[0.08em] whitespace-nowrap transition-colors disabled:cursor-not-allowed"
+                  style={{ background: verifying ? "#1A1A1A" : "rgba(239,68,68,0.1)" }}
+                >
+                  {verifying
+                    ? <div className="w-3 h-3 rounded-full border-2 border-[#333] border-t-[#EF4444] animate-spin-fast" />
+                    : <Search size={12} />
+                  }
+                  {verifying ? "" : "Verificar"}
+                </button>
+              </div>
+              {codeError && <p className="text-xs text-[#EF4444] mt-1.5 mb-0">{codeError}</p>}
+            </div>
+          )}
 
           {/* Campaign confirmed */}
           {campaign && (
             <div className="bg-bg-input border border-[#EF444433] border-l-[3px] border-l-[#EF4444] rounded-r-sm px-4 py-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <CheckCircle size={12} color="#22C55E" />
-                <span className="text-[10px] text-[#22C55E] font-semibold tracking-[0.08em]">Campanha encontrada</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <CheckCircle size={12} color="#22C55E" />
+                    <span className="text-[10px] text-[#22C55E] font-semibold tracking-[0.08em]">Campanha selecionada</span>
+                  </div>
+                  <div className="text-[13px] font-semibold text-text-base">{campaign.name}</div>
+                </div>
+                {masterCampaigns.length > 1 && (
+                  <button
+                    onClick={() => setCampaign(null)}
+                    className="text-[10px] text-text-faint bg-transparent border-none cursor-pointer underline hover:text-text-mid"
+                  >
+                    Trocar
+                  </button>
+                )}
               </div>
-              <div className="text-[13px] font-semibold text-text-base">{campaign.name}</div>
-              <div className="text-[11px] text-text-faint mt-0.5">Mestre: {campaign.master.email.split("@")[0]}</div>
             </div>
           )}
 
-          {/* Step: nome */}
-          {step === "name" && campaign && (
+          {/* Nome da maldição */}
+          {campaign && !loading && (
             <div>
               <div className="text-[10px] text-text-faint uppercase tracking-[0.15em] mb-2 font-cinzel">
                 Nome da Maldição
@@ -275,28 +343,39 @@ function CreateMaldicaoModal({ token, onClose, onCreated }: {
           )}
 
           {/* Actions */}
-          <div className="flex gap-2.5 pt-1">
+          {(!loading && masterCampaigns.length > 0) && (
+            <div className="flex gap-2.5 pt-1">
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 bg-transparent border border-border rounded-sm text-text-muted text-[11px] font-semibold tracking-[0.08em] uppercase cursor-pointer hover:border-border-strong hover:text-text-mid transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={creating || !campaign || !nome.trim()}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border-none rounded-sm cursor-pointer text-white text-[11px] font-bold tracking-[0.1em] uppercase font-cinzel transition-all disabled:cursor-not-allowed disabled:opacity-40"
+                style={{
+                  background: creating || !campaign || !nome.trim() ? "#1A1A1A" : "#991B1B",
+                  boxShadow: creating || !campaign || !nome.trim() ? "none" : "0 0 20px rgba(239,68,68,0.3)",
+                }}
+              >
+                {creating
+                  ? <><div className="w-3 h-3 rounded-full border-2 border-[#333] border-t-white animate-spin-fast" /> Conjurando…</>
+                  : <><Skull size={13} /> Invocar Maldição</>
+                }
+              </button>
+            </div>
+          )}
+
+          {!loading && masterCampaigns.length === 0 && (
             <button
               onClick={onClose}
-              className="flex-1 py-2.5 bg-transparent border border-border rounded-sm text-text-muted text-[11px] font-semibold tracking-[0.08em] uppercase cursor-pointer hover:border-border-strong hover:text-text-mid transition-colors"
+              className="w-full py-2.5 bg-transparent border border-border rounded-sm text-text-muted text-[11px] font-semibold tracking-[0.08em] uppercase cursor-pointer hover:border-border-strong transition-colors"
             >
-              Cancelar
+              Fechar
             </button>
-            <button
-              onClick={handleCreate}
-              disabled={creating || !campaign || !nome.trim()}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 border-none rounded-sm cursor-pointer text-white text-[11px] font-bold tracking-[0.1em] uppercase font-cinzel transition-all disabled:cursor-not-allowed disabled:opacity-40"
-              style={{
-                background: creating || !campaign || !nome.trim() ? "#1A1A1A" : "#991B1B",
-                boxShadow: creating || !campaign || !nome.trim() ? "none" : "0 0 20px rgba(239,68,68,0.3)",
-              }}
-            >
-              {creating
-                ? <><div className="w-3 h-3 rounded-full border-2 border-[#333] border-t-white animate-spin-fast" /> Conjurando…</>
-                : <><Skull size={13} /> Invocar Maldição</>
-              }
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -307,6 +386,7 @@ export default function MaldicoesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const token = (session?.user as any)?.backendToken as string | undefined;
+  const userId = (session?.user as any)?.backendUserId as string | undefined;
 
   const [mobs, setMobs] = useState<{ mob: MobCharacter; campaignName: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -386,9 +466,10 @@ export default function MaldicoesPage() {
         )}
       </div>
 
-      {showModal && token && (
+      {showModal && token && userId && (
         <CreateMaldicaoModal
           token={token}
+          userId={userId}
           onClose={() => setShowModal(false)}
           onCreated={() => {
             setShowModal(false);

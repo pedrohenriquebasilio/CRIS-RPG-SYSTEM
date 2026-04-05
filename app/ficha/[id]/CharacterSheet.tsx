@@ -2228,6 +2228,9 @@ export function CharacterSheet({ character }: { character: Character }) {
   }, []);
   const removeNotif = useCallback((id: number) => setNotifs(prev => prev.filter(n => n.id !== id)), []);
 
+  // ── Active scene notification ──
+  const [activeScene, setActiveScene] = useState<{ id: string; nome: string } | null>(null);
+
   // ── Dice rolls ──
   const [skillIdMap, setSkillIdMap]   = useState<Record<string, string>>({});
   const [currentRoll, setCurrentRoll] = useState<DiceRoll | null>(null);
@@ -2492,19 +2495,30 @@ export function CharacterSheet({ character }: { character: Character }) {
       setActiveCombat(null);
     }
 
+    function onSceneActivated(data: { id: string; nome: string }) {
+      setActiveScene({ id: data.id, nome: data.nome });
+    }
+    function onSceneDeactivated() {
+      setActiveScene(null);
+    }
+
     if (socket.connected) onConnect();
     socket.on("connect", onConnect);
     socket.on("characterUpdate", onCharacterUpdate);
     socket.on("combatCreated",   onCombatCreated);
     socket.on("combatUpdate",    onCombatUpdate);
     socket.on("combatFinished",  onCombatFinished);
+    socket.on("sceneActivated",  onSceneActivated);
+    socket.on("sceneDeactivated", onSceneDeactivated);
 
     return () => {
-      socket.off("connect",         onConnect);
-      socket.off("characterUpdate", onCharacterUpdate);
-      socket.off("combatCreated",   onCombatCreated);
-      socket.off("combatUpdate",    onCombatUpdate);
-      socket.off("combatFinished",  onCombatFinished);
+      socket.off("connect",          onConnect);
+      socket.off("characterUpdate",  onCharacterUpdate);
+      socket.off("combatCreated",    onCombatCreated);
+      socket.off("combatUpdate",     onCombatUpdate);
+      socket.off("combatFinished",   onCombatFinished);
+      socket.off("sceneActivated",   onSceneActivated);
+      socket.off("sceneDeactivated", onSceneDeactivated);
       socket.emit("leaveCampaign", { campaignId: character.campaignId });
     };
   }, [backendToken, character.campaignId, character.id]);  
@@ -3533,6 +3547,28 @@ export function CharacterSheet({ character }: { character: Character }) {
       </div>
 
       {currentRoll && <DiceToast roll={currentRoll} visible={rollVisible} />}
+
+      {/* Scene notification */}
+      {activeScene && (
+        <div className="fixed top-[76px] left-1/2 -translate-x-1/2 z-[200] animate-fade-in-up">
+          <div
+            className="bg-[rgba(10,10,10,0.95)] border border-brand/40 rounded-md px-5 py-3 flex items-center gap-3 cursor-pointer transition-all duration-200 hover:border-brand hover:shadow-[0_0_20px_rgba(124,58,237,0.3)]"
+            onClick={() => window.open(`/cenario/${activeScene.id}`, "_blank")}
+            title="Clique para ver o cenário"
+          >
+            <div className="w-2 h-2 rounded-full bg-brand animate-pulse shrink-0" />
+            <div>
+              <div className="text-[10px] text-brand-light font-bold uppercase tracking-[0.12em]">Novo Cenário</div>
+              <div className="text-xs text-text-base font-semibold">{activeScene.nome}</div>
+            </div>
+            <span className="text-[9px] text-text-faint ml-2">Clique para abrir ↗</span>
+            <button
+              onClick={e => { e.stopPropagation(); setActiveScene(null); }}
+              className="ml-2 bg-transparent border-none cursor-pointer text-text-ghost text-sm leading-none hover:text-text-base"
+            >×</button>
+          </div>
+        </div>
+      )}
 
       {showAddTalento && backendToken && (
         <AddTalentoModal

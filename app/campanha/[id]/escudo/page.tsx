@@ -414,13 +414,14 @@ function MiniSheet({ participant, token, combatId, campaignId, onStatsChange }: 
   );
 }
 
-type Tab = "agentes" | "combates" | "ajustes";
+type Tab = "agentes" | "combates" | "ajustes" | "cenarios";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TABS: { id: Tab; label: string }[] = [
   { id: "agentes",  label: "AGENTES"  },
   { id: "combates", label: "COMBATES" },
   { id: "ajustes",  label: "AJUSTES"  },
+  { id: "cenarios", label: "CENÁRIOS" },
 ];
 
 function hpColor(cur: number, max: number) {
@@ -1073,8 +1074,8 @@ function AjustesPanel({ agents, token, campaignId, onRefresh }: { agents: Charac
         </>
       )}
 
-      {/* ─── UP de Grau ─── */}
-      <GrauUpPanel agents={agents} token={token} onRefresh={onRefresh} />
+      {/* ─── Grau ─── */}
+      <GrauPanel agents={agents} token={token} direction={direction} onRefresh={onRefresh} />
     </div>
   );
 }
@@ -1089,67 +1090,89 @@ function grauColor(grau: string) {
   return '#9CA3AF';
 }
 
-function GrauUpPanel({ agents, token, onRefresh }: { agents: Character[]; token: string; onRefresh?: () => void }) {
+function GrauPanel({ agents, token, direction, onRefresh }: { agents: Character[]; token: string; direction: "add" | "sub"; onRefresh?: () => void }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [result,  setResult]  = useState<{ id: string; ok: boolean; msg: string } | null>(null);
 
-  async function handleUp(char: Character) {
+  const isUp = direction === "add";
+
+  async function handleGrau(char: Character) {
     const idx = GRAU_SEQUENCE.indexOf(char.grau ?? '4');
-    if (idx === GRAU_SEQUENCE.length - 1) return;
+    if (isUp && idx === GRAU_SEQUENCE.length - 1) return;
+    if (!isUp && idx <= 0) return;
     setLoading(char.id); setResult(null);
+    const endpoint = isUp ? 'up' : 'down';
+    const targetGrau = isUp ? GRAU_SEQUENCE[idx + 1] : GRAU_SEQUENCE[idx - 1];
     try {
-      await apiCall(`/characters/${char.id}/grau/up`, token, { method: 'PATCH' });
-      setResult({ id: char.id, ok: true, msg: `Grau de ${char.nome} elevado para ${GRAU_SEQUENCE[idx + 1]}.` });
+      await apiCall(`/characters/${char.id}/grau/${endpoint}`, token, { method: 'PATCH' });
+      setResult({ id: char.id, ok: true, msg: `Grau de ${char.nome} ${isUp ? 'elevado' : 'reduzido'} para ${targetGrau}.` });
       onRefresh?.();
     } catch (e) {
-      setResult({ id: char.id, ok: false, msg: e instanceof Error ? e.message : 'Erro ao elevar grau.' });
+      setResult({ id: char.id, ok: false, msg: e instanceof Error ? e.message : `Erro ao ${isUp ? 'elevar' : 'reduzir'} grau.` });
     } finally { setLoading(null); }
   }
 
-  const upgradeable = agents.filter(a => GRAU_SEQUENCE.indexOf(a.grau ?? '4') < GRAU_SEQUENCE.length - 1);
+  const actionable = agents.filter(a => {
+    const idx = GRAU_SEQUENCE.indexOf(a.grau ?? '4');
+    return isUp ? idx < GRAU_SEQUENCE.length - 1 : idx > 0;
+  });
+
+  const emptyMsg = isUp
+    ? 'Todos já estão no grau ESPECIAL.'
+    : 'Todos já estão no grau mínimo (4).';
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 pt-1 border-t border-border-subtle">
-        <span className="text-[10px] text-text-faint tracking-[0.18em] font-cinzel">UP DE GRAU</span>
-        <span className="text-[9px] text-text-faint bg-[#1A1A1A] border border-border px-1.5 py-px rounded-sm">4 → 3 → 2 → 1 → SEMI → ESPECIAL</span>
+        <span className="text-[10px] text-text-faint tracking-[0.18em] font-cinzel">{isUp ? 'UP' : 'DOWN'} DE GRAU</span>
+        <span className="text-[9px] text-text-faint bg-[#1A1A1A] border border-border px-1.5 py-px rounded-sm">
+          {isUp ? '4 → 3 → 2 → 1 → SEMI → ESPECIAL' : 'ESPECIAL → SEMI → 1 → 2 → 3 → 4'}
+        </span>
       </div>
-      {upgradeable.length === 0 ? (
-        <p className="text-[11px] text-text-faint italic">Todos os agentes já estão no grau ESPECIAL.</p>
+      {actionable.length === 0 ? (
+        <p className="text-[11px] text-text-faint italic">{emptyMsg}</p>
       ) : (
         <div className="flex flex-col gap-[6px]">
           {agents.map(char => {
-            const idx      = GRAU_SEQUENCE.indexOf(char.grau ?? '4');
-            const isMax    = idx === GRAU_SEQUENCE.length - 1;
-            const nextGrau = isMax ? null : GRAU_SEQUENCE[idx + 1];
+            const idx = GRAU_SEQUENCE.indexOf(char.grau ?? '4');
+            const atLimit = isUp ? idx === GRAU_SEQUENCE.length - 1 : idx <= 0;
+            const targetGrau = atLimit ? null : (isUp ? GRAU_SEQUENCE[idx + 1] : GRAU_SEQUENCE[idx - 1]);
             return (
               <div key={char.id}
                 className="flex items-center gap-3 rounded-[3px] px-[14px] py-[10px]"
                 style={{ background: '#0F0F0F', border: '1px solid #1F1F1F' }}
               >
-                <div className="w-7 h-7 rounded-[2px] bg-[#1A1A1A] border border-border flex items-center justify-center shrink-0">
-                  <span className="text-[12px] font-extrabold text-text-faint">{char.nome[0].toUpperCase()}</span>
-                </div>
+                {char.avatarUrl ? (
+                  <img src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${char.avatarUrl}`} alt={char.nome}
+                    className="w-7 h-7 rounded-[2px] object-cover shrink-0 border border-border" />
+                ) : (
+                  <div className="w-7 h-7 rounded-[2px] bg-[#1A1A1A] border border-border flex items-center justify-center shrink-0">
+                    <span className="text-[12px] font-extrabold text-text-faint">{char.nome[0].toUpperCase()}</span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-bold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{char.nome}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[12px] font-bold text-text-base overflow-hidden text-ellipsis whitespace-nowrap">{char.nome}</span>
+                    {char.isMob && <span className="text-[8px] text-red-500 border border-[#7F1D1D] px-1 py-px rounded-sm shrink-0">MOB</span>}
+                  </div>
                   <div className="text-[10px]">
                     <span style={{ color: grauColor(char.grau ?? '4') }}>Grau {char.grau ?? '4'}</span>
-                    {nextGrau && <span className="text-text-ghost"> → {nextGrau}</span>}
-                    {isMax && <span className="text-[#F59E0B]"> (máximo)</span>}
+                    {targetGrau && <span className="text-text-ghost"> → {targetGrau}</span>}
+                    {atLimit && <span style={{ color: isUp ? '#F59E0B' : '#52525B' }}> ({isUp ? 'máximo' : 'mínimo'})</span>}
                   </div>
                 </div>
-                {!isMax && (
+                {!atLimit && (
                   <button
-                    onClick={() => handleUp(char)}
+                    onClick={() => handleGrau(char)}
                     disabled={loading === char.id}
                     className="shrink-0 rounded-[3px] px-3 py-1.5 text-[11px] font-bold tracking-[0.1em] font-cinzel transition-all"
                     style={{
-                      background: loading === char.id ? '#1A1A1A' : 'rgba(124,58,237,0.15)',
-                      border: `1px solid ${loading === char.id ? '#2A2A2A' : '#7C3AED'}`,
-                      color:   loading === char.id ? '#52525B' : '#A78BFA',
-                      cursor:  loading === char.id ? 'not-allowed' : 'pointer',
+                      background: loading === char.id ? '#1A1A1A' : isUp ? 'rgba(124,58,237,0.15)' : 'rgba(239,68,68,0.12)',
+                      border: `1px solid ${loading === char.id ? '#2A2A2A' : isUp ? '#7C3AED' : '#EF4444'}`,
+                      color: loading === char.id ? '#52525B' : isUp ? '#A78BFA' : '#EF4444',
+                      cursor: loading === char.id ? 'not-allowed' : 'pointer',
                     }}
-                  >{loading === char.id ? '…' : '▲ UP'}</button>
+                  >{loading === char.id ? '…' : isUp ? '▲ UP' : '▼ DOWN'}</button>
                 )}
               </div>
             );
@@ -1164,6 +1187,178 @@ function GrauUpPanel({ agents, token, onRefresh }: { agents: Character[]; token:
             color: result.ok ? '#22C55E' : '#EF4444',
           }}
         >{result.ok ? '✓' : '✗'} {result.msg}</div>
+      )}
+    </div>
+  );
+}
+
+// ─── Scenes Panel ────────────────────────────────────────────────────────────
+
+interface SceneData {
+  id: string;
+  nome: string;
+  imageUrl: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+function ScenesPanel({ campaignId, token }: { campaignId: string; token: string }) {
+  const [scenes, setScenes] = useState<SceneData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [nome, setNome] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    apiCall<SceneData[]>(`/scenes/${campaignId}`, token)
+      .then(setScenes)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [campaignId, token]);
+
+  async function handleUpload() {
+    const file = fileRef.current?.files?.[0];
+    if (!file || !nome.trim()) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("nome", nome.trim());
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/scenes/${campaignId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      if (!res.ok) throw new Error("Upload falhou");
+      const scene = await res.json() as SceneData;
+      setScenes(prev => [scene, ...prev]);
+      setNome("");
+      if (fileRef.current) fileRef.current.value = "";
+    } catch { /* ignore */ }
+    setUploading(false);
+  }
+
+  async function handleActivate(sceneId: string) {
+    try {
+      await apiCall(`/scenes/${campaignId}/activate/${sceneId}`, token, { method: "POST" });
+      setScenes(prev => prev.map(s => ({ ...s, isActive: s.id === sceneId })));
+    } catch { /* ignore */ }
+  }
+
+  async function handleDeactivate() {
+    try {
+      await apiCall(`/scenes/${campaignId}/deactivate`, token, { method: "POST" });
+      setScenes(prev => prev.map(s => ({ ...s, isActive: false })));
+    } catch { /* ignore */ }
+  }
+
+  async function handleDelete(sceneId: string) {
+    try {
+      await apiCall(`/scenes/${campaignId}/${sceneId}`, token, { method: "DELETE" });
+      setScenes(prev => prev.filter(s => s.id !== sceneId));
+    } catch { /* ignore */ }
+  }
+
+  const activeScene = scenes.find(s => s.isActive);
+  const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  if (loading) return <p className="text-text-faint text-xs text-center py-8">Carregando cenários…</p>;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Upload form */}
+      <div className="bg-bg-deep border border-border rounded p-4">
+        <h3 className="text-[11px] font-bold text-text-base tracking-[0.12em] uppercase font-cinzel mb-3">Novo Cenário</h3>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-[9px] text-text-faint uppercase tracking-[0.1em] block mb-1">Nome</label>
+            <input
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              placeholder="Ex: Taverna do Grifo"
+              className="ficha-input w-full"
+              onFocus={e => (e.currentTarget.style.borderColor = "#7C3AED")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#2A2A2A")}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] text-text-faint uppercase tracking-[0.1em] block mb-1">Imagem</label>
+            <input ref={fileRef} type="file" accept="image/*"
+              className="text-[10px] text-text-faint file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border file:border-border file:text-[10px] file:bg-bg-input file:text-text-base file:cursor-pointer"
+            />
+          </div>
+          <button
+            onClick={handleUpload}
+            disabled={uploading || !nome.trim()}
+            className="px-4 py-[7px] bg-brand border-none rounded-sm cursor-pointer text-white text-[10px] font-bold tracking-[0.1em] uppercase font-cinzel shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {uploading ? "…" : "Upload"}
+          </button>
+        </div>
+      </div>
+
+      {/* Active indicator */}
+      {activeScene && (
+        <div className="bg-[rgba(124,58,237,0.08)] border border-brand/30 rounded p-3 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-brand-light font-bold uppercase tracking-[0.1em]">Cenário Ativo: </span>
+            <span className="text-xs text-text-base font-semibold">{activeScene.nome}</span>
+          </div>
+          <button
+            onClick={handleDeactivate}
+            className="px-3 py-1 bg-transparent border border-red-900 rounded-sm cursor-pointer text-red-400 text-[10px] font-bold hover:bg-red-900/20 transition-colors"
+          >
+            Desativar
+          </button>
+        </div>
+      )}
+
+      {/* Scene list */}
+      {scenes.length === 0 ? (
+        <p className="text-text-ghost text-xs text-center py-6">Nenhum cenário importado ainda.</p>
+      ) : (
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+          {scenes.map(s => (
+            <div key={s.id} className={`bg-bg-deep border rounded overflow-hidden ${s.isActive ? "border-brand" : "border-border"}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`${BACKEND}${s.imageUrl}`}
+                alt={s.nome}
+                className="w-full h-[140px] object-cover"
+              />
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-text-base">{s.nome}</span>
+                  {s.isActive && <span className="text-[8px] text-brand-light bg-brand/20 px-1.5 py-px rounded-sm font-bold">ATIVO</span>}
+                </div>
+                <div className="flex gap-1.5">
+                  {!s.isActive && (
+                    <button
+                      onClick={() => handleActivate(s.id)}
+                      className="flex-1 px-2 py-1 bg-brand/20 border border-brand/40 rounded-sm cursor-pointer text-brand-light text-[10px] font-bold hover:bg-brand/30 transition-colors"
+                    >
+                      Disparar
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      window.open(`/cenario/${s.id}`, "_blank");
+                    }}
+                    className="px-2 py-1 bg-bg-input border border-border rounded-sm cursor-pointer text-text-faint text-[10px] hover:text-text-base transition-colors"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="px-2 py-1 bg-transparent border border-red-900/50 rounded-sm cursor-pointer text-red-700 text-[10px] hover:text-red-400 hover:border-red-700 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -1415,6 +1610,11 @@ export default function EscudoPage() {
             {/* AJUSTES */}
             {tab === "ajustes" && (
               <AjustesPanel agents={[...agents, ...campaign.characters.filter(c => c.isMob)]} token={token!} campaignId={id} onRefresh={fetchAll} />
+            )}
+
+            {/* CENÁRIOS */}
+            {tab === "cenarios" && (
+              <ScenesPanel campaignId={id} token={token!} />
             )}
           </div>
         </div>

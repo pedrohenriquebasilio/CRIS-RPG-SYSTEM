@@ -13,7 +13,6 @@ const NAV_ITEMS = [
   { label: "MALDIÇÕES", href: "/maldicoes" },
   { label: "HABILIDADES", href: "/habilidades" },
   { label: "ARMAS", href: "/armas" },
-  { label: "GAME", href: "/game" },
 ];
 
 export function Navbar() {

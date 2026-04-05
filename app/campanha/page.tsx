@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api";
-import { Shield, Users, ChevronRight, Plus, X, Swords } from "lucide-react";
+import { Shield, Users, ChevronRight, Plus, X, Swords, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 interface Campaign {
@@ -17,12 +17,25 @@ interface Campaign {
   characters?: { id: string }[];
 }
 
-function CampaignCard({ campaign, token, userId }: { campaign: Campaign; token: string; userId: string }) {
+function CampaignCard({ campaign, token, userId, onDeleted }: { campaign: Campaign; token: string; userId: string; onDeleted: (id: string) => void }) {
   const isMaster = campaign.master.id === userId;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const hue = campaign.id
     .split("")
     .reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await apiCall(`/campaigns/${campaign.id}`, token, { method: "DELETE" });
+      onDeleted(campaign.id);
+    } catch {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
 
   return (
     <div
@@ -72,13 +85,50 @@ function CampaignCard({ campaign, token, userId }: { campaign: Campaign; token: 
           </div>
         </div>
 
-        <Link
-          href={`/campanha/${campaign.id}`}
-          className="flex items-center justify-center gap-2 py-[9px] bg-brand text-white no-underline text-xs font-bold tracking-[0.1em] uppercase rounded-sm font-cinzel transition-all hover:bg-brand-dark"
-          style={{ boxShadow: "0 0 16px rgba(124,58,237,0.3)" }}
-        >
-          Acessar <ChevronRight size={14} />
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/campanha/${campaign.id}`}
+            className="flex-1 flex items-center justify-center gap-2 py-[9px] bg-brand text-white no-underline text-xs font-bold tracking-[0.1em] uppercase rounded-sm font-cinzel transition-all hover:bg-brand-dark"
+            style={{ boxShadow: "0 0 16px rgba(124,58,237,0.3)" }}
+          >
+            Acessar <ChevronRight size={14} />
+          </Link>
+          {isMaster && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center justify-center w-9 bg-transparent border border-border rounded-sm cursor-pointer text-text-faint transition-colors hover:border-[#EF4444] hover:text-[#EF4444]"
+              title="Excluir campanha"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Delete confirmation */}
+        {showDeleteConfirm && (
+          <div className="bg-[rgba(127,29,29,0.1)] border border-[#EF444444] rounded-sm p-3 flex flex-col gap-2.5">
+            <p className="text-[11px] text-[#FCA5A5] m-0">
+              Excluir <strong>{campaign.name}</strong>? Todos os personagens, combates e dados serão removidos permanentemente.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-1.5 bg-transparent border border-border rounded-sm text-text-muted text-[10px] font-semibold tracking-[0.08em] uppercase cursor-pointer hover:border-border-strong transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-1.5 border-none rounded-sm cursor-pointer text-white text-[10px] font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
+                style={{ background: "#991B1B" }}
+              >
+                {deleting ? "Excluindo…" : "Confirmar Exclusão"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -246,7 +296,13 @@ export default function CampanhaPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {campaigns.map(c => (
-              <CampaignCard key={c.id} campaign={c} token={token!} userId={userId ?? ""} />
+              <CampaignCard
+                key={c.id}
+                campaign={c}
+                token={token!}
+                userId={userId ?? ""}
+                onDeleted={id => setCampaigns(prev => prev.filter(p => p.id !== id))}
+              />
             ))}
           </div>
         )}
