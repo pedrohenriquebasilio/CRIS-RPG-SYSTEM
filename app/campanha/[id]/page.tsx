@@ -19,6 +19,7 @@ interface Character {
   isMob: boolean;
   createdAt: string;
   userId: string;
+  avatarUrl: string | null;
   specialization: { nome: string } | null;
   user: { id: string; email: string };
 }
@@ -220,12 +221,21 @@ function CharacterCard({ char, isMaster, currentUserId, token, onApprove }: {
           className="w-[90px] shrink-0 flex items-center justify-center relative min-h-[110px]"
           style={{ background: `linear-gradient(160deg, hsl(${hue},25%,12%) 0%, #0A0A0A 100%)` }}
         >
-          <div
-            className="w-11 h-11 rounded-full flex items-center justify-center opacity-80"
-            style={{ border: `1px solid hsl(${hue},40%,28%)` }}
-          >
-            <Shield size={18} color={`hsl(${hue},55%,55%)`} />
-          </div>
+          {char.avatarUrl ? (
+            <img
+              src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${char.avatarUrl}`}
+              alt={char.nome}
+              className="w-11 h-11 rounded-full object-cover opacity-90"
+              style={{ border: `1px solid hsl(${hue},40%,28%)` }}
+            />
+          ) : (
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center opacity-80"
+              style={{ border: `1px solid hsl(${hue},40%,28%)` }}
+            >
+              <Shield size={18} color={`hsl(${hue},55%,55%)`} />
+            </div>
+          )}
           {char.isMob && (
             <div className="absolute bottom-1.5 left-0 right-0 text-center text-[8px] text-text-muted tracking-[0.1em]">
               MOB

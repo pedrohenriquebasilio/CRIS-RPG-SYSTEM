@@ -22,6 +22,7 @@ interface Character {
   maestriaBonus: number;
   grau: string;
   isMob: boolean; isApproved: boolean;
+  avatarUrl: string | null;
   specialization: { nome: string } | null;
   origemRelacao: { nome: string } | null;
   attributes: Attrs | null;
@@ -439,9 +440,17 @@ function AgentCard({ char }: { char: Character }) {
     <div className="bg-bg-deep border border-border rounded-[4px] p-[18px_20px] flex flex-col gap-[14px]">
       {/* Header */}
       <div className="flex gap-[14px] items-start">
-        <div className="w-[52px] h-[52px] shrink-0 bg-[#1A1A1A] border border-border-md rounded-[2px] flex items-center justify-center">
-          <Users size={20} color="#3A3A3A" />
-        </div>
+        {char.avatarUrl ? (
+          <img
+            src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${char.avatarUrl}`}
+            alt={char.nome}
+            className="w-[52px] h-[52px] shrink-0 rounded-[2px] object-cover border border-border-md"
+          />
+        ) : (
+          <div className="w-[52px] h-[52px] shrink-0 bg-[#1A1A1A] border border-border-md rounded-[2px] flex items-center justify-center">
+            <Users size={20} color="#3A3A3A" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-bold text-text-near font-cinzel tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis">
             {char.nome}
@@ -644,11 +653,20 @@ function CombatPanel({
                 }}
               >
                 {/* Avatar */}
-                <div className="w-[42px] h-[42px] bg-bg-dark rounded-[3px] flex items-center justify-center shrink-0"
-                  style={{ border: `1px solid ${isCur ? "#7C3AED" : "#1E1E1E"}` }}
-                >
-                  <span className="text-[16px] font-black font-cinzel" style={{ color: isCur ? "#A78BFA" : "#2A2A2A" }}>{name[0]?.toUpperCase()}</span>
-                </div>
+                {p.character?.avatarUrl ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${p.character.avatarUrl}`}
+                    alt={name}
+                    className="w-[42px] h-[42px] rounded-[3px] object-cover shrink-0"
+                    style={{ border: `1px solid ${isCur ? "#7C3AED" : "#1E1E1E"}` }}
+                  />
+                ) : (
+                  <div className="w-[42px] h-[42px] bg-bg-dark rounded-[3px] flex items-center justify-center shrink-0"
+                    style={{ border: `1px solid ${isCur ? "#7C3AED" : "#1E1E1E"}` }}
+                  >
+                    <span className="text-[16px] font-black font-cinzel" style={{ color: isCur ? "#A78BFA" : "#2A2A2A" }}>{name[0]?.toUpperCase()}</span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis mb-1" style={{ color: isCur ? "#F3F4F6" : "#9CA3AF" }}>{name}</div>
                   <div className="text-[11px] text-text-faint flex gap-[10px]">

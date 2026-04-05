@@ -143,7 +143,7 @@ export function GameMap({ campaignId, backendToken, userId }: {
         width: containerRef.current.clientWidth,
         height: containerRef.current.clientHeight,
         backgroundColor: "#0a0a0a",
-        scene,
+        scene: scene as unknown as Phaser.Scene,
         scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
       };
 
