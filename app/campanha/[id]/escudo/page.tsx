@@ -780,7 +780,7 @@ function LogFeed({ logs, onClear }: { logs: CampaignLog[]; onClear: () => void }
             Nenhum registro ainda.
           </p>
         )}
-        {[...logs].reverse().map(log => {
+        {logs.map(log => {
           const hasDice = log.diceResult !== null;
           const label = ACTION_LABELS[log.actionType] ?? log.actionType;
 
@@ -1377,8 +1377,15 @@ export default function EscudoPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [combat,   setCombat]   = useState<Combat | null>(null);
   const [logs,     setLogs]     = useState<CampaignLog[]>([]);
+  const [clearedAt, setClearedAt] = useState<string | null>(() => {
+    try { return localStorage.getItem(`jrp-logs-cleared-${id}`); } catch { return null; }
+  });
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState<Tab>("agentes");
+
+  const visibleLogs = clearedAt
+    ? logs.filter(l => new Date(l.timestamp) > new Date(clearedAt))
+    : logs;
 
   const fetchAll = useCallback(async () => {
     if (!token) return;
@@ -1459,7 +1466,7 @@ export default function EscudoPage() {
     function onNewCombatLog(log: CampaignLog) {
       setLogs(prev => {
         const already = prev.some(l => l.id === log.id);
-        return already ? prev : [...prev, log];
+        return already ? prev : [log, ...prev];
       });
     }
 
@@ -1555,7 +1562,11 @@ export default function EscudoPage() {
       <div className="flex-1 flex overflow-hidden" style={{ height: "calc(100vh - 68px - 52px)" }}>
 
         {/* Left: log feed */}
-        <LogFeed logs={logs} onClear={() => setLogs([])} />
+        <LogFeed logs={visibleLogs} onClear={() => {
+          const now = new Date().toISOString();
+          setClearedAt(now);
+          try { localStorage.setItem(`jrp-logs-cleared-${id}`, now); } catch {}
+        }} />
 
         {/* Right: tabs */}
         <div className="flex-1 flex flex-col overflow-hidden">
