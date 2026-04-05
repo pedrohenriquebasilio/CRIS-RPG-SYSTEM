@@ -952,7 +952,7 @@ function AjustesPanel({ agents, token, campaignId, onRefresh }: { agents: Charac
               >
                 <Users size={16} color={target === "all" ? "#A78BFA" : "#52525B"} />
                 <div className="flex-1">
-                  <div className="text-[12px] font-bold" style={{ color: target === "all" ? "#A78BFA" : "#9CA3AF" }}>Todos os Agentes</div>
+                  <div className="text-[12px] font-bold" style={{ color: target === "all" ? "#A78BFA" : "#9CA3AF" }}>Todos</div>
                   <div className="text-[10px] text-text-faint">{agents.length} personagem{agents.length !== 1 ? "s" : ""}</div>
                 </div>
                 {target === "all" && <div className="w-2 h-2 rounded-full bg-brand" />}
@@ -973,11 +973,25 @@ function AjustesPanel({ agents, token, campaignId, onRefresh }: { agents: Charac
                       border: `1px solid ${active ? def!.color : "#1F1F1F"}`,
                     }}
                   >
-                    <div className="w-8 h-8 rounded-[2px] bg-[#1A1A1A] border border-border-md flex items-center justify-center shrink-0">
-                      <span className="text-[13px] font-extrabold" style={{ color: active ? def!.color : "#3F3F46" }}>{char.nome[0].toUpperCase()}</span>
-                    </div>
+                    {char.avatarUrl ? (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${char.avatarUrl}`}
+                        alt={char.nome}
+                        className="w-8 h-8 rounded-[2px] object-cover shrink-0"
+                        style={{ border: `1px solid ${char.isMob ? "#7F1D1D" : active ? def!.color : "#1F1F1F"}` }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-[2px] bg-[#1A1A1A] flex items-center justify-center shrink-0"
+                        style={{ border: `1px solid ${char.isMob ? "#7F1D1D" : "#1F1F1F"}` }}
+                      >
+                        <span className="text-[13px] font-extrabold" style={{ color: char.isMob ? "#EF4444" : active ? def!.color : "#3F3F46" }}>{char.nome[0].toUpperCase()}</span>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12px] font-bold overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: active ? "#F3F4F6" : "#9CA3AF" }}>{char.nome}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12px] font-bold overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: active ? "#F3F4F6" : "#9CA3AF" }}>{char.nome}</span>
+                        {char.isMob && <span className="text-[8px] text-red-500 border border-[#7F1D1D] px-1 py-px rounded-sm shrink-0">MOB</span>}
+                      </div>
                       <div className="text-[10px] text-text-faint">{char.specialization?.nome ?? "Sem classe"} · Nv.{char.nivel}</div>
                     </div>
                     {selectedType !== "XP" && (
@@ -1400,7 +1414,7 @@ export default function EscudoPage() {
 
             {/* AJUSTES */}
             {tab === "ajustes" && (
-              <AjustesPanel agents={agents} token={token!} campaignId={id} onRefresh={fetchAll} />
+              <AjustesPanel agents={[...agents, ...campaign.characters.filter(c => c.isMob)]} token={token!} campaignId={id} onRefresh={fetchAll} />
             )}
           </div>
         </div>
