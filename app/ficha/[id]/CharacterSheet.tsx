@@ -182,9 +182,8 @@ function storageKey(userId?: string) {
 function persist(key: string, updates: Record<string, unknown>) {
   try {
     const raw = localStorage.getItem(key);
-    if (raw) {
-      localStorage.setItem(key, JSON.stringify({ ...JSON.parse(raw), ...updates }));
-    }
+    const existing = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(key, JSON.stringify({ ...existing, ...updates }));
   } catch { /* ignore */ }
 }
 
