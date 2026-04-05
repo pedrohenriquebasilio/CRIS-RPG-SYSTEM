@@ -751,13 +751,7 @@ function CombatPanel({
 }
 
 // ─── Log Feed ─────────────────────────────────────────────────────────────────
-function LogFeed({ logs }: { logs: CampaignLog[] }) {
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs.length]);
-
+function LogFeed({ logs, onClear }: { logs: CampaignLog[]; onClear: () => void }) {
   const ACTION_LABELS: Record<string, string> = {
     SKILL: "Perícia", TECHNIQUE: "Técnica", DAMAGE: "Dano", CONDITION: "Condição",
     XP: "XP", LEVELUP: "Level Up", ATAQUE: "Ataque", DEFESA: "Defesa",
@@ -766,10 +760,18 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
 
   return (
     <div className="w-[260px] shrink-0 bg-bg-input border-r border-border-subtle flex flex-col h-full overflow-hidden">
-      <div className="px-4 pt-4 pb-3 border-b border-border-subtle">
+      <div className="px-4 pt-4 pb-3 border-b border-border-subtle flex items-center justify-between">
         <p className="text-[10px] text-text-faint tracking-[0.18em] uppercase m-0 font-cinzel">
           Resultados
         </p>
+        {logs.length > 0 && (
+          <button
+            onClick={onClear}
+            className="bg-transparent border-none cursor-pointer text-text-ghost text-[9px] tracking-[0.08em] uppercase transition-colors hover:text-red-400"
+          >
+            Limpar
+          </button>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto py-2">
         {logs.length === 0 && (
@@ -810,7 +812,6 @@ function LogFeed({ logs }: { logs: CampaignLog[] }) {
             </div>
           );
         })}
-        <div ref={endRef} />
       </div>
     </div>
   );
@@ -1345,7 +1346,7 @@ export default function EscudoPage() {
       <div className="flex-1 flex overflow-hidden" style={{ height: "calc(100vh - 68px - 52px)" }}>
 
         {/* Left: log feed */}
-        <LogFeed logs={logs} />
+        <LogFeed logs={logs} onClear={() => setLogs([])} />
 
         {/* Right: tabs */}
         <div className="flex-1 flex flex-col overflow-hidden">
