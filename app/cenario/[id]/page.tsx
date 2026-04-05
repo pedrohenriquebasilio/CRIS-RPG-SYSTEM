@@ -77,9 +77,9 @@ export default function SceneViewPage() {
   // ── Check master + load entities ──
   useEffect(() => {
     if (!backendToken || !scene?.campaignId || !userId) return;
-    apiCall<{ master: { id: string } }>(`/campaigns/${scene.campaignId}`, backendToken)
+    apiCall<{ masterId: string; master: { id: string } }>(`/campaigns/${scene.campaignId}`, backendToken)
       .then(camp => {
-        const master = camp.master.id === userId;
+        const master = camp.masterId === userId || camp.master?.id === userId;
         setIsMaster(master);
         if (master) {
           apiCall<CharOption[]>(`/characters/campaign/${scene.campaignId}`, backendToken).then(setCharacters).catch(() => {});
@@ -202,19 +202,6 @@ export default function SceneViewPage() {
             Ao vivo
           </span>
         )}
-        <div className="flex-1" />
-        {isMaster && (
-          <button
-            onClick={() => setShowAddPanel(p => !p)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.08em] cursor-pointer transition-colors border ${
-              showAddPanel
-                ? "bg-brand/20 border-brand text-brand-light"
-                : "bg-transparent border-[#2a2a2a] text-text-faint hover:text-text-base hover:border-[#3a3a3a]"
-            }`}
-          >
-            <Users size={12} /> Tokens
-          </button>
-        )}
       </div>
 
       <div className="flex-1 flex overflow-hidden">
@@ -307,6 +294,21 @@ export default function SceneViewPage() {
             })}
           </div>
         </div>
+
+        {/* Floating button (master only) */}
+        {isMaster && (
+          <button
+            onClick={() => setShowAddPanel(p => !p)}
+            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center cursor-pointer border-none transition-all duration-200 shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+            style={{
+              background: showAddPanel ? "#7C3AED" : "#18181B",
+              border: `2px solid ${showAddPanel ? "#A78BFA" : "#3f3f46"}`,
+            }}
+            title="Gerenciar tokens"
+          >
+            <Users size={18} color={showAddPanel ? "#fff" : "#A1A1AA"} />
+          </button>
+        )}
 
         {/* Add Token Panel (master only) */}
         {showAddPanel && isMaster && (
