@@ -9,11 +9,11 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { label: "FICHA", href: "/ficha" },
   { label: "CAMPANHA", href: "/campanha" },
-  { label: "GAME", href: "/game" },
   { label: "TÉCNICAS", href: "/tecnicas" },
   { label: "MALDIÇÕES", href: "/maldicoes" },
   { label: "HABILIDADES", href: "/habilidades" },
   { label: "ARMAS", href: "/armas" },
+  { label: "GAME", href: "/game" },
 ];
 
 export function Navbar() {

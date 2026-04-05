@@ -578,8 +578,7 @@ class MapScene extends Phaser.Scene {
     if (this.currentTool === "select") {
       const hit = this.positions.find(pos => pos.x === tile.x && pos.y === tile.y);
       if (hit) {
-        const canMove = this.isMaster || (hit.characterId && hit.character && !hit.character.isMob);
-        if (canMove) this.draggingId = hit.id;
+        if (this.isMaster) this.draggingId = hit.id;
         this.callbacks.onSelectToken(hit);
       } else {
         this.callbacks.onSelectToken(null);
